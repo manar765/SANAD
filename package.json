@@ -1,0 +1,16 @@
+{
+  "name": "sanad",
+  "version": "1.0.0",
+  "description": "SANAD (سند) — Arabic-first in-kind donation & beneficiary management platform",
+  "type": "module",
+  "main": "server/app.js",
+  "scripts": {
+    "start": "node server/app.js",
+    "dev": "node --watch server/app.js"
+  },
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "express": "^4.21.2",
+    "pg": "^8.23.0"
+  }
+}
