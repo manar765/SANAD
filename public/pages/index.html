@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>سند | SANAD — نظّم التبرعات واصل الخير لمستحقيه</title>
+    <meta name="description" content="سند — منصة عربية متكاملة لإدارة التبرعات العينية للجمعيات والمبادرات، تنظّم التبرعات والاحتياجات والتوزيع بشفافية وكفاءة." />
+
+    <!-- favicon -->
+    <link rel="icon" type="image/png" href="../../assets/images/LogoSANAD.png" />
+
+    <!-- fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Cairo:wght@600;700;800&display=swap" rel="stylesheet" />
+
+    <!-- font awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+
+    <!-- styles -->
+    <link rel="stylesheet" href="../CSS/style.css" />
+</head>
+<body>
+
+    <!-- scroll progress indicator -->
+    <div class="progress-bar" id="progressBar" aria-hidden="true"></div>
+
+    <!-- ============================================================
+         NAVBAR
+    ============================================================ -->
+    <header class="navbar" id="navbar">
+        <div class="container nav-inner">
+
+            <!-- logo -->
+            <a href="#home" class="brand" aria-label="سند — الصفحة الرئيسية">
+                <img src="../../assets/images/LogoSANAD.png" alt="شعار سند" class="brand-logo" />
+                <span class="brand-text">
+                    <span class="brand-ar">سند</span>
+                    <span class="brand-en">SANAD</span>
+                </span>
+            </a>
+
+            <!-- menu (links + actions) -->
+            <nav class="nav-menu" id="navMenu" aria-label="التنقل الرئيسي">
+                <div class="nav-links">
+                    <a href="#home" class="nav-link active">الرئيسية</a>
+                    <a href="#about" class="nav-link">عن سند</a>
+                    <a href="../pages/donations.html" class="nav-link">التبرعات</a>
+                    <a href="#" class="nav-link placeholder" data-page="المستفيدون">المستفيدون</a>
+                    <a href="#dashboard" class="nav-link">لوحة البيانات</a>
+                    <a href="#contact" class="nav-link">تواصل معنا</a>
+                </div>
+
+                <div class="nav-actions">
+                    <a href="#" class="btn btn-outline placeholder" data-page="تسجيل الدخول">تسجيل دخول</a>
+                    <a href="#" class="btn btn-primary placeholder" data-page="إنشاء حساب">إنشاء حساب</a>
+                </div>
+            </nav>
+
+            <!-- mobile toggle -->
+            <button class="nav-toggle" id="navToggle" aria-label="فتح القائمة" aria-expanded="false" aria-controls="navMenu">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </button>
+        </div>
+    </header>
+
+    <main>
+
+        <!-- ============================================================
+             HERO
+        ============================================================ -->
+        <section class="hero" id="home">
+            <div class="hero-blob hero-blob-1" aria-hidden="true"></div>
+            <div class="hero-blob hero-blob-2" aria-hidden="true"></div>
+            <div class="hero-blob hero-blob-3" aria-hidden="true"></div>
+
+            <div class="container hero-grid">
+
+                <!-- hero text -->
+                <div class="hero-content">
+                    <span class="eyebrow reveal">
+                        <img src="../../assets/images/LogoSANAD.png" alt="logo" style="width: 50px;">
+                        <!-- <i class="fa-solid fa-hand-holding-heart"></i> -->
+                        منصة سند لإدارة التبرعات العينية
+                    </span>
+
+                    <h1 class="hero-title reveal">
+                        نظّم التبرعات العينية <span class="text-accent">واضمن وصول الخير</span> لمستحقيه
+                    </h1>
+
+                    <p class="hero-desc reveal">
+                        سند يجمع كل ما تحتاجه الجمعيات والمبادرات في منظومة واحدة متكاملة:
+                        تسجيل التبرعات، إدارة المخزون اللحظي، توثيق المستفيدين،
+                        وتحقيق قرارات توزيع مدروسة تعتمد على الشفافية والعدالة.
+                    </p>
+
+                    <div class="hero-actions reveal">
+                        <a href="#how" class="btn btn-primary btn-lg">ابدأ الآن <i class="fa-solid fa-arrow-left"></i></a>
+                        <a href="#about" class="btn btn-outline btn-lg">تعرف على سند</a>
+                    </div>
+
+                    <div class="hero-trust reveal">
+                        <span><i class="fa-solid fa-circle-check"></i> بدون رسوم</span>
+                        <span><i class="fa-solid fa-circle-check"></i> شفافية كاملة</span>
+                        <span><i class="fa-solid fa-circle-check"></i> سجل موثّق</span>
+                    </div>
+                </div>
+
+                <!-- hero visual -->
+                <div class="hero-visual reveal">
+                    <img
+                        src="../../assets/images/Hero (2).png"
+                        alt="صندوق تبرعات يحتوي على ملابس وبطاطين ومواد غذائية وألعاب"
+                        class="hero-img"
+
+                    />
+
+                    <div class="float-chip float-chip-1">
+                        <i class="fa-solid fa-gift"></i>
+                        <span><strong>1,250+</strong> تبرع مسجّل</span>
+                    </div>
+
+                    <div class="float-chip float-chip-2">
+                        <i class="fa-solid fa-shield-heart"></i>
+                        <span>توزيع بكل شفافية</span>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ============================================================
+             STATISTICS
+        ============================================================ -->
+        <section class="stats-section" aria-label="إحصائيات المنصة">
+            <div class="container">
+                <div class="stats-card reveal">
+
+                    <div class="stat">
+                        <div class="stat-icon icon-green"><i class="fa-solid fa-users"></i></div>
+                        <div class="stat-value" data-target="2450" data-suffix="+">0</div>
+                        <div class="stat-label">مستفيد</div>
+                    </div>
+
+                    <div class="stat">
+                        <div class="stat-icon icon-orange"><i class="fa-solid fa-hand-holding-heart"></i></div>
+                        <div class="stat-value" data-target="1250" data-suffix="+">0</div>
+                        <div class="stat-label">تبرع</div>
+                    </div>
+
+                    <div class="stat">
+                        <div class="stat-icon icon-coral"><i class="fa-solid fa-building"></i></div>
+                        <div class="stat-value" data-target="85" data-suffix="+">0</div>
+                        <div class="stat-label">جمعية ومبادرة</div>
+                    </div>
+
+                    <div class="stat">
+                        <div class="stat-icon icon-gold"><i class="fa-solid fa-face-smile"></i></div>
+                        <div class="stat-value" data-target="98" data-suffix="%">0</div>
+                        <div class="stat-label">رضا المستفيدين</div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================================
+             HOW SANAD WORKS
+        ============================================================ -->
+        <section class="how-section" id="how">
+            <div class="container">
+
+                <div class="section-head reveal">
+                    <span class="eyebrow"><i class="fa-solid fa-route"></i> رحلة الخير في خمس خطوات</span>
+                    <h2 class="section-title">كيف يعمل سند؟</h2>
+                    <p class="section-desc">من تسجيل التبرع إلى وصوله للمستفيد، كل خطوة منظّمة وواضحة.</p>
+                </div>
+
+                <div class="how-steps">
+                    <span class="how-line" aria-hidden="true"></span>
+
+                    <article class="how-card reveal">
+                        <span class="how-num">01</span>
+                        <div class="how-icon"><i class="fa-solid fa-box-open"></i></div>
+                        <h3>حصر وتسجيل التبرع</h3>
+                        <p>توثيق الأصناف والكميات وحالة التخزين فور استلامها برقم تتبع فريد.</p>
+                    </article>
+
+                    <article class="how-card reveal">
+                        <span class="how-num">02</span>
+                        <div class="how-icon"><i class="fa-solid fa-boxes-stacked"></i></div>
+                        <h3>إدارة المخزون اللحظي</h3>
+                        <p>متابعة الفائض والنقص في كل فئة لمنع تراكم الأصناف وتوجيه الإمداد.</p>
+                    </article>
+
+                    <article class="how-card reveal">
+                        <span class="how-num">03</span>
+                        <div class="how-icon"><i class="fa-solid fa-user-pen"></i></div>
+                        <h3>ملفات المستفيدين</h3>
+                        <p>سجل موثق لحالة الأسرة واحتياجاتها الفعلية وسوابق الدعم المستلم.</p>
+                    </article>
+
+                    <article class="how-card reveal">
+                        <span class="how-num">04</span>
+                        <div class="how-icon"><i class="fa-solid fa-shield-halved"></i></div>
+                        <h3>التحقق وقواعد الأولوية</h3>
+                        <p>كشف الدعم المتكرر وحساب درجات الأولوية لمساعدة الفريق في التقييم.</p>
+                    </article>
+
+                    <article class="how-card reveal">
+                        <span class="how-num">05</span>
+                        <div class="how-icon"><i class="fa-solid fa-circle-check"></i></div>
+                        <h3>القرار البشري والتوزيع</h3>
+                        <p>اعتماد التوزيع بقرار بشري مفوّض وتحديث المخزن وسجل المستفيد فوراً.</p>
+                    </article>
+                </div>
+
+                <div class="how-cta reveal">
+                    <a href="#dashboard" class="btn btn-primary btn-lg">اكتشف المزيد <i class="fa-solid fa-arrow-left"></i></a>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ============================================================
+             DASHBOARD PREVIEW
+        ============================================================ -->
+        <section class="dash-section" id="dashboard">
+            <div class="container">
+
+                <div class="section-head reveal">
+                    <span class="eyebrow"><i class="fa-solid fa-gauge-high"></i> لوحة البيانات</span>
+                    <h2 class="section-title">كل العمليات أمامك في نظرة واحدة</h2>
+                    <p class="section-desc">متابعة مباشرة للتبرعات والمخزون والمستفيدين والتوزيعات خلال آخر 30 يوماً.</p>
+                </div>
+
+                <div class="dash-card reveal">
+
+                    <!-- top overview -->
+                    <div class="dash-head">
+                        <span class="dash-head-icon" aria-hidden="true"><i class="fa-solid fa-arrow-trend-up"></i></span>
+                        <div class="dash-head-text">
+                            <h3 class="dash-title">نظرة عامة</h3>
+                            <p class="dash-sub">آخر 30 يوماً</p>
+                        </div>
+                    </div>
+
+                    <!-- statistics -->
+                    <div class="dash-stats">
+                        <div class="dash-stat">
+                            <span class="ds-icon ds-green"><i class="fa-solid fa-users"></i></span>
+                            <div class="ds-text">
+                                <strong class="ds-num">2,458+</strong>
+                                <small class="ds-label">مستفيد</small>
+                            </div>
+                        </div>
+
+                        <div class="dash-stat">
+                            <span class="ds-icon ds-orange"><i class="fa-solid fa-hand-holding-heart"></i></span>
+                            <div class="ds-text">
+                                <strong class="ds-num">1,256+</strong>
+                                <small class="ds-label">تبرع</small>
+                            </div>
+                        </div>
+
+                        <div class="dash-stat">
+                            <span class="ds-icon ds-blue"><i class="fa-solid fa-building"></i></span>
+                            <div class="ds-text">
+                                <strong class="ds-num">86+</strong>
+                                <small class="ds-label">جمعية ومبادرة</small>
+                            </div>
+                        </div>
+
+                        <div class="dash-stat">
+                            <span class="ds-icon ds-coral"><i class="fa-solid fa-chart-pie"></i></span>
+                            <div class="ds-text">
+                                <strong class="ds-num">88%</strong>
+                                <small class="ds-label">تغطية الاحتياجات العاجلة</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- chart (right) + table (left) -->
+                    <div class="dash-main">
+
+                        <!-- summary chart -->
+                        <div class="dash-chart-card">
+                            <div class="dash-chart-head">
+                                <h4><i class="fa-solid fa-chart-column"></i> ملخص حركة التبرعات الشهرية</h4>
+                            </div>
+
+                            <div class="chart-wrap">
+                                <div class="chart-yaxis" aria-hidden="true">
+                                    <span>1.5K</span>
+                                    <span>1.2K</span>
+                                    <span>900</span>
+                                    <span>600</span>
+                                    <span>300</span>
+                                    <span>0</span>
+                                </div>
+
+                                <div class="chart-main">
+                                    <div class="chart-plot">
+                                        <div class="chart-grid" aria-hidden="true">
+                                            <span></span>
+                                            <span></span>
+                                            <span></span>
+                                            <span></span>
+                                            <span></span>
+                                            <span></span>
+                                        </div>
+                                        <div class="chart-bars" role="img" aria-label="ملخص التبرعات خلال ثمانية أشهر">
+                                            <div class="chart-col"><span class="chart-bar"></span></div>
+                                            <div class="chart-col"><span class="chart-bar"></span></div>
+                                            <div class="chart-col"><span class="chart-bar"></span></div>
+                                            <div class="chart-col"><span class="chart-bar"></span></div>
+                                            <div class="chart-col"><span class="chart-bar"></span></div>
+                                            <div class="chart-col"><span class="chart-bar"></span></div>
+                                            <div class="chart-col"><span class="chart-bar"></span></div>
+                                            <div class="chart-col"><span class="chart-bar"></span></div>
+                                        </div>
+                                    </div>
+                                    <div class="chart-months" aria-hidden="true">
+                                        <span>يناير</span>
+                                        <span>فبراير</span>
+                                        <span>مارس</span>
+                                        <span>أبريل</span>
+                                        <span>مايو</span>
+                                        <span>يونيو</span>
+                                        <span>يوليو</span>
+                                        <span>أغسطس</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- recent donations -->
+                        <div class="dash-table-card">
+                            <div class="dash-table-head">
+                                <h4>أحدث التبرعات المستلمة</h4>
+                                <a href="../pages/donations.html" class="dash-more">عرض الكل <i class="fa-solid fa-arrow-left"></i></a>
+                            </div>
+
+                            <table class="dash-table">
+                                <thead>
+                                    <tr>
+                                        <th>الصنف</th>
+                                        <th>الحالة</th>
+                                        <th>التاريخ</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>
+                                            <div class="t-item">
+                                                <span class="t-dot st-green"></span>
+                                                <span class="t-icon ti-green"><i class="fa-solid fa-shirt"></i></span>
+                                                <div class="t-text">
+                                                    <strong>بطانيات شتوية</strong>
+                                                    <small>أغطية وملابس</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td><span class="status-badge st-available">متاح</span></td>
+                                        <td class="t-date">12 أغسطس 2026</td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div class="t-item">
+                                                <span class="t-dot st-amber"></span>
+                                                <span class="t-icon ti-orange"><i class="fa-solid fa-utensils"></i></span>
+                                                <div class="t-text">
+                                                    <strong>مواد غذائية جافة</strong>
+                                                    <small>طرود تموينية</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td><span class="status-badge st-progress">قيد التوزيع</span></td>
+                                        <td class="t-date">10 أغسطس 2026</td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div class="t-item">
+                                                <span class="t-dot st-blue"></span>
+                                                <span class="t-icon ti-blue"><i class="fa-solid fa-school"></i></span>
+                                                <div class="t-text">
+                                                    <strong>أدوات وحقائب مدرسية</strong>
+                                                    <small>مستلزمات دراسية</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td><span class="status-badge st-done">تم التوزيع</span></td>
+                                        <td class="t-date">8 أغسطس 2026</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================================
+             FEATURES
+        ============================================================ -->
+        <section class="features-section" id="about">
+            <div class="container">
+
+                <div class="section-head reveal">
+                    <span class="eyebrow"><i class="fa-solid fa-gem"></i> لماذا سند؟</span>
+                    <h2 class="section-title">مميزات صُمّمت لخدمة الخير</h2>
+                    <p class="section-desc">أدوات عملية تجعل تنظيم التبرعات والتوزيع أسهل وأوضح للجميع.</p>
+                </div>
+
+                <div class="features-grid">
+                    <article class="feature-card reveal">
+                        <span class="feat-icon fc-green"><i class="fa-solid fa-magnifying-glass-chart"></i></span>
+                        <h3>شفافية كاملة</h3>
+                        <p>متابعة كل تبرع من لحظة وصوله حتى وصوله لمستحقيه.</p>
+                    </article>
+
+                    <article class="feature-card reveal">
+                        <span class="feat-icon fc-orange"><i class="fa-solid fa-diagram-project"></i></span>
+                        <h3>بيانات منظمة</h3>
+                        <p>سجل موحد للمستفيدين والاحتياجات والمساعدات السابقة.</p>
+                    </article>
+
+                    <article class="feature-card reveal">
+                        <span class="feat-icon fc-coral"><i class="fa-solid fa-scale-balanced"></i></span>
+                        <h3>قرارات مدروسة</h3>
+                        <p>قواعد واضحة وتوصيات تساعد الفريق على اتخاذ القرار المناسب.</p>
+                    </article>
+
+                    <article class="feature-card reveal">
+                        <span class="feat-icon fc-gold"><i class="fa-solid fa-bolt"></i></span>
+                        <h3>توفير الوقت</h3>
+                        <p>تحقق سريع من الاحتياج والدعم السابق قبل كل عملية توزيع.</p>
+                    </article>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ============================================================
+             BENEFITS
+        ============================================================ -->
+        <section class="benefits-section" aria-label="مزايا سند">
+            <div class="container">
+                <div class="benefits-card reveal">
+
+                    <div class="benefit">
+                        <span class="benefit-icon icon-green"><i class="fa-solid fa-laptop"></i></span>
+                        <h3>سهولة الاستخدام</h3>
+                        <p>واجهة بسيطة وسهلة للجميع.</p>
+                    </div>
+
+                    <div class="benefit">
+                        <span class="benefit-icon icon-coral"><i class="fa-solid fa-shield-halved"></i></span>
+                        <h3>أمان البيانات</h3>
+                        <p>حماية متقدمة للبيانات الحساسة.</p>
+                    </div>
+
+                    <div class="benefit">
+                        <span class="benefit-icon icon-orange"><i class="fa-solid fa-robot"></i></span>
+                        <h3>توصيات ذكية</h3>
+                        <p>ذكاء يساعدك على اتخاذ القرار.</p>
+                    </div>
+
+                    <div class="benefit">
+                        <span class="benefit-icon icon-gold"><i class="fa-solid fa-chart-pie"></i></span>
+                        <h3>تقارير تفصيلية</h3>
+                        <p>تقارير شاملة ورؤى واضحة.</p>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ============================================================
+         FOOTER
+    ============================================================ -->
+    <footer class="footer" id="contact">
+        <div class="container footer-grid">
+
+            <!-- brand -->
+            <div class="footer-brand">
+                <a href="#home" class="brand" aria-label="سند — الصفحة الرئيسية">
+                    <img src="../../assets/images/LogoSANAD.png" alt="شعار سند" class="brand-logo" />
+                    <span class="brand-text">
+                        <span class="brand-ar">سند</span>
+                        <span class="brand-en">SANAD</span>
+                    </span>
+                </a>
+                <p>منصة تساعد على تنظيم التبرعات العينية وربط الخير بالاحتياج الحقيقي.</p>
+                <div class="footer-social">
+                    <a href="#" class="placeholder" data-page="فيسبوك" aria-label="فيسبوك"><i class="fa-brands fa-facebook-f"></i></a>
+                    <a href="#" class="placeholder" data-page="تويتر" aria-label="تويتر"><i class="fa-brands fa-x-twitter"></i></a>
+                    <a href="#" class="placeholder" data-page="إنستغرام" aria-label="إنستغرام"><i class="fa-brands fa-instagram"></i></a>
+                    <a href="#" class="placeholder" data-page="لينكد إن" aria-label="لينكد إن"><i class="fa-brands fa-linkedin-in"></i></a>
+                </div>
+            </div>
+
+            <!-- quick links -->
+            <div class="footer-col">
+                <h4>روابط سريعة</h4>
+                <ul>
+                    <li><a href="#home"><i class="fa-solid fa-angle-left"></i> الرئيسية</a></li>
+                    <li><a href="#about"><i class="fa-solid fa-angle-left"></i> عن سند</a></li>
+                    <li><a href="../pages/donations.html"><i class="fa-solid fa-angle-left"></i> التبرعات</a></li>
+                    <li><a href="#" class="placeholder" data-page="المستفيدون"><i class="fa-solid fa-angle-left"></i> المستفيدون</a></li>
+                    <li><a href="#contact"><i class="fa-solid fa-angle-left"></i> تواصل معنا</a></li>
+                </ul>
+            </div>
+
+            <!-- platform -->
+            <div class="footer-col">
+                <h4>المنصة</h4>
+                <ul>
+                    <li><a href="#how"><i class="fa-solid fa-angle-left"></i> كيف يعمل سند</a></li>
+                    <li><a href="#dashboard"><i class="fa-solid fa-angle-left"></i> لوحة البيانات</a></li>
+                    <li><a href="#" class="placeholder" data-page="تسجيل الدخول"><i class="fa-solid fa-angle-left"></i> تسجيل الدخول</a></li>
+                    <li><a href="#" class="placeholder" data-page="إنشاء حساب"><i class="fa-solid fa-angle-left"></i> إنشاء حساب</a></li>
+                </ul>
+            </div>
+
+            <!-- contact -->
+            <div class="footer-col">
+                <h4>تواصل معنا</h4>
+                <ul>
+                    <li><a href="mailto:hello@sanad.org"><i class="fa-solid fa-envelope"></i> hello@sanad.org</a></li>
+                    <li><a href="tel:+201000000000"><i class="fa-solid fa-phone"></i> +20 100 000 0000</a></li>
+                    <li><a href="#contact"><i class="fa-solid fa-location-dot"></i> القاهرة، مصر</a></li>
+                </ul>
+            </div>
+
+        </div>
+
+        <div class="footer-bottom">
+            <div class="container">
+                <p>© 2026 سند | SANAD — جميع الحقوق محفوظة</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- toast notification -->
+    <div class="toast" id="toast" role="status" aria-live="polite">
+        <i class="fa-solid fa-circle-info"></i>
+        <span></span>
+    </div>
+
+    <!-- back to top -->
+    <button class="back-to-top" id="backToTop" aria-label="العودة إلى الأعلى">
+        <i class="fa-solid fa-arrow-up"></i>
+    </button>
+
+    <!-- scripts -->
+    <script src="../JS/main.js"></script>
+</body>
+</html>
