@@ -48,6 +48,8 @@
     --orange-tint: #FDF0DC;
     --coral: #E76F51;
     --coral-tint: #FCEBE6;
+    --red: #D92D20;
+    --red-tint: #FDECEA;
     --blue: #5B8DEF;
     --blue-tint: #E9F0FC;
     --purple: #8B7CC8;
@@ -520,6 +522,11 @@ footer[id] {
 }
 
 /* hero text */
+.text-accent{
+    background: linear-gradient(90deg, #0F6B4F, #f3f176,red,rgb(88, 111, 164));
+-webkit-background-clip: text;
+-webkit-text-fill-color: transparent;
+}
 .hero-title {
     font-size: clamp(2.4rem, 5vw, 3.75rem);
     font-weight: 900;
@@ -2487,7 +2494,7 @@ footer[id] {
 }
 
 /* ==========================================================================
-   14. Slide-Over Detail Drawer & Hardening Utilities
+   14. Donation Details Modal (centered, replaces the old slide-over drawer)
    ========================================================================== */
 .drawer-backdrop {
     position: fixed;
@@ -2508,26 +2515,28 @@ footer[id] {
 
 .drawer {
     position: fixed;
-    top: 0;
-    bottom: 0;
-    inset-inline-start: 0;
-    width: min(540px, 92vw);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.96);
+    width: min(560px, 92vw);
+    max-height: 88vh;
     background: var(--surface);
-    box-shadow: 0 0 40px rgba(15, 91, 70, 0.18);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 24px 70px rgba(15, 91, 70, 0.28);
     z-index: 1001;
     display: flex;
     flex-direction: column;
-    transform: translateX(100%);
-    transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1);
-    border-inline-end: 1px solid var(--border);
-}
-
-[dir="rtl"] .drawer {
-    transform: translateX(100%);
+    overflow: hidden;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.28s ease, transform 0.32s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.28s ease;
 }
 
 .drawer.active {
-    transform: translateX(0) !important;
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+    visibility: visible;
 }
 
 .drawer-header {
@@ -2585,6 +2594,7 @@ footer[id] {
 
 .drawer-body {
     flex: 1;
+    min-height: 0;
     overflow-y: auto;
     padding: 28px;
     display: flex;
@@ -2656,6 +2666,401 @@ footer[id] {
     justify-content: flex-end;
 }
 
+@media (max-width: 640px) {
+    .drawer {
+        width: 94vw;
+        max-height: 90vh;
+    }
+
+    .drawer-grid-2 {
+        grid-template-columns: 1fr;
+    }
+}
+
 .don-empty-action {
     margin-top: 16px;
 }
+
+/* ==========================================================================
+    15. Add Donation Modal
+   ========================================================================== */
+.add-donation-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 30, 25, 0.65);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 1100;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.28s ease, visibility 0.28s ease;
+}
+
+.add-donation-modal-backdrop.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.add-donation-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.96);
+    width: min(560px, 92vw);
+    max-height: 86vh;
+    overflow-y: auto;
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 24px 60px rgba(15, 91, 70, 0.22);
+    border: 1px solid var(--border);
+    z-index: 1101;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.25s ease;
+}
+
+.add-donation-modal.active {
+    opacity: 1;
+    visibility: visible;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+body.add-donation-modal-open {
+    overflow: hidden;
+}
+
+.add-donation-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+    background: var(--mint-soft);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+.add-donation-modal-title {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: var(--text-dark);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.add-donation-modal-title i {
+    color: var(--green);
+}
+
+.add-donation-modal-close {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1.05rem;
+    transition: all 0.2s ease;
+}
+
+.add-donation-modal-close:hover {
+    background: #fee2e2;
+    color: #dc2626;
+    border-color: #fca5a5;
+}
+
+.add-donation-form {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.add-donation-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.add-donation-field {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.add-donation-field-full {
+    grid-column: 1 / -1;
+}
+
+.add-donation-label {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-dark);
+}
+
+.add-donation-label .req {
+    color: var(--coral);
+}
+
+.add-donation-field input,
+.add-donation-field select,
+.add-donation-field textarea {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    font: inherit;
+    font-size: 0.92rem;
+    color: var(--text-dark);
+    background: var(--surface);
+    transition: var(--transition);
+}
+
+.add-donation-field select {
+    appearance: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236B7280'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: left 14px center;
+    background-size: 16px;
+}
+
+.add-donation-field input::placeholder,
+.add-donation-field textarea::placeholder {
+    color: var(--text-muted);
+}
+
+.add-donation-field textarea {
+    resize: vertical;
+    min-height: 80px;
+    line-height: 1.7;
+}
+
+.add-donation-field input:focus,
+.add-donation-field select:focus,
+.add-donation-field textarea:focus {
+    outline: none;
+    border-color: var(--green);
+    box-shadow: 0 0 0 4px rgba(31, 122, 92, 0.12);
+}
+
+.add-donation-modal-footer {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    padding: 18px 24px;
+    border-top: 1px solid var(--border);
+}
+
+@media (max-width: 640px) {
+    .add-donation-form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .add-donation-modal {
+        width: 94vw;
+    }
+
+    .add-donation-modal-footer {
+        flex-direction: column-reverse;
+    }
+
+    .add-donation-modal-footer .btn {
+        width: 100%;
+    }
+}
+
+/* ---------------------------------------------------------
+   16. Show More / Show Less button
+--------------------------------------------------------- */
+.don-more-wrap {
+    display: flex;
+    justify-content: center;
+    margin-top: 28px;
+}
+
+.don-more-btn {
+    min-width: 180px;
+}
+
+.don-more-btn[hidden] {
+    display: none;
+}
+
+/* ---------------------------------------------------------
+   17. Admin Donation Requests
+--------------------------------------------------------- */
+.admin-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 16px 22px;
+    margin-bottom: 22px;
+}
+
+.admin-toolbar-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 800;
+    font-size: 1rem;
+    color: var(--text-dark);
+}
+
+.admin-toolbar-title > i {
+    color: var(--green);
+    font-size: 1.15rem;
+}
+
+.admin-pending-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 26px;
+    height: 26px;
+    padding: 0 8px;
+    border-radius: 999px;
+    background: var(--orange-tint);
+    color: var(--orange);
+    font-size: 0.78rem;
+    font-weight: 800;
+}
+
+.admin-filter {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.admin-filter i {
+    color: var(--text-muted);
+}
+
+.admin-filter select {
+    padding: 9px 14px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface);
+    color: var(--text-dark);
+    font-family: inherit;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+
+.admin-filter select:focus {
+    outline: none;
+    border-color: var(--green);
+    box-shadow: 0 0 0 4px rgba(31, 122, 92, 0.12);
+}
+
+.admin-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 8px 12px 12px;
+    overflow: hidden;
+}
+
+.admin-table-wrap {
+    overflow-x: auto;
+}
+
+.admin-table {
+    min-width: 1080px;
+}
+
+.admin-table .admin-id {
+    font-weight: 800;
+    color: var(--green);
+    white-space: nowrap;
+}
+
+.admin-desc-cell {
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.admin-actions {
+    display: flex;
+    gap: 8px;
+    white-space: nowrap;
+}
+
+.admin-actions .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    font-size: 0.78rem;
+}
+
+.admin-no-actions {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+}
+
+.admin-empty {
+    padding: 40px 20px;
+    text-align: center;
+}
+
+.btn-danger {
+    color: #fff;
+    background: var(--red);
+    border: 1px solid var(--red);
+}
+
+.btn-danger:hover {
+    background: #b42318;
+    border-color: #b42318;
+    color: #fff;
+    transform: translateY(-2px);
+}
+
+.st-rejected {
+    color: var(--red);
+    background: rgba(217, 45, 32, 0.1);
+}
+
+@media (max-width: 640px) {
+    .admin-toolbar {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+
+/* ---------------------------------------------------------
+   18. Add Donation modal note
+--------------------------------------------------------- */
+.add-donation-note {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+}
+
+.add-donation-note i {
+    color: var(--orange);
+}
+
+@media (max-width: 640px) {
+    .add-donation-note {
+        width: 100%;
+    }
+}
+
+
+

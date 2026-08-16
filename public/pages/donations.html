@@ -12,12 +12,13 @@
     <!-- fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Cairo:wght@600;700;800&display=swap" rel="stylesheet" />
 
     <!-- font awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
 
     <!-- styles -->
-    <link rel="stylesheet" href="../CSS/style.css" />
+    <link rel="stylesheet" href="../css/style.css" />
 </head>
 <body>
 
@@ -42,8 +43,13 @@
             <!-- menu (links + actions) -->
             <nav class="nav-menu" id="navMenu" aria-label="التنقل الرئيسي">
                 <div class="nav-links">
-                    <a href="#contact" class="nav-link">تواصل معنا</a>
-                    <a href="index.html" class="nav-link"> الرئيسية</a>
+                    <a href="../pages/index.html" class="nav-link">الرئيسية</a>
+                    <a href="../pages/index.html#about" class="nav-link">عن سند</a>
+                    <a href="../pages/Donations.html" class="nav-link">التبرعات</a>
+                    <a href="../pages/AdminRequests.html" class="nav-link">لوحة تحكم الادارة</a>
+                    <a href="#" class="nav-link placeholder" data-page="المستفيدون">المستفيدون</a>
+                    <a href="../pages/index.html#dashboard" class="nav-link">لوحة البيانات</a>
+                    <a href="../pages/index.html#contact" class="nav-link">تواصل معنا</a>
                 </div>
 
                 <div class="nav-actions">
@@ -74,14 +80,16 @@
 
                 <!-- header text -->
                 <div class="page-hero-content">
+                    <span class="eyebrow reveal"><img src="../../assets/images/LogoSANAD.png" alt="logo" style="width: 50px;">منصة سند</span>
                     <h1 class="page-hero-title reveal">التبرعات</h1>
                     <p class="page-hero-sub reveal">اكتشف التبرعات المتاحة وساهم في وصول الخير إلى مستحقيه.</p>
                 </div>
 
                 <!-- soft decorative illustration -->
-                <div aria-hidden="true">
-                    <img src="../../assets/images/Donations.png" alt="img Donations" />
+                <div  aria-hidden="true">
+                    <img src="../../assets/images/Donations.png" alt="img Donations">
                 </div>
+
             </div>
         </section>
 
@@ -152,7 +160,7 @@
                     <div class="don-stat reveal">
                         <span class="don-stat-icon ds-green"><i class="fa-solid fa-box-open"></i></span>
                         <div class="don-stat-text">
-                            <div class="stat-value don-stat-value" data-target="1256">0</div>
+                            <div id="totalDonations" class="stat-value don-stat-value" data-target="1256">0</div>
                             <span class="don-stat-label">إجمالي التبرعات</span>
                         </div>
                     </div>
@@ -160,7 +168,7 @@
                     <div class="don-stat reveal">
                         <span class="don-stat-icon ds-orange"><i class="fa-solid fa-circle-check"></i></span>
                         <div class="don-stat-text">
-                            <div class="stat-value don-stat-value" data-target="845">0</div>
+                            <div id="availableDonations" class="stat-value don-stat-value" data-target="845">0</div>
                             <span class="don-stat-label">تبرعات متاحة</span>
                         </div>
                     </div>
@@ -168,7 +176,7 @@
                     <div class="don-stat reveal">
                         <span class="don-stat-icon ds-blue"><i class="fa-solid fa-hand-holding-heart"></i></span>
                         <div class="don-stat-text">
-                            <div class="stat-value don-stat-value" data-target="411">0</div>
+                            <div id="distributedDonations" class="stat-value don-stat-value" data-target="411">0</div>
                             <span class="don-stat-label">تم توزيعها</span>
                         </div>
                     </div>
@@ -186,7 +194,19 @@
                 <div class="don-grid" id="donGrid">
 
                     <!-- بطانيات شتوية -->
-                    <article class="don-card reveal" data-title="بطانيات شتوية" data-category="ملابس" data-location="القاهرة" data-status="متاح">
+                    <article class="don-card reveal"
+                        data-id="DON-1021"
+                        data-title="بطانيات شتوية"
+                        data-category="ملابس"
+                        data-location="القاهرة"
+                        data-status="متاح"
+                        data-qty="50 بطانية"
+                        data-condition="جديدة (بحالة ممتازة)"
+                        data-warehouse="مخزن القاهرة الرئيسي — رف B-12"
+                        data-date="12 أغسطس 2026"
+                        data-donor="متبرع معتمد #402"
+                        data-desc="مجموعة بطاطين شتوية بحالة ممتازة لتوزيعها على الأسر المحتاجة قبل فصل الشتاء."
+                        data-target="أسر مسجلة في قوائم الشتاء ذات الأولوية العالية (عائلات > 4 أفراد، كبار سن)">
                         <div class="don-media m-mint">
                             <span class="don-media-icon"><i class="fa-solid fa-rug"></i></span>
                             <span class="don-badge">ملابس</span>
@@ -202,11 +222,24 @@
                                 <span class="status-badge st-available">متاح</span>
                                 <span class="don-date"><i class="fa-solid fa-calendar-days"></i> 12 أغسطس 2026</span>
                             </div>
+                            <button type="button" class="btn btn-outline don-btn don-detail-btn" data-id="DON-1021">عرض التفاصيل</button>
                         </div>
                     </article>
 
                     <!-- مواد غذائية -->
-                    <article class="don-card reveal" data-title="مواد غذائية" data-category="مواد غذائية" data-location="الجيزة" data-status="متاح">
+                    <article class="don-card reveal"
+                        data-id="DON-1022"
+                        data-title="مواد غذائية"
+                        data-category="مواد غذائية"
+                        data-location="الجيزة"
+                        data-status="متاح"
+                        data-qty="100 صندوق"
+                        data-condition="معبأة ومغلفة جديدة"
+                        data-warehouse="مخزن الجيزة المركزي — قطاع الأغذية A-04"
+                        data-date="10 أغسطس 2026"
+                        data-donor="مبادرة إطعام الخيرية"
+                        data-desc="صناديق مواد غذائية جافة متنوعة تشمل الأرز والسكر والزيت والمكرونة صالحة لمدة عام."
+                        data-target="الأسر الأكثر احتياجاً والأرامل المسجلين في قاعدة بيانات الجيزة">
                         <div class="don-media m-orange">
                             <span class="don-media-icon"><i class="fa-solid fa-bowl-food"></i></span>
                             <span class="don-badge">مواد غذائية</span>
@@ -222,11 +255,24 @@
                                 <span class="status-badge st-available">متاح</span>
                                 <span class="don-date"><i class="fa-solid fa-calendar-days"></i> 10 أغسطس 2026</span>
                             </div>
+                            <button type="button" class="btn btn-outline don-btn don-detail-btn" data-id="DON-1022">عرض التفاصيل</button>
                         </div>
                     </article>
 
                     <!-- أدوات مدرسية -->
-                    <article class="don-card reveal" data-title="أدوات مدرسية" data-category="أدوات مدرسية" data-location="القاهرة" data-status="قيد التوزيع">
+                    <article class="don-card reveal"
+                        data-id="DON-1023"
+                        data-title="أدوات مدرسية"
+                        data-category="أدوات مدرسية"
+                        data-location="القاهرة"
+                        data-status="قيد التوزيع"
+                        data-qty="75 مجموعة"
+                        data-condition="جديدة بالكرتونة"
+                        data-warehouse="مخزن القاهرة الرئيسي — جناح التعليم C-08"
+                        data-date="8 أغسطس 2026"
+                        data-donor="حملة العودة للمدارس"
+                        data-desc="حقائب وكراسات وأدوات مدرسية متكاملة جاهزة لدعم الطلاب مع بداية العام الدراسي."
+                        data-target="الطلاب الأيتام وأبناء الأسر المستفيدة المسجلين في المراحل الابتدائية والإعدادية">
                         <div class="don-media m-blue">
                             <span class="don-media-icon"><i class="fa-solid fa-school"></i></span>
                             <span class="don-badge">أدوات مدرسية</span>
@@ -242,11 +288,24 @@
                                 <span class="status-badge st-progress">قيد التوزيع</span>
                                 <span class="don-date"><i class="fa-solid fa-calendar-days"></i> 8 أغسطس 2026</span>
                             </div>
+                            <button type="button" class="btn btn-outline don-btn don-detail-btn" data-id="DON-1023">عرض التفاصيل</button>
                         </div>
                     </article>
 
                     <!-- ملابس أطفال -->
-                    <article class="don-card reveal" data-title="ملابس أطفال" data-category="ملابس" data-location="مدينة نصر" data-status="متاح">
+                    <article class="don-card reveal"
+                        data-id="DON-1024"
+                        data-title="ملابس أطفال"
+                        data-category="ملابس"
+                        data-location="مدينة نصر"
+                        data-status="متاح"
+                        data-qty="120 قطعة"
+                        data-condition="ممتازة ومغسولة ومفرزة"
+                        data-warehouse="مخزن مدينة نصر — قسم الملابس M-10"
+                        data-date="6 أغسطس 2026"
+                        data-donor="متبرعون متعددون"
+                        data-desc="تشكيلة ملابس أطفال نظيفة ومناسبة لمختلف الأعمار والمراحل الدراسية."
+                        data-target="الأطفال من سن 4 إلى 12 سنة في الأسر المستفيدة">
                         <div class="don-media m-green">
                             <span class="don-media-icon"><i class="fa-solid fa-shirt"></i></span>
                             <span class="don-badge">ملابس</span>
@@ -262,11 +321,24 @@
                                 <span class="status-badge st-available">متاح</span>
                                 <span class="don-date"><i class="fa-solid fa-calendar-days"></i> 6 أغسطس 2026</span>
                             </div>
+                            <button type="button" class="btn btn-outline don-btn don-detail-btn" data-id="DON-1024">عرض التفاصيل</button>
                         </div>
                     </article>
 
                     <!-- أثاث منزلي -->
-                    <article class="don-card reveal" data-title="أثاث منزلي" data-category="أثاث" data-location="العبور" data-status="متاح">
+                    <article class="don-card reveal"
+                        data-id="DON-1025"
+                        data-title="أثاث منزلي"
+                        data-category="أثاث"
+                        data-location="العبور"
+                        data-status="متاح"
+                        data-qty="15 قطعة"
+                        data-condition="بحالة جيدة جداً"
+                        data-warehouse="مستودع العبور للمعدات — ساحة F-01"
+                        data-date="4 أغسطس 2026"
+                        data-donor="فاعل خير"
+                        data-desc="قطع أثاث منزلي بحالة جيدة وقابلة للاستخدام لتأثيث بيوت الأسر المستفيدة."
+                        data-target="حالات الزواج الحديث للأيتام وتأثيث المنازل المتضررة">
                         <div class="don-media m-coral">
                             <span class="don-media-icon"><i class="fa-solid fa-couch"></i></span>
                             <span class="don-badge">أثاث</span>
@@ -282,11 +354,24 @@
                                 <span class="status-badge st-available">متاح</span>
                                 <span class="don-date"><i class="fa-solid fa-calendar-days"></i> 4 أغسطس 2026</span>
                             </div>
+                            <button type="button" class="btn btn-outline don-btn don-detail-btn" data-id="DON-1025">عرض التفاصيل</button>
                         </div>
                     </article>
 
                     <!-- كتب تعليمية -->
-                    <article class="don-card reveal" data-title="كتب تعليمية" data-category="أخرى" data-location="القاهرة" data-status="متاح">
+                    <article class="don-card reveal"
+                        data-id="DON-1026"
+                        data-title="كتب تعليمية"
+                        data-category="أخرى"
+                        data-location="القاهرة"
+                        data-status="متاح"
+                        data-qty="200 كتاب"
+                        data-condition="بحالة ممتازة"
+                        data-warehouse="مخزن القاهرة الرئيسي — رف E-03"
+                        data-date="2 أغسطس 2026"
+                        data-donor="مكتبة النور الثقافية"
+                        data-desc="مجموعة كتب تعليمية وقصص متنوعة تناسب جميع المراحل الدراسية."
+                        data-target="مراكز التحفيظ والمدارس المجتمعية ومكتبات الجمعيات الخيرية">
                         <div class="don-media m-purple">
                             <span class="don-media-icon"><i class="fa-solid fa-book-open"></i></span>
                             <span class="don-badge">أخرى</span>
@@ -302,6 +387,7 @@
                                 <span class="status-badge st-available">متاح</span>
                                 <span class="don-date"><i class="fa-solid fa-calendar-days"></i> 2 أغسطس 2026</span>
                             </div>
+                            <button type="button" class="btn btn-outline don-btn don-detail-btn" data-id="DON-1026">عرض التفاصيل</button>
                         </div>
                     </article>
 
@@ -312,6 +398,16 @@
                     <i class="fa-solid fa-box-open"></i>
                     <h3>لا توجد تبرعات مطابقة</h3>
                     <p>جرّب تعديل البحث أو إعادة تعيين الفلاتر.</p>
+                    <div class="don-empty-action">
+                        <button type="button" class="btn btn-outline btn-sm" id="emptyResetBtn">
+                            <i class="fa-solid fa-rotate-left"></i> إعادة ضبط الفلاتر
+                        </button>
+                    </div>
+                </div>
+
+                <!-- show more / show less -->
+                <div class="don-more-wrap">
+                    <button type="button" class="btn btn-outline don-more-btn" id="showMoreBtn" hidden>عرض المزيد</button>
                 </div>
 
             </div>
@@ -329,9 +425,14 @@
                     <span class="cta-icon" aria-hidden="true"><i class="fa-solid fa-hand-holding-heart"></i></span>
                     <h2 class="cta-title">لديك تبرع تريد مشاركته؟</h2>
                     <p class="cta-desc">أضف تبرعك الآن وساعد في وصوله إلى من يحتاجه.</p>
-                    <button type="button" class="btn btn-light btn-lg placeholder" data-page="إضافة تبرع">
+                   
+                   
+                    <button type="button" class="btn btn-light btn-lg" id="addDonationBtn">
                         <i class="fa-solid fa-plus"></i> إضافة تبرع
                     </button>
+
+                   
+
                 </div>
             </div>
         </section>
@@ -366,9 +467,11 @@
             <div class="footer-col">
                 <h4>روابط سريعة</h4>
                 <ul>
-                    <li><a href="../pages/donations.html"><i class="fa-solid fa-angle-left"></i> التبرعات</a></li>
+                    <li><a href="../pages/index.html"><i class="fa-solid fa-angle-left"></i> الرئيسية</a></li>
+                    <li><a href="../pages/index.html#about"><i class="fa-solid fa-angle-left"></i> عن سند</a></li>
+                    <li><a href="../pages/Donations.html"><i class="fa-solid fa-angle-left"></i> التبرعات</a></li>
                     <li><a href="#" class="placeholder" data-page="المستفيدون"><i class="fa-solid fa-angle-left"></i> المستفيدون</a></li>
-                    <li><a href="#contact"><i class="fa-solid fa-angle-left"></i> تواصل معنا</a></li>
+                    <li><a href="../pages/index.html#contact"><i class="fa-solid fa-angle-left"></i> تواصل معنا</a></li>
                 </ul>
             </div>
 
@@ -376,6 +479,8 @@
             <div class="footer-col">
                 <h4>المنصة</h4>
                 <ul>
+                    <li><a href="../pages/index.html#how"><i class="fa-solid fa-angle-left"></i> كيف يعمل سند</a></li>
+                    <li><a href="../pages/index.html#dashboard"><i class="fa-solid fa-angle-left"></i> لوحة البيانات</a></li>
                     <li><a href="#" class="placeholder" data-page="تسجيل الدخول"><i class="fa-solid fa-angle-left"></i> تسجيل الدخول</a></li>
                     <li><a href="#" class="placeholder" data-page="إنشاء حساب"><i class="fa-solid fa-angle-left"></i> إنشاء حساب</a></li>
                 </ul>
@@ -387,7 +492,7 @@
                 <ul>
                     <li><a href="mailto:hello@sanad.org"><i class="fa-solid fa-envelope"></i> hello@sanad.org</a></li>
                     <li><a href="tel:+201000000000"><i class="fa-solid fa-phone"></i> +20 100 000 0000</a></li>
-                    <li><a href="#contact"><i class="fa-solid fa-location-dot"></i> القاهرة، مصر</a></li>
+                    <li><a href="../pages/index.html#contact"><i class="fa-solid fa-location-dot"></i> القاهرة، مصر</a></li>
                 </ul>
             </div>
 
@@ -399,6 +504,157 @@
             </div>
         </div>
     </footer>
+
+    <!-- ============================================================
+         SLIDE-OVER DONATION DETAILS DRAWER
+    ============================================================ -->
+    <div class="drawer-backdrop" id="drawerBackdrop" aria-hidden="true"></div>
+    <aside class="drawer" id="donationDrawer" role="dialog" aria-modal="true" aria-labelledby="drawerItemTitle" aria-hidden="true">
+        <div class="drawer-header">
+            <div class="drawer-header-info">
+                <span class="drawer-id" id="drawerItemId">DON-1021</span>
+                <span class="status-badge st-available" id="drawerItemStatus">متاح</span>
+            </div>
+            <button type="button" class="drawer-close" id="drawerCloseBtn" aria-label="إغلاق تفاصيل التبرع">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <div class="drawer-body">
+            <div>
+                <h2 class="drawer-title" id="drawerItemTitle">بطانيات شتوية</h2>
+                <p class="drawer-notes" id="drawerItemDesc" style="margin-top: 8px;">مجموعة بطاطين شتوية بحالة ممتازة لتوزيعها على الأسر المحتاجة قبل فصل الشتاء.</p>
+            </div>
+
+            <div class="drawer-section">
+                <h3 class="drawer-section-title"><i class="fa-solid fa-cubes-stacked"></i> بيانات المخزون والكميات</h3>
+                <div class="drawer-grid-2">
+                    <div class="drawer-field">
+                        <span class="drawer-field-label">الفئة الرئيسية</span>
+                        <span class="drawer-field-value" id="drawerItemCategory">ملابس</span>
+                    </div>
+                    <div class="drawer-field">
+                        <span class="drawer-field-label">الحالة التشغيلية</span>
+                        <span class="drawer-field-value" id="drawerItemCondition">جديدة (بحالة ممتازة)</span>
+                    </div>
+                    <div class="drawer-field">
+                        <span class="drawer-field-label">الكمية الإجمالية</span>
+                        <span class="drawer-field-value" id="drawerItemQty">50 بطانية</span>
+                    </div>
+                    <div class="drawer-field">
+                        <span class="drawer-field-label">الموقع المخزني</span>
+                        <span class="drawer-field-value" id="drawerItemWarehouse">مخزن القاهرة الرئيسي — رف B-12</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="drawer-section">
+                <h3 class="drawer-section-title"><i class="fa-solid fa-clock-rotate-left"></i> التتبع وتاريخ التوريد</h3>
+                <div class="drawer-grid-2">
+                    <div class="drawer-field">
+                        <span class="drawer-field-label">تاريخ الاستلام</span>
+                        <span class="drawer-field-value" id="drawerItemDate">12 أغسطس 2026</span>
+                    </div>
+                    <div class="drawer-field">
+                        <span class="drawer-field-label">الجهة المانحة</span>
+                        <span class="drawer-field-value" id="drawerItemDonor">متبرع معتمد #402</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="drawer-section">
+                <h3 class="drawer-section-title"><i class="fa-solid fa-shield-halved"></i> معايير التوزيع والأولوية</h3>
+                <p class="drawer-notes" id="drawerItemTarget">أسر مسجلة في قوائم الشتاء ذات الأولوية العالية (عائلات > 4 أفراد، كبار سن).</p>
+            </div>
+        </div>
+
+        <div class="drawer-footer">
+            <button type="button" class="btn btn-outline" id="drawerDismissBtn">إغلاق</button>
+            <button type="button" class="btn btn-primary" id="drawerAllocateBtn"><i class="fa-solid fa-hand-holding-heart"></i> تخصيص لمستفيد</button>
+        </div>
+    </aside>
+
+    <!-- ============================================================
+         ADD DONATION MODAL
+    ============================================================ -->
+    <div class="add-donation-modal-backdrop" id="addDonationModalBackdrop" aria-hidden="true"></div>
+    <div class="add-donation-modal" id="addDonationModal" role="dialog" aria-modal="true" aria-labelledby="addDonationTitle" aria-hidden="true">
+        <div class="add-donation-modal-header">
+            <h3 class="add-donation-modal-title" id="addDonationTitle">
+                <i class="fa-solid fa-plus"></i> إضافة تبرع جديد
+            </h3>
+            <button type="button" class="add-donation-modal-close" id="addDonationCloseBtn" aria-label="إغلاق نموذج إضافة تبرع">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <form class="add-donation-form" id="addDonationForm" novalidate>
+            <div class="add-donation-form-grid">
+
+                <div class="add-donation-field">
+                    <label class="add-donation-label" for="donationName">اسم التبرع <span class="req">*</span></label>
+                    <input type="text" id="donationName" placeholder="مثال: بطانيات شتوية" required />
+                </div>
+
+                <div class="add-donation-field">
+                    <label class="add-donation-label" for="donorName">اسم المتبرع</label>
+                    <input type="text" id="donorName" placeholder="مثال: فاعل خير" />
+                </div>
+
+                <div class="add-donation-field">
+                    <label class="add-donation-label" for="donationCategory">الفئة</label>
+                    <select id="donationCategory">
+                        <option value="">اختر الفئة</option>
+                        <option>ملابس</option>
+                        <option>مواد غذائية</option>
+                        <option>أدوات مدرسية</option>
+                        <option>أثاث</option>
+                        <option>أجهزة</option>
+                        <option>أخرى</option>
+                    </select>
+                </div>
+
+                <div class="add-donation-field">
+                    <label class="add-donation-label" for="donationQty">الكمية</label>
+                    <input type="number" id="donationQty" min="1" placeholder="مثال: 50" />
+                </div>
+
+                <div class="add-donation-field">
+                    <label class="add-donation-label" for="donationCondition">الحالة</label>
+                    <select id="donationCondition">
+                        <option value="">اختر الحالة</option>
+                        <option>جديدة</option>
+                        <option>بحالة ممتازة</option>
+                        <option>مستعملة بحالة جيدة</option>
+                    </select>
+                </div>
+
+                <div class="add-donation-field">
+                    <label class="add-donation-label" for="donationWarehouse">الموقع / المخزن</label>
+                    <input type="text" id="donationWarehouse" placeholder="مثال: مخزن القاهرة الرئيسي" />
+                </div>
+
+                <div class="add-donation-field">
+                    <label class="add-donation-label" for="donationDate">تاريخ الاستلام</label>
+                    <input type="date" id="donationDate" />
+                </div>
+
+                <div class="add-donation-field add-donation-field-full">
+                    <label class="add-donation-label" for="donationDesc">الوصف</label>
+                    <textarea id="donationDesc" rows="3" placeholder="وصف موجز للتبرع وحالته"></textarea>
+                </div>
+
+            </div>
+
+            <div class="add-donation-modal-footer">
+                <span class="add-donation-note"><i class="fa-solid fa-user-shield"></i> سيراجع المسؤول طلبك قبل إضافة التبرع.</span>
+                <button type="button" class="btn btn-outline" id="addDonationCancelBtn">إلغاء</button>
+                <button type="submit" class="btn btn-primary" id="addDonationSaveBtn">
+                    <i class="fa-solid fa-paper-plane"></i> إرسال الطلب
+                </button>
+            </div>
+        </form>
+    </div>
 
     <!-- toast notification -->
     <div class="toast" id="toast" role="status" aria-live="polite">
@@ -412,7 +668,8 @@
     </button>
 
     <!-- scripts -->
-    <script src="../JS/main.js"></script>
-    <script src="../JS/donation.js"></script>
+    <script src="../js/main.js"></script>
+    <script src="../js/donations-store.js"></script>
+    <script src="../js/donation.js"></script>
 </body>
 </html>

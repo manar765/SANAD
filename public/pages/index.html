@@ -18,7 +18,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
 
     <!-- styles -->
-    <link rel="stylesheet" href="../CSS/style.css" />
+    <link rel="stylesheet" href="../css/style.css" />
 </head>
 <body>
 
@@ -32,7 +32,7 @@
         <div class="container nav-inner">
 
             <!-- logo -->
-            <a href="#home" class="brand" aria-label="سند — الصفحة الرئيسية">
+            <a href="../pages/index.html" class="brand" aria-label="سند — الصفحة الرئيسية">
                 <img src="../../assets/images/LogoSANAD.png" alt="شعار سند" class="brand-logo" />
                 <span class="brand-text">
                     <span class="brand-ar">سند</span>
@@ -43,12 +43,13 @@
             <!-- menu (links + actions) -->
             <nav class="nav-menu" id="navMenu" aria-label="التنقل الرئيسي">
                 <div class="nav-links">
-                    <a href="#home" class="nav-link active">الرئيسية</a>
-                    <a href="#about" class="nav-link">عن سند</a>
-                    <a href="../pages/donations.html" class="nav-link">التبرعات</a>
+                    <a href="../pages/index.html" class="nav-link">الرئيسية</a>
+                    <a href="../pages/index.html#about" class="nav-link">عن سند</a>
+                    <a href="../pages/Donations.html" class="nav-link">التبرعات</a>
+                    <a href="../pages/AdminRequests.html" class="nav-link">لوحة تحكم الادارة</a>
                     <a href="#" class="nav-link placeholder" data-page="المستفيدون">المستفيدون</a>
-                    <a href="#dashboard" class="nav-link">لوحة البيانات</a>
-                    <a href="#contact" class="nav-link">تواصل معنا</a>
+                    <a href="../pages/index.html#dashboard" class="nav-link">لوحة البيانات</a>
+                    <a href="../pages/index.html#contact" class="nav-link">تواصل معنا</a>
                 </div>
 
                 <div class="nav-actions">
@@ -65,7 +66,6 @@
             </button>
         </div>
     </header>
-
     <main>
 
         <!-- ============================================================
@@ -87,7 +87,8 @@
                     </span>
 
                     <h1 class="hero-title reveal">
-                        نظّم التبرعات العينية <span class="text-accent">واضمن وصول الخير</span> لمستحقيه
+                        <!-- <img src="../../assets/images/LogoSANAD.png" alt="" style="width: 50px;"> -->
+                       <span class="text-accent">من ايد لايد الخير يزيد</span> 
                     </h1>
 
                     <p class="hero-desc reveal">
@@ -260,7 +261,7 @@
                         <div class="dash-stat">
                             <span class="ds-icon ds-orange"><i class="fa-solid fa-hand-holding-heart"></i></span>
                             <div class="ds-text">
-                                <strong class="ds-num">1,256+</strong>
+                                <strong class="ds-num" id="dashboardDonations">1,256+</strong>
                                 <small class="ds-label">تبرع</small>
                             </div>
                         </div>
@@ -340,7 +341,7 @@
                         <div class="dash-table-card">
                             <div class="dash-table-head">
                                 <h4>أحدث التبرعات المستلمة</h4>
-                                <a href="../pages/donations.html" class="dash-more">عرض الكل <i class="fa-solid fa-arrow-left"></i></a>
+                                <a href="../pages/Donations.html" class="dash-more">عرض الكل <i class="fa-solid fa-arrow-left"></i></a>
                             </div>
 
                             <table class="dash-table">
@@ -489,7 +490,7 @@
 
             <!-- brand -->
             <div class="footer-brand">
-                <a href="#home" class="brand" aria-label="سند — الصفحة الرئيسية">
+                <a href="../pages/index.html" class="brand" aria-label="سند — الصفحة الرئيسية">
                     <img src="../../assets/images/LogoSANAD.png" alt="شعار سند" class="brand-logo" />
                     <span class="brand-text">
                         <span class="brand-ar">سند</span>
@@ -509,11 +510,11 @@
             <div class="footer-col">
                 <h4>روابط سريعة</h4>
                 <ul>
-                    <li><a href="#home"><i class="fa-solid fa-angle-left"></i> الرئيسية</a></li>
-                    <li><a href="#about"><i class="fa-solid fa-angle-left"></i> عن سند</a></li>
-                    <li><a href="../pages/donations.html"><i class="fa-solid fa-angle-left"></i> التبرعات</a></li>
+                    <li><a href="../pages/index.html"><i class="fa-solid fa-angle-left"></i> الرئيسية</a></li>
+                    <li><a href="../pages/index.html#about"><i class="fa-solid fa-angle-left"></i> عن سند</a></li>
+                    <li><a href="../pages/Donations.html"><i class="fa-solid fa-angle-left"></i> التبرعات</a></li>
                     <li><a href="#" class="placeholder" data-page="المستفيدون"><i class="fa-solid fa-angle-left"></i> المستفيدون</a></li>
-                    <li><a href="#contact"><i class="fa-solid fa-angle-left"></i> تواصل معنا</a></li>
+                    <li><a href="../pages/index.html#contact"><i class="fa-solid fa-angle-left"></i> تواصل معنا</a></li>
                 </ul>
             </div>
 
@@ -521,8 +522,8 @@
             <div class="footer-col">
                 <h4>المنصة</h4>
                 <ul>
-                    <li><a href="#how"><i class="fa-solid fa-angle-left"></i> كيف يعمل سند</a></li>
-                    <li><a href="#dashboard"><i class="fa-solid fa-angle-left"></i> لوحة البيانات</a></li>
+                    <li><a href="../pages/index.html#how"><i class="fa-solid fa-angle-left"></i> كيف يعمل سند</a></li>
+                    <li><a href="../pages/index.html#dashboard"><i class="fa-solid fa-angle-left"></i> لوحة البيانات</a></li>
                     <li><a href="#" class="placeholder" data-page="تسجيل الدخول"><i class="fa-solid fa-angle-left"></i> تسجيل الدخول</a></li>
                     <li><a href="#" class="placeholder" data-page="إنشاء حساب"><i class="fa-solid fa-angle-left"></i> إنشاء حساب</a></li>
                 </ul>
@@ -534,7 +535,7 @@
                 <ul>
                     <li><a href="mailto:hello@sanad.org"><i class="fa-solid fa-envelope"></i> hello@sanad.org</a></li>
                     <li><a href="tel:+201000000000"><i class="fa-solid fa-phone"></i> +20 100 000 0000</a></li>
-                    <li><a href="#contact"><i class="fa-solid fa-location-dot"></i> القاهرة، مصر</a></li>
+                    <li><a href="../pages/index.html#contact"><i class="fa-solid fa-location-dot"></i> القاهرة، مصر</a></li>
                 </ul>
             </div>
 
@@ -559,6 +560,7 @@
     </button>
 
     <!-- scripts -->
-    <script src="../JS/main.js"></script>
+    <script src="../js/donations-store.js"></script>
+    <script src="../js/main.js"></script>
 </body>
 </html>
