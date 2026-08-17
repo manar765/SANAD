@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>سند — تسجيل الدخول</title>
+        <link rel="icon" type="image/png" href="../../assets/images/LogoSANAD.png" />
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="stylesheet" href="../CSS/login.css">
+        <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap"
+            rel="stylesheet">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/feather-icons/4.29.0/feather.min.js"></script>
+    </head>
+
+    <body>
+
+        <div class="page">
+
+            <!-- left brand panel -->
+            <div class="brand-panel">
+                <div class="brand-logo">
+                    <img src="../../assets/images/LogoSANAD.png" alt="Sanad Logo">
+                </div>
+                <h2>نظّم التبرعات، و وصل الخير لمستحقيه</h2>
+                <p class="lead">منصة متكاملة لإدارة التبرعات العينية للمبادرات والجمعيات الخيرية.</p>
+                <div class="stat-row">
+                    <div>
+                        <div class="num">2,450+</div>
+                        <div class="label">متبرع</div>
+                    </div>
+                    <div>
+                        <div class="num">1,250+</div>
+                        <div class="label">مستفيد</div>
+                    </div>
+                    <div>
+                        <div class="num">85+</div>
+                        <div class="label">جمعية</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- right form panel -->
+            <div class="form-panel">
+                <div class="form-box">
+                    <div class="top-badge"><svg data-feather="shield"></svg>دخول آمن ومشفّر</div>
+
+                    <h3>تسجيل الدخول</h3>
+                    <p class="sub">أدخل بياناتك للوصول إلى لوحة التحكم</p>
+
+                    <form id="loginForm" novalidate>
+                        <div class="field-group">
+                            <label class="field-label" for="email">البريد الإلكتروني</label>
+                            <input class="field" id="email" name="email" type="email"
+                                placeholder="name@organization.com" autocomplete="email">
+                            <div class="error-msg" id="emailError">من فضلك أدخل بريد إلكتروني صحيح</div>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label" for="password">كلمة المرور</label>
+                            <div class="input-wrap">
+                                <input class="field has-icon" id="password" name="password" type="password"
+                                    placeholder="••••••••" autocomplete="current-password">
+                                <button type="button" class="toggle-pass" id="togglePass"
+                                    aria-label="إظهار كلمة المرور">
+                                    <svg data-feather="eye"></svg>
+                                </button>
+                            </div>
+                            <div class="error-msg" id="passwordError">كلمة المرور مطلوبة</div>
+                        </div>
+
+                        <div class="row-between">
+                            <label class="remember-label">
+                                <input type="checkbox" id="remember">
+                                تذكرني
+                            </label>
+                            <button type="button" class="forgot-link">نسيت كلمة المرور؟</button>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary" id="submitBtn">
+                            <span class="btn-text">تسجيل الدخول</span>
+                            <span class="spinner"></span>
+                        </button>
+                    </form>
+
+                    <p class="signup-line">لا يوجد حساب؟ <a href="../pages/signup.html">إنشاء حساب جديد</a></p>
+                </div>
+            </div>
+
+        </div>
+        <script src="../JS/login.js"></script>
+
+    </body>
+
+</html>

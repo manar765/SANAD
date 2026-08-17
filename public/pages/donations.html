@@ -1,351 +1,39 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>سند | SANAD — التبرعات</title>
-    <meta name="description" content="التبرعات — استعرض التبرعات العينية المتاحة في سند وابحث وفلاتر وساهم في وصول الخير إلى مستحقيه." />
 
-    <!-- favicon -->
-    <link rel="icon" type="image/png" href="../../assets/images/LogoSANAD.png" />
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>سند | SANAD — التبرعات</title>
+        <meta name="description"
+            content="التبرعات — استعرض التبرعات العينية المتاحة في سند وابحث وفلاتر وساهم في وصول الخير إلى مستحقيه." />
 
-    <!-- fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <!-- favicon -->
+        <link rel="icon" type="image/png" href="../../assets/images/LogoSANAD.png" />
 
-    <!-- font awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+        <!-- fonts -->
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 
-    <!-- styles -->
-    <link rel="stylesheet" href="../CSS/style.css" />
-</head>
-<body>
+        <!-- font awesome -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
 
-    <!-- scroll progress indicator -->
-    <div class="progress-bar" id="progressBar" aria-hidden="true"></div>
+        <!-- styles -->
+        <link rel="stylesheet" href="../CSS/style.css" />
+    </head>
 
-    <!-- ============================================================
+    <body>
+
+        <!-- scroll progress indicator -->
+        <div class="progress-bar" id="progressBar" aria-hidden="true"></div>
+
+        <!-- ============================================================
          NAVBAR
     ============================================================ -->
-    <header class="navbar" id="navbar">
-        <div class="container nav-inner">
+        <header class="navbar" id="navbar">
+            <div class="container nav-inner">
 
-            <!-- logo -->
-            <a href="../pages/index.html" class="brand" aria-label="سند — الصفحة الرئيسية">
-                <img src="../../assets/images/LogoSANAD.png" alt="شعار سند" class="brand-logo" />
-                <span class="brand-text">
-                    <span class="brand-ar">سند</span>
-                    <span class="brand-en">SANAD</span>
-                </span>
-            </a>
-
-            <!-- menu (links + actions) -->
-            <nav class="nav-menu" id="navMenu" aria-label="التنقل الرئيسي">
-                <div class="nav-links">
-                    <a href="#contact" class="nav-link">تواصل معنا</a>
-                    <a href="index.html" class="nav-link"> الرئيسية</a>
-                </div>
-
-                <div class="nav-actions">
-                    <a href="#" class="btn btn-outline placeholder" data-page="تسجيل الدخول">تسجيل دخول</a>
-                    <a href="#" class="btn btn-primary placeholder" data-page="إنشاء حساب">إنشاء حساب</a>
-                </div>
-            </nav>
-
-            <!-- mobile toggle -->
-            <button class="nav-toggle" id="navToggle" aria-label="فتح القائمة" aria-expanded="false" aria-controls="navMenu">
-                <span class="bar"></span>
-                <span class="bar"></span>
-                <span class="bar"></span>
-            </button>
-        </div>
-    </header>
-
-    <main>
-
-        <!-- ============================================================
-             PAGE HEADER
-        ============================================================ -->
-        <section class="page-hero" id="donations">
-            <div class="hero-blob hero-blob-1" aria-hidden="true"></div>
-            <div class="hero-blob hero-blob-2" aria-hidden="true"></div>
-
-            <div class="container page-hero-grid">
-
-                <!-- header text -->
-                <div class="page-hero-content">
-                    <h1 class="page-hero-title reveal">التبرعات</h1>
-                    <p class="page-hero-sub reveal">اكتشف التبرعات المتاحة وساهم في وصول الخير إلى مستحقيه.</p>
-                </div>
-
-                <!-- soft decorative illustration -->
-                <div aria-hidden="true">
-                    <img src="../../assets/images/Donations.png" alt="img Donations" />
-                </div>
-            </div>
-        </section>
-
-        <!-- ============================================================
-             SEARCH & FILTER
-        ============================================================ -->
-        <section class="don-tools" id="browse" aria-label="البحث والتصفية">
-            <div class="container">
-                <div class="search-card reveal">
-
-                    <div class="search-row">
-
-                        <div class="search-input-wrap">
-                            <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
-                            <input type="search" id="donSearch" placeholder="ابحث عن تبرع..." aria-label="ابحث عن تبرع" />
-                        </div>
-
-                        <div class="filter-select">
-                            <i class="fa-solid fa-tags" aria-hidden="true"></i>
-                            <select id="filterCategory" aria-label="الفئة">
-                                <option value="">الفئة: الكل</option>
-                                <option>ملابس</option>
-                                <option>مواد غذائية</option>
-                                <option>أدوات مدرسية</option>
-                                <option>أثاث</option>
-                                <option>أجهزة</option>
-                                <option>أخرى</option>
-                            </select>
-                        </div>
-
-                        <div class="filter-select">
-                            <i class="fa-solid fa-location-dot" aria-hidden="true"></i>
-                            <select id="filterLocation" aria-label="الموقع">
-                                <option value="">الموقع: الكل</option>
-                                <option>القاهرة</option>
-                                <option>الجيزة</option>
-                                <option>مدينة نصر</option>
-                                <option>العبور</option>
-                            </select>
-                        </div>
-
-                        <div class="filter-select">
-                            <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
-                            <select id="filterStatus" aria-label="الحالة">
-                                <option value="">الحالة: الكل</option>
-                                <option>متاح</option>
-                                <option>قيد التوزيع</option>
-                                <option>تم التوزيع</option>
-                            </select>
-                        </div>
-
-                        <button type="button" class="btn btn-outline btn-reset" id="resetFilters">
-                            <i class="fa-solid fa-rotate-left"></i> إعادة تعيين
-                        </button>
-
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- ============================================================
-             STATISTICS
-        ============================================================ -->
-        <section class="don-stats-section" aria-label="إحصائيات التبرعات">
-            <div class="container">
-                <div class="don-stats">
-
-                    <div class="don-stat reveal">
-                        <span class="don-stat-icon ds-green"><i class="fa-solid fa-box-open"></i></span>
-                        <div class="don-stat-text">
-                            <div class="stat-value don-stat-value" data-target="1256">0</div>
-                            <span class="don-stat-label">إجمالي التبرعات</span>
-                        </div>
-                    </div>
-
-                    <div class="don-stat reveal">
-                        <span class="don-stat-icon ds-orange"><i class="fa-solid fa-circle-check"></i></span>
-                        <div class="don-stat-text">
-                            <div class="stat-value don-stat-value" data-target="845">0</div>
-                            <span class="don-stat-label">تبرعات متاحة</span>
-                        </div>
-                    </div>
-
-                    <div class="don-stat reveal">
-                        <span class="don-stat-icon ds-blue"><i class="fa-solid fa-hand-holding-heart"></i></span>
-                        <div class="don-stat-text">
-                            <div class="stat-value don-stat-value" data-target="411">0</div>
-                            <span class="don-stat-label">تم توزيعها</span>
-                        </div>
-                    </div>
-
-                </div>
-            </div>
-        </section>
-
-        <!-- ============================================================
-             DONATION CARDS GRID
-        ============================================================ -->
-        <section class="don-section" aria-label="قائمة التبرعات">
-            <div class="container">
-
-                <div class="don-grid" id="donGrid">
-
-                    <!-- بطانيات شتوية -->
-                    <article class="don-card reveal" data-title="بطانيات شتوية" data-category="ملابس" data-location="القاهرة" data-status="متاح">
-                        <div class="don-media m-mint">
-                            <span class="don-media-icon"><i class="fa-solid fa-rug"></i></span>
-                            <span class="don-badge">ملابس</span>
-                        </div>
-                        <div class="don-body">
-                            <h3 class="don-title">بطانيات شتوية</h3>
-                            <p class="don-desc">مجموعة بطاطين شتوية بحالة ممتازة لتوزيعها على الأسر المحتاجة قبل فصل الشتاء.</p>
-                            <div class="don-meta">
-                                <span class="don-meta-item"><i class="fa-solid fa-location-dot"></i> القاهرة</span>
-                                <span class="don-meta-item"><i class="fa-solid fa-boxes-stacked"></i> 50 بطانية</span>
-                            </div>
-                            <div class="don-foot">
-                                <span class="status-badge st-available">متاح</span>
-                                <span class="don-date"><i class="fa-solid fa-calendar-days"></i> 12 أغسطس 2026</span>
-                            </div>
-                        </div>
-                    </article>
-
-                    <!-- مواد غذائية -->
-                    <article class="don-card reveal" data-title="مواد غذائية" data-category="مواد غذائية" data-location="الجيزة" data-status="متاح">
-                        <div class="don-media m-orange">
-                            <span class="don-media-icon"><i class="fa-solid fa-bowl-food"></i></span>
-                            <span class="don-badge">مواد غذائية</span>
-                        </div>
-                        <div class="don-body">
-                            <h3 class="don-title">مواد غذائية</h3>
-                            <p class="don-desc">صناديق مواد غذائية جافة متنوعة تشمل الأرز والسكر والزيت والمكرونة.</p>
-                            <div class="don-meta">
-                                <span class="don-meta-item"><i class="fa-solid fa-location-dot"></i> الجيزة</span>
-                                <span class="don-meta-item"><i class="fa-solid fa-boxes-stacked"></i> 100 صندوق</span>
-                            </div>
-                            <div class="don-foot">
-                                <span class="status-badge st-available">متاح</span>
-                                <span class="don-date"><i class="fa-solid fa-calendar-days"></i> 10 أغسطس 2026</span>
-                            </div>
-                        </div>
-                    </article>
-
-                    <!-- أدوات مدرسية -->
-                    <article class="don-card reveal" data-title="أدوات مدرسية" data-category="أدوات مدرسية" data-location="القاهرة" data-status="قيد التوزيع">
-                        <div class="don-media m-blue">
-                            <span class="don-media-icon"><i class="fa-solid fa-school"></i></span>
-                            <span class="don-badge">أدوات مدرسية</span>
-                        </div>
-                        <div class="don-body">
-                            <h3 class="don-title">أدوات مدرسية</h3>
-                            <p class="don-desc">حقائب وكراسات وأدوات مدرسية جاهزة لدعم الطلاب مع بداية العام الدراسي.</p>
-                            <div class="don-meta">
-                                <span class="don-meta-item"><i class="fa-solid fa-location-dot"></i> القاهرة</span>
-                                <span class="don-meta-item"><i class="fa-solid fa-boxes-stacked"></i> 75 مجموعة</span>
-                            </div>
-                            <div class="don-foot">
-                                <span class="status-badge st-progress">قيد التوزيع</span>
-                                <span class="don-date"><i class="fa-solid fa-calendar-days"></i> 8 أغسطس 2026</span>
-                            </div>
-                        </div>
-                    </article>
-
-                    <!-- ملابس أطفال -->
-                    <article class="don-card reveal" data-title="ملابس أطفال" data-category="ملابس" data-location="مدينة نصر" data-status="متاح">
-                        <div class="don-media m-green">
-                            <span class="don-media-icon"><i class="fa-solid fa-shirt"></i></span>
-                            <span class="don-badge">ملابس</span>
-                        </div>
-                        <div class="don-body">
-                            <h3 class="don-title">ملابس أطفال</h3>
-                            <p class="don-desc">تشكيلة ملابس أطفال نظيفة ومناسبة لمختلف الأعمار والمراحل الدراسية.</p>
-                            <div class="don-meta">
-                                <span class="don-meta-item"><i class="fa-solid fa-location-dot"></i> مدينة نصر</span>
-                                <span class="don-meta-item"><i class="fa-solid fa-boxes-stacked"></i> 120 قطعة</span>
-                            </div>
-                            <div class="don-foot">
-                                <span class="status-badge st-available">متاح</span>
-                                <span class="don-date"><i class="fa-solid fa-calendar-days"></i> 6 أغسطس 2026</span>
-                            </div>
-                        </div>
-                    </article>
-
-                    <!-- أثاث منزلي -->
-                    <article class="don-card reveal" data-title="أثاث منزلي" data-category="أثاث" data-location="العبور" data-status="متاح">
-                        <div class="don-media m-coral">
-                            <span class="don-media-icon"><i class="fa-solid fa-couch"></i></span>
-                            <span class="don-badge">أثاث</span>
-                        </div>
-                        <div class="don-body">
-                            <h3 class="don-title">أثاث منزلي</h3>
-                            <p class="don-desc">قطع أثاث منزلي بحالة جيدة وقابلة للاستخدام لتأثيث بيوت الأسر المستفيدة.</p>
-                            <div class="don-meta">
-                                <span class="don-meta-item"><i class="fa-solid fa-location-dot"></i> العبور</span>
-                                <span class="don-meta-item"><i class="fa-solid fa-boxes-stacked"></i> 15 قطعة</span>
-                            </div>
-                            <div class="don-foot">
-                                <span class="status-badge st-available">متاح</span>
-                                <span class="don-date"><i class="fa-solid fa-calendar-days"></i> 4 أغسطس 2026</span>
-                            </div>
-                        </div>
-                    </article>
-
-                    <!-- كتب تعليمية -->
-                    <article class="don-card reveal" data-title="كتب تعليمية" data-category="أخرى" data-location="القاهرة" data-status="متاح">
-                        <div class="don-media m-purple">
-                            <span class="don-media-icon"><i class="fa-solid fa-book-open"></i></span>
-                            <span class="don-badge">أخرى</span>
-                        </div>
-                        <div class="don-body">
-                            <h3 class="don-title">كتب تعليمية</h3>
-                            <p class="don-desc">مجموعة كتب تعليمية وقصص متنوعة تناسب جميع المراحل الدراسية.</p>
-                            <div class="don-meta">
-                                <span class="don-meta-item"><i class="fa-solid fa-location-dot"></i> القاهرة</span>
-                                <span class="don-meta-item"><i class="fa-solid fa-boxes-stacked"></i> 200 كتاب</span>
-                            </div>
-                            <div class="don-foot">
-                                <span class="status-badge st-available">متاح</span>
-                                <span class="don-date"><i class="fa-solid fa-calendar-days"></i> 2 أغسطس 2026</span>
-                            </div>
-                        </div>
-                    </article>
-
-                </div>
-
-                <!-- empty state -->
-                <div class="don-empty" id="donEmpty" hidden>
-                    <i class="fa-solid fa-box-open"></i>
-                    <h3>لا توجد تبرعات مطابقة</h3>
-                    <p>جرّب تعديل البحث أو إعادة تعيين الفلاتر.</p>
-                </div>
-
-            </div>
-        </section>
-
-        <!-- ============================================================
-             CALL TO ACTION
-        ============================================================ -->
-        <section class="don-cta-section" aria-label="أضف تبرعك">
-            <div class="container">
-                <div class="cta-card reveal">
-                    <span class="cta-circle cta-circle-1" aria-hidden="true"></span>
-                    <span class="cta-circle cta-circle-2" aria-hidden="true"></span>
-
-                    <span class="cta-icon" aria-hidden="true"><i class="fa-solid fa-hand-holding-heart"></i></span>
-                    <h2 class="cta-title">لديك تبرع تريد مشاركته؟</h2>
-                    <p class="cta-desc">أضف تبرعك الآن وساعد في وصوله إلى من يحتاجه.</p>
-                    <button type="button" class="btn btn-light btn-lg placeholder" data-page="إضافة تبرع">
-                        <i class="fa-solid fa-plus"></i> إضافة تبرع
-                    </button>
-                </div>
-            </div>
-        </section>
-
-    </main>
-
-    <!-- ============================================================
-         FOOTER
-    ============================================================ -->
-    <footer class="footer" id="contact">
-        <div class="container footer-grid">
-
-            <!-- brand -->
-            <div class="footer-brand">
+                <!-- logo -->
                 <a href="../pages/index.html" class="brand" aria-label="سند — الصفحة الرئيسية">
                     <img src="../../assets/images/LogoSANAD.png" alt="شعار سند" class="brand-logo" />
                     <span class="brand-text">
@@ -353,66 +41,411 @@
                         <span class="brand-en">SANAD</span>
                     </span>
                 </a>
-                <p>منصة تساعد على تنظيم التبرعات العينية وربط الخير بالاحتياج الحقيقي.</p>
-                <div class="footer-social">
-                    <a href="#" class="placeholder" data-page="فيسبوك" aria-label="فيسبوك"><i class="fa-brands fa-facebook-f"></i></a>
-                    <a href="#" class="placeholder" data-page="تويتر" aria-label="تويتر"><i class="fa-brands fa-x-twitter"></i></a>
-                    <a href="#" class="placeholder" data-page="إنستغرام" aria-label="إنستغرام"><i class="fa-brands fa-instagram"></i></a>
-                    <a href="#" class="placeholder" data-page="لينكد إن" aria-label="لينكد إن"><i class="fa-brands fa-linkedin-in"></i></a>
+
+                <!-- menu (links + actions) -->
+                <nav class="nav-menu" id="navMenu" aria-label="التنقل الرئيسي">
+                    <div class="nav-links">
+                        <a href="#contact" class="nav-link">تواصل معنا</a>
+                        <a href="index.html" class="nav-link"> الرئيسية</a>
+                    </div>
+
+                    <div class="nav-actions">
+                        <a href="#" class="btn btn-outline placeholder" data-page="تسجيل الدخول">تسجيل دخول</a>
+                        <a href="#" class="btn btn-primary placeholder" data-page="إنشاء حساب">إنشاء حساب</a>
+                    </div>
+                </nav>
+
+                <!-- mobile toggle -->
+                <button class="nav-toggle" id="navToggle" aria-label="فتح القائمة" aria-expanded="false"
+                    aria-controls="navMenu">
+                    <span class="bar"></span>
+                    <span class="bar"></span>
+                    <span class="bar"></span>
+                </button>
+            </div>
+        </header>
+
+        <main>
+
+            <!-- ============================================================
+             PAGE HEADER
+        ============================================================ -->
+            <section class="page-hero" id="donations">
+                <div class="hero-blob hero-blob-1" aria-hidden="true"></div>
+                <div class="hero-blob hero-blob-2" aria-hidden="true"></div>
+
+                <div class="container page-hero-grid">
+
+                    <!-- header text -->
+                    <div class="page-hero-content">
+                        <h1 class="page-hero-title reveal">التبرعات</h1>
+                        <p class="page-hero-sub reveal">اكتشف التبرعات المتاحة وساهم في وصول الخير إلى مستحقيه.</p>
+                    </div>
+
+                    <!-- soft decorative illustration -->
+                    <div aria-hidden="true">
+                        <img src="../../assets/images/Donations.png" alt="img Donations" />
+                    </div>
+                </div>
+            </section>
+
+            <!-- ============================================================
+             SEARCH & FILTER
+        ============================================================ -->
+            <section class="don-tools" id="browse" aria-label="البحث والتصفية">
+                <div class="container">
+                    <div class="search-card reveal">
+
+                        <div class="search-row">
+
+                            <div class="search-input-wrap">
+                                <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                                <input type="search" id="donSearch" placeholder="ابحث عن تبرع..."
+                                    aria-label="ابحث عن تبرع" />
+                            </div>
+
+                            <div class="filter-select">
+                                <i class="fa-solid fa-tags" aria-hidden="true"></i>
+                                <select id="filterCategory" aria-label="الفئة">
+                                    <option value="">الفئة: الكل</option>
+                                    <option>ملابس</option>
+                                    <option>مواد غذائية</option>
+                                    <option>أدوات مدرسية</option>
+                                    <option>أثاث</option>
+                                    <option>أجهزة</option>
+                                    <option>أخرى</option>
+                                </select>
+                            </div>
+
+                            <div class="filter-select">
+                                <i class="fa-solid fa-location-dot" aria-hidden="true"></i>
+                                <select id="filterLocation" aria-label="الموقع">
+                                    <option value="">الموقع: الكل</option>
+                                    <option>القاهرة</option>
+                                    <option>الجيزة</option>
+                                    <option>مدينة نصر</option>
+                                    <option>العبور</option>
+                                </select>
+                            </div>
+
+                            <div class="filter-select">
+                                <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+                                <select id="filterStatus" aria-label="الحالة">
+                                    <option value="">الحالة: الكل</option>
+                                    <option>متاح</option>
+                                    <option>قيد التوزيع</option>
+                                    <option>تم التوزيع</option>
+                                </select>
+                            </div>
+
+                            <button type="button" class="btn btn-outline btn-reset" id="resetFilters">
+                                <i class="fa-solid fa-rotate-left"></i> إعادة تعيين
+                            </button>
+
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ============================================================
+             STATISTICS
+        ============================================================ -->
+            <section class="don-stats-section" aria-label="إحصائيات التبرعات">
+                <div class="container">
+                    <div class="don-stats">
+
+                        <div class="don-stat reveal">
+                            <span class="don-stat-icon ds-green"><i class="fa-solid fa-box-open"></i></span>
+                            <div class="don-stat-text">
+                                <div class="stat-value don-stat-value" data-target="1256">0</div>
+                                <span class="don-stat-label">إجمالي التبرعات</span>
+                            </div>
+                        </div>
+
+                        <div class="don-stat reveal">
+                            <span class="don-stat-icon ds-orange"><i class="fa-solid fa-circle-check"></i></span>
+                            <div class="don-stat-text">
+                                <div class="stat-value don-stat-value" data-target="845">0</div>
+                                <span class="don-stat-label">تبرعات متاحة</span>
+                            </div>
+                        </div>
+
+                        <div class="don-stat reveal">
+                            <span class="don-stat-icon ds-blue"><i class="fa-solid fa-hand-holding-heart"></i></span>
+                            <div class="don-stat-text">
+                                <div class="stat-value don-stat-value" data-target="411">0</div>
+                                <span class="don-stat-label">تم توزيعها</span>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </section>
+
+            <!-- ============================================================
+             DONATION CARDS GRID
+        ============================================================ -->
+            <section class="don-section" aria-label="قائمة التبرعات">
+                <div class="container">
+
+                    <div class="don-grid" id="donGrid">
+
+                        <!-- بطانيات شتوية -->
+                        <article class="don-card reveal" data-title="بطانيات شتوية" data-category="ملابس"
+                            data-location="القاهرة" data-status="متاح">
+                            <div class="don-media m-mint">
+                                <span class="don-media-icon"><i class="fa-solid fa-rug"></i></span>
+                                <span class="don-badge">ملابس</span>
+                            </div>
+                            <div class="don-body">
+                                <h3 class="don-title">بطانيات شتوية</h3>
+                                <p class="don-desc">مجموعة بطاطين شتوية بحالة ممتازة لتوزيعها على الأسر المحتاجة قبل فصل
+                                    الشتاء.</p>
+                                <div class="don-meta">
+                                    <span class="don-meta-item"><i class="fa-solid fa-location-dot"></i> القاهرة</span>
+                                    <span class="don-meta-item"><i class="fa-solid fa-boxes-stacked"></i> 50
+                                        بطانية</span>
+                                </div>
+                                <div class="don-foot">
+                                    <span class="status-badge st-available">متاح</span>
+                                    <span class="don-date"><i class="fa-solid fa-calendar-days"></i> 12 أغسطس
+                                        2026</span>
+                                </div>
+                            </div>
+                        </article>
+
+                        <!-- مواد غذائية -->
+                        <article class="don-card reveal" data-title="مواد غذائية" data-category="مواد غذائية"
+                            data-location="الجيزة" data-status="متاح">
+                            <div class="don-media m-orange">
+                                <span class="don-media-icon"><i class="fa-solid fa-bowl-food"></i></span>
+                                <span class="don-badge">مواد غذائية</span>
+                            </div>
+                            <div class="don-body">
+                                <h3 class="don-title">مواد غذائية</h3>
+                                <p class="don-desc">صناديق مواد غذائية جافة متنوعة تشمل الأرز والسكر والزيت والمكرونة.
+                                </p>
+                                <div class="don-meta">
+                                    <span class="don-meta-item"><i class="fa-solid fa-location-dot"></i> الجيزة</span>
+                                    <span class="don-meta-item"><i class="fa-solid fa-boxes-stacked"></i> 100
+                                        صندوق</span>
+                                </div>
+                                <div class="don-foot">
+                                    <span class="status-badge st-available">متاح</span>
+                                    <span class="don-date"><i class="fa-solid fa-calendar-days"></i> 10 أغسطس
+                                        2026</span>
+                                </div>
+                            </div>
+                        </article>
+
+                        <!-- أدوات مدرسية -->
+                        <article class="don-card reveal" data-title="أدوات مدرسية" data-category="أدوات مدرسية"
+                            data-location="القاهرة" data-status="قيد التوزيع">
+                            <div class="don-media m-blue">
+                                <span class="don-media-icon"><i class="fa-solid fa-school"></i></span>
+                                <span class="don-badge">أدوات مدرسية</span>
+                            </div>
+                            <div class="don-body">
+                                <h3 class="don-title">أدوات مدرسية</h3>
+                                <p class="don-desc">حقائب وكراسات وأدوات مدرسية جاهزة لدعم الطلاب مع بداية العام
+                                    الدراسي.</p>
+                                <div class="don-meta">
+                                    <span class="don-meta-item"><i class="fa-solid fa-location-dot"></i> القاهرة</span>
+                                    <span class="don-meta-item"><i class="fa-solid fa-boxes-stacked"></i> 75
+                                        مجموعة</span>
+                                </div>
+                                <div class="don-foot">
+                                    <span class="status-badge st-progress">قيد التوزيع</span>
+                                    <span class="don-date"><i class="fa-solid fa-calendar-days"></i> 8 أغسطس 2026</span>
+                                </div>
+                            </div>
+                        </article>
+
+                        <!-- ملابس أطفال -->
+                        <article class="don-card reveal" data-title="ملابس أطفال" data-category="ملابس"
+                            data-location="مدينة نصر" data-status="متاح">
+                            <div class="don-media m-green">
+                                <span class="don-media-icon"><i class="fa-solid fa-shirt"></i></span>
+                                <span class="don-badge">ملابس</span>
+                            </div>
+                            <div class="don-body">
+                                <h3 class="don-title">ملابس أطفال</h3>
+                                <p class="don-desc">تشكيلة ملابس أطفال نظيفة ومناسبة لمختلف الأعمار والمراحل الدراسية.
+                                </p>
+                                <div class="don-meta">
+                                    <span class="don-meta-item"><i class="fa-solid fa-location-dot"></i> مدينة
+                                        نصر</span>
+                                    <span class="don-meta-item"><i class="fa-solid fa-boxes-stacked"></i> 120
+                                        قطعة</span>
+                                </div>
+                                <div class="don-foot">
+                                    <span class="status-badge st-available">متاح</span>
+                                    <span class="don-date"><i class="fa-solid fa-calendar-days"></i> 6 أغسطس 2026</span>
+                                </div>
+                            </div>
+                        </article>
+
+                        <!-- أثاث منزلي -->
+                        <article class="don-card reveal" data-title="أثاث منزلي" data-category="أثاث"
+                            data-location="العبور" data-status="متاح">
+                            <div class="don-media m-coral">
+                                <span class="don-media-icon"><i class="fa-solid fa-couch"></i></span>
+                                <span class="don-badge">أثاث</span>
+                            </div>
+                            <div class="don-body">
+                                <h3 class="don-title">أثاث منزلي</h3>
+                                <p class="don-desc">قطع أثاث منزلي بحالة جيدة وقابلة للاستخدام لتأثيث بيوت الأسر
+                                    المستفيدة.</p>
+                                <div class="don-meta">
+                                    <span class="don-meta-item"><i class="fa-solid fa-location-dot"></i> العبور</span>
+                                    <span class="don-meta-item"><i class="fa-solid fa-boxes-stacked"></i> 15 قطعة</span>
+                                </div>
+                                <div class="don-foot">
+                                    <span class="status-badge st-available">متاح</span>
+                                    <span class="don-date"><i class="fa-solid fa-calendar-days"></i> 4 أغسطس 2026</span>
+                                </div>
+                            </div>
+                        </article>
+
+                        <!-- كتب تعليمية -->
+                        <article class="don-card reveal" data-title="كتب تعليمية" data-category="أخرى"
+                            data-location="القاهرة" data-status="متاح">
+                            <div class="don-media m-purple">
+                                <span class="don-media-icon"><i class="fa-solid fa-book-open"></i></span>
+                                <span class="don-badge">أخرى</span>
+                            </div>
+                            <div class="don-body">
+                                <h3 class="don-title">كتب تعليمية</h3>
+                                <p class="don-desc">مجموعة كتب تعليمية وقصص متنوعة تناسب جميع المراحل الدراسية.</p>
+                                <div class="don-meta">
+                                    <span class="don-meta-item"><i class="fa-solid fa-location-dot"></i> القاهرة</span>
+                                    <span class="don-meta-item"><i class="fa-solid fa-boxes-stacked"></i> 200
+                                        كتاب</span>
+                                </div>
+                                <div class="don-foot">
+                                    <span class="status-badge st-available">متاح</span>
+                                    <span class="don-date"><i class="fa-solid fa-calendar-days"></i> 2 أغسطس 2026</span>
+                                </div>
+                            </div>
+                        </article>
+
+                    </div>
+
+                    <!-- empty state -->
+                    <div class="don-empty" id="donEmpty" hidden>
+                        <i class="fa-solid fa-box-open"></i>
+                        <h3>لا توجد تبرعات مطابقة</h3>
+                        <p>جرّب تعديل البحث أو إعادة تعيين الفلاتر.</p>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- ============================================================
+             CALL TO ACTION
+        ============================================================ -->
+            <section class="don-cta-section" aria-label="أضف تبرعك">
+                <div class="container">
+                    <div class="cta-card reveal">
+                        <span class="cta-circle cta-circle-1" aria-hidden="true"></span>
+                        <span class="cta-circle cta-circle-2" aria-hidden="true"></span>
+
+                        <span class="cta-icon" aria-hidden="true"><i class="fa-solid fa-hand-holding-heart"></i></span>
+                        <h2 class="cta-title">لديك تبرع تريد مشاركته؟</h2>
+                        <p class="cta-desc">أضف تبرعك الآن وساعد في وصوله إلى من يحتاجه.</p>
+                        <button type="button" class="btn btn-light btn-lg placeholder" data-page="إضافة تبرع">
+                            <i class="fa-solid fa-plus"></i> إضافة تبرع
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- ============================================================
+         FOOTER
+    ============================================================ -->
+        <footer class="footer" id="contact">
+            <div class="container footer-grid">
+
+                <!-- brand -->
+                <div class="footer-brand">
+                    <a href="../pages/index.html" class="brand" aria-label="سند — الصفحة الرئيسية">
+                        <img src="../../assets/images/LogoSANAD.png" alt="شعار سند" class="brand-logo" />
+                        <span class="brand-text">
+                            <span class="brand-ar">سند</span>
+                            <span class="brand-en">SANAD</span>
+                        </span>
+                    </a>
+                    <p>منصة تساعد على تنظيم التبرعات العينية وربط الخير بالاحتياج الحقيقي.</p>
+                    <div class="footer-social">
+                        <a href="#" class="placeholder" data-page="فيسبوك" aria-label="فيسبوك"><i
+                                class="fa-brands fa-facebook-f"></i></a>
+                        <a href="#" class="placeholder" data-page="تويتر" aria-label="تويتر"><i
+                                class="fa-brands fa-x-twitter"></i></a>
+                        <a href="#" class="placeholder" data-page="إنستغرام" aria-label="إنستغرام"><i
+                                class="fa-brands fa-instagram"></i></a>
+                        <a href="#" class="placeholder" data-page="لينكد إن" aria-label="لينكد إن"><i
+                                class="fa-brands fa-linkedin-in"></i></a>
+                    </div>
+                </div>
+
+                <!-- quick links -->
+                <div class="footer-col">
+                    <h4>روابط سريعة</h4>
+                    <ul>
+                        <li><a href="../pages/donations.html"><i class="fa-solid fa-angle-left"></i> التبرعات</a></li>
+                        <li><a href="#" class="placeholder" data-page="المستفيدون"><i
+                                    class="fa-solid fa-angle-left"></i> المستفيدون</a></li>
+                        <li><a href="#contact"><i class="fa-solid fa-angle-left"></i> تواصل معنا</a></li>
+                    </ul>
+                </div>
+
+                <!-- platform -->
+                <div class="footer-col">
+                    <h4>المنصة</h4>
+                    <ul>
+                        <li><a href="#" class="placeholder" data-page="تسجيل الدخول"><i
+                                    class="fa-solid fa-angle-left"></i> تسجيل الدخول</a></li>
+                        <li><a href="#" class="placeholder" data-page="إنشاء حساب"><i
+                                    class="fa-solid fa-angle-left"></i> إنشاء حساب</a></li>
+                    </ul>
+                </div>
+
+                <!-- contact -->
+                <div class="footer-col">
+                    <h4>تواصل معنا</h4>
+                    <ul>
+                        <li><a href="mailto:hello@sanad.org"><i class="fa-solid fa-envelope"></i> hello@sanad.org</a>
+                        </li>
+                        <li><a href="tel:+201000000000"><i class="fa-solid fa-phone"></i> +20 100 000 0000</a></li>
+                        <li><a href="#contact"><i class="fa-solid fa-location-dot"></i> القاهرة، مصر</a></li>
+                    </ul>
+                </div>
+
+            </div>
+
+            <div class="footer-bottom">
+                <div class="container">
+                    <p>© 2026 سند | SANAD — جميع الحقوق محفوظة</p>
                 </div>
             </div>
+        </footer>
 
-            <!-- quick links -->
-            <div class="footer-col">
-                <h4>روابط سريعة</h4>
-                <ul>
-                    <li><a href="../pages/donations.html"><i class="fa-solid fa-angle-left"></i> التبرعات</a></li>
-                    <li><a href="#" class="placeholder" data-page="المستفيدون"><i class="fa-solid fa-angle-left"></i> المستفيدون</a></li>
-                    <li><a href="#contact"><i class="fa-solid fa-angle-left"></i> تواصل معنا</a></li>
-                </ul>
-            </div>
-
-            <!-- platform -->
-            <div class="footer-col">
-                <h4>المنصة</h4>
-                <ul>
-                    <li><a href="#" class="placeholder" data-page="تسجيل الدخول"><i class="fa-solid fa-angle-left"></i> تسجيل الدخول</a></li>
-                    <li><a href="#" class="placeholder" data-page="إنشاء حساب"><i class="fa-solid fa-angle-left"></i> إنشاء حساب</a></li>
-                </ul>
-            </div>
-
-            <!-- contact -->
-            <div class="footer-col">
-                <h4>تواصل معنا</h4>
-                <ul>
-                    <li><a href="mailto:hello@sanad.org"><i class="fa-solid fa-envelope"></i> hello@sanad.org</a></li>
-                    <li><a href="tel:+201000000000"><i class="fa-solid fa-phone"></i> +20 100 000 0000</a></li>
-                    <li><a href="#contact"><i class="fa-solid fa-location-dot"></i> القاهرة، مصر</a></li>
-                </ul>
-            </div>
-
+        <!-- toast notification -->
+        <div class="toast" id="toast" role="status" aria-live="polite">
+            <i class="fa-solid fa-circle-info"></i>
+            <span></span>
         </div>
 
-        <div class="footer-bottom">
-            <div class="container">
-                <p>© 2026 سند | SANAD — جميع الحقوق محفوظة</p>
-            </div>
-        </div>
-    </footer>
+        <!-- back to top -->
+        <button class="back-to-top" id="backToTop" aria-label="العودة إلى الأعلى">
+            <i class="fa-solid fa-arrow-up"></i>
+        </button>
 
-    <!-- toast notification -->
-    <div class="toast" id="toast" role="status" aria-live="polite">
-        <i class="fa-solid fa-circle-info"></i>
-        <span></span>
-    </div>
+        <!-- scripts -->
+        <script src="../JS/main.js"></script>
+        <script src="../JS/donation.js"></script>
+    </body>
 
-    <!-- back to top -->
-    <button class="back-to-top" id="backToTop" aria-label="العودة إلى الأعلى">
-        <i class="fa-solid fa-arrow-up"></i>
-    </button>
-
-    <!-- scripts -->
-    <script src="../JS/main.js"></script>
-    <script src="../JS/donation.js"></script>
-</body>
 </html>
