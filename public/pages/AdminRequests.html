@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>سند | SANAD — لوحة تحكم الادارة</title>
+    <meta name="description" content="طلبات الموافقة — مراجعة طلبات إضافة التبرعات والموافقة عليها أو رفضها." />
+
+    <!-- favicon -->
+    <link rel="icon" type="image/png" href="../../assets/images/LogoSANAD.png" />
+
+    <!-- fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Cairo:wght@600;700;800&display=swap" rel="stylesheet" />
+
+    <!-- font awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+
+    <!-- styles -->
+    <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body>
+
+    <!-- scroll progress indicator -->
+    <div class="progress-bar" id="progressBar" aria-hidden="true"></div>
+
+    <!-- ============================================================
+         NAVBAR
+    ============================================================ -->
+    <header class="navbar" id="navbar">
+        <div class="container nav-inner">
+
+            <!-- logo -->
+            <a href="../pages/index.html" class="brand" aria-label="سند — الصفحة الرئيسية">
+                <img src="../../assets/images/LogoSANAD.png" alt="شعار سند" class="brand-logo" />
+                <span class="brand-text">
+                    <span class="brand-ar">سند</span>
+                    <span class="brand-en">SANAD</span>
+                </span>
+            </a>
+
+            <!-- menu (links + actions) -->
+            <nav class="nav-menu" id="navMenu" aria-label="التنقل الرئيسي">
+                <div class="nav-links">
+                    <a href="../pages/index.html" class="nav-link">الرئيسية</a>
+                    <a href="../pages/index.html#about" class="nav-link">عن سند</a>
+                    <a href="../pages/Donations.html" class="nav-link">التبرعات</a>
+                    <a href="../pages/AdminRequests.html" class="nav-link">لوحة تحكم الادارة</a>
+                    <a href="#" class="nav-link placeholder" data-page="المستفيدون">المستفيدون</a>
+                    <a href="../pages/index.html#dashboard" class="nav-link">لوحة البيانات</a>
+                    <a href="../pages/index.html#contact" class="nav-link">تواصل معنا</a>
+                </div>
+
+                <div class="nav-actions">
+                    <a href="#" class="btn btn-outline placeholder" data-page="تسجيل الدخول">تسجيل دخول</a>
+                    <a href="#" class="btn btn-primary placeholder" data-page="إنشاء حساب">إنشاء حساب</a>
+                </div>
+            </nav>
+
+            <!-- mobile toggle -->
+            <button class="nav-toggle" id="navToggle" aria-label="فتح القائمة" aria-expanded="false" aria-controls="navMenu">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </button>
+        </div>
+    </header>
+
+    <main>
+
+        <!-- ============================================================
+             PAGE HEADER
+        ============================================================ -->
+        <section class="page-hero" id="admin-requests">
+            <div class="hero-blob hero-blob-1" aria-hidden="true"></div>
+            <div class="hero-blob hero-blob-2" aria-hidden="true"></div>
+
+            <div class="container page-hero-grid">
+
+                <div class="page-hero-content">
+                    <span class="eyebrow reveal"><img src="../../assets/images/LogoSANAD.png" alt="logo" style="width: 50px;">إدارة المنصة</span>
+                    <h1 class="page-hero-title reveal">طلبات الموافقة على التبرعات</h1>
+                    <p class="page-hero-sub reveal">راجع طلبات إضافة التبرعات المقدمة من المستخدمين ووافق عليها أو ارفضها.</p>
+                </div>
+
+                <div aria-hidden="true">
+                    <img src="../assets/images/admin.png" alt="img Donations">
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ============================================================
+             REQUESTS SECTION
+        ============================================================ -->
+        <section class="don-section" aria-label="طلبات التبرعات">
+            <div class="container">
+
+                <div class="admin-toolbar reveal">
+                    <div class="admin-toolbar-title">
+                        <i class="fa-solid fa-inbox"></i>
+                        <span>طلبات إضافة التبرعات</span>
+                        <span class="admin-pending-badge" id="pendingCount">0</span>
+                    </div>
+
+                    <div class="admin-filter">
+                        <i class="fa-solid fa-filter" aria-hidden="true"></i>
+                        <select id="approvalFilter" aria-label="تصفية حالة الطلب">
+                            <option value="all">كل الطلبات</option>
+                            <option value="pending">بانتظار الموافقة</option>
+                            <option value="approved">تمت الموافقة</option>
+                            <option value="rejected">مرفوضة</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="admin-card reveal">
+                    <div class="admin-table-wrap">
+                        <table class="dash-table admin-table">
+                            <thead>
+                                <tr>
+                                    <th>معرّف الطلب</th>
+                                    <th>التبرع</th>
+                                    <th>المتبرع</th>
+                                    <th>الفئة</th>
+                                    <th>الكمية</th>
+                                    <th>الحالة</th>
+                                    <th>المخزن / الموقع</th>
+                                    <th>الوصف</th>
+                                    <th>التاريخ</th>
+                                    <th>حالة الطلب</th>
+                                    <th>إجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminTableBody">
+                                <!-- rows rendered by admin-requests.js -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="don-empty admin-empty" id="adminEmpty" hidden>
+                        <i class="fa-solid fa-inbox"></i>
+                        <h3>لا توجد طلبات مطابقة</h3>
+                        <p>عندما يرسل المستخدمون طلبات إضافة تبرع ستظهر هنا.</p>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ============================================================
+         FOOTER
+    ============================================================ -->
+    <footer class="footer" id="contact">
+        <div class="container footer-grid">
+
+            <!-- brand -->
+            <div class="footer-brand">
+                <a href="../pages/index.html" class="brand" aria-label="سند — الصفحة الرئيسية">
+                    <img src="../../assets/images/LogoSANAD.png" alt="شعار سند" class="brand-logo" />
+                    <span class="brand-text">
+                        <span class="brand-ar">سند</span>
+                        <span class="brand-en">SANAD</span>
+                    </span>
+                </a>
+                <p>منصة تساعد على تنظيم التبرعات العينية وربط الخير بالاحتياج الحقيقي.</p>
+                <div class="footer-social">
+                    <a href="#" class="placeholder" data-page="فيسبوك" aria-label="فيسبوك"><i class="fa-brands fa-facebook-f"></i></a>
+                    <a href="#" class="placeholder" data-page="تويتر" aria-label="تويتر"><i class="fa-brands fa-x-twitter"></i></a>
+                    <a href="#" class="placeholder" data-page="إنستغرام" aria-label="إنستغرام"><i class="fa-brands fa-instagram"></i></a>
+                    <a href="#" class="placeholder" data-page="لينكد إن" aria-label="لينكد إن"><i class="fa-brands fa-linkedin-in"></i></a>
+                </div>
+            </div>
+
+            <!-- quick links -->
+            <div class="footer-col">
+                <h4>روابط سريعة</h4>
+                <ul>
+                    <li><a href="../pages/index.html"><i class="fa-solid fa-angle-left"></i> الرئيسية</a></li>
+                    <li><a href="../pages/index.html#about"><i class="fa-solid fa-angle-left"></i> عن سند</a></li>
+                    <li><a href="../pages/Donations.html"><i class="fa-solid fa-angle-left"></i> التبرعات</a></li>
+                    <li><a href="#" class="placeholder" data-page="المستفيدون"><i class="fa-solid fa-angle-left"></i> المستفيدون</a></li>
+                    <li><a href="../pages/index.html#contact"><i class="fa-solid fa-angle-left"></i> تواصل معنا</a></li>
+                </ul>
+            </div>
+
+            <!-- platform -->
+            <div class="footer-col">
+                <h4>المنصة</h4>
+                <ul>
+                    <li><a href="../pages/index.html#how"><i class="fa-solid fa-angle-left"></i> كيف يعمل سند</a></li>
+                    <li><a href="../pages/index.html#dashboard"><i class="fa-solid fa-angle-left"></i> لوحة البيانات</a></li>
+                    <li><a href="#" class="placeholder" data-page="تسجيل الدخول"><i class="fa-solid fa-angle-left"></i> تسجيل الدخول</a></li>
+                    <li><a href="#" class="placeholder" data-page="إنشاء حساب"><i class="fa-solid fa-angle-left"></i> إنشاء حساب</a></li>
+                </ul>
+            </div>
+
+            <!-- contact -->
+            <div class="footer-col">
+                <h4>تواصل معنا</h4>
+                <ul>
+                    <li><a href="mailto:hello@sanad.org"><i class="fa-solid fa-envelope"></i> hello@sanad.org</a></li>
+                    <li><a href="tel:+201000000000"><i class="fa-solid fa-phone"></i> +20 100 000 0000</a></li>
+                    <li><a href="../pages/index.html#contact"><i class="fa-solid fa-location-dot"></i> القاهرة، مصر</a></li>
+                </ul>
+            </div>
+
+        </div>
+
+        <div class="footer-bottom">
+            <div class="container">
+                <p>© 2026 سند | SANAD — جميع الحقوق محفوظة</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- toast notification -->
+    <div class="toast" id="toast" role="status" aria-live="polite">
+        <i class="fa-solid fa-circle-info"></i>
+        <span></span>
+    </div>
+
+    <!-- back to top -->
+    <button class="back-to-top" id="backToTop" aria-label="العودة إلى الأعلى">
+        <i class="fa-solid fa-arrow-up"></i>
+    </button>
+
+    <!-- scripts -->
+    <script src="../js/main.js"></script>
+    <script src="../js/donations-store.js"></script>
+    <script src="../js/admin-requests.js"></script>
+</body>
+</html>

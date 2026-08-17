@@ -48,6 +48,8 @@
     --orange-tint: #FDF0DC;
     --coral: #E76F51;
     --coral-tint: #FCEBE6;
+    --red: #D92D20;
+    --red-tint: #FDECEA;
     --blue: #5B8DEF;
     --blue-tint: #E9F0FC;
     --purple: #8B7CC8;
@@ -538,6 +540,11 @@ footer[id] {
 }
 
 /* hero text */
+.text-accent{
+    background: linear-gradient(90deg, #0F6B4F, #f3f176,red,rgb(88, 111, 164));
+-webkit-background-clip: text;
+-webkit-text-fill-color: transparent;
+}
 .hero-title {
     font-size: clamp(2.4rem, 5vw, 3.75rem);
     font-weight: 900;
@@ -2720,7 +2727,7 @@ footer[id] {
 }
 
 /* ==========================================================================
-   14. Slide-Over Detail Drawer & Hardening Utilities
+   14. Donation Details Modal (centered, replaces the old slide-over drawer)
    ========================================================================== */
 .drawer-backdrop {
     position: fixed;
@@ -2741,26 +2748,28 @@ footer[id] {
 
 .drawer {
     position: fixed;
-    top: 0;
-    bottom: 0;
-    inset-inline-start: 0;
-    width: min(540px, 92vw);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.96);
+    width: min(560px, 92vw);
+    max-height: 88vh;
     background: var(--surface);
-    box-shadow: 0 0 40px rgba(15, 91, 70, 0.18);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 24px 70px rgba(15, 91, 70, 0.28);
     z-index: 1001;
     display: flex;
     flex-direction: column;
-    transform: translateX(100%);
-    transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1);
-    border-inline-end: 1px solid var(--border);
-}
-
-[dir="rtl"] .drawer {
-    transform: translateX(100%);
+    overflow: hidden;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.28s ease, transform 0.32s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.28s ease;
 }
 
 .drawer.active {
-    transform: translateX(0) !important;
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+    visibility: visible;
 }
 
 .drawer-header {
@@ -2818,6 +2827,7 @@ footer[id] {
 
 .drawer-body {
     flex: 1;
+    min-height: 0;
     overflow-y: auto;
     padding: 28px;
     display: flex;
@@ -2887,6 +2897,17 @@ footer[id] {
     display: flex;
     gap: 12px;
     justify-content: flex-end;
+}
+
+@media (max-width: 640px) {
+    .drawer {
+        width: 94vw;
+        max-height: 90vh;
+    }
+
+    .drawer-grid-2 {
+        grid-template-columns: 1fr;
+    }
 }
 
 .don-empty-action {
