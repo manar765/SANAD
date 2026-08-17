@@ -71,12 +71,12 @@
        2. Card Rendering (reuses the existing .don-card structure)
     --------------------------------------------------------- */
     const CATEGORY_META = {
-        "ملابس":       { media: "m-green",  icon: "fa-shirt" },
-        "مواد غذائية":  { media: "m-orange", icon: "fa-bowl-food" },
-        "أدوات مدرسية": { media: "m-blue",   icon: "fa-school" },
-        "أثاث":        { media: "m-coral",  icon: "fa-couch" },
-        "أجهزة":       { media: "m-purple", icon: "fa-tv" },
-        "أخرى":        { media: "m-mint",   icon: "fa-box-open" }
+        "ملابس": { media: "m-green", icon: "fa-shirt" },
+        "مواد غذائية": { media: "m-orange", icon: "fa-bowl-food" },
+        "أدوات مدرسية": { media: "m-blue", icon: "fa-school" },
+        "أثاث": { media: "m-coral", icon: "fa-couch" },
+        "أجهزة": { media: "m-purple", icon: "fa-tv" },
+        "أخرى": { media: "m-mint", icon: "fa-box-open" }
     };
 
     function escapeHtml(value) {

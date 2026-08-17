@@ -16,9 +16,9 @@
     if (!store || !tbody) return;
 
     const APPROVAL_META = {
-        pending:  { label: "بانتظار الموافقة", className: "st-progress", icon: "fa-hourglass-half" },
-        approved: { label: "تمت الموافقة",     className: "st-done",     icon: "fa-circle-check" },
-        rejected: { label: "مرفوض",            className: "st-rejected", icon: "fa-circle-xmark" }
+        pending: { label: "بانتظار الموافقة", className: "st-progress", icon: "fa-hourglass-half" },
+        approved: { label: "تمت الموافقة", className: "st-done", icon: "fa-circle-check" },
+        rejected: { label: "مرفوض", className: "st-rejected", icon: "fa-circle-xmark" }
     };
 
     const ORDER = { pending: 0, approved: 1, rejected: 2 };
