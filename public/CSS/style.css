@@ -540,11 +540,12 @@ footer[id] {
 }
 
 /* hero text */
-.text-accent{
-    background: linear-gradient(90deg, #0F6B4F, #f3f176,red,rgb(88, 111, 164));
--webkit-background-clip: text;
--webkit-text-fill-color: transparent;
+.text-accent {
+    background: linear-gradient(90deg, #0F6B4F, #f3f176, red, rgb(88, 111, 164));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
 }
+
 .hero-title {
     font-size: clamp(2.4rem, 5vw, 3.75rem);
     font-weight: 900;

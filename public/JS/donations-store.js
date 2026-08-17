@@ -26,7 +26,7 @@
     const CHART_BASELINE_KEY = "sanad_chart_baseline";
 
     // Fallback values — these are the ACTUAL current demo numbers already
-    // displayed in the project (Donations.html data-target attributes).
+    // displayed in the project (donations page data-target attributes).
     const DEMO_BASELINE = {
         total: 1256,
         available: 845,

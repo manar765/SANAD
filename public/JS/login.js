@@ -51,17 +51,37 @@ function validate() {
     });
 });
 
-form.addEventListener('submit', (e) => {
+form.addEventListener('submit', async (e) => {
     e.preventDefault();
     if (!validate()) return;
 
     submitBtn.classList.add('loading');
     submitBtn.disabled = true;
 
-    // placeholder for real auth request
-    setTimeout(() => {
+    try {
+        const response = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                email: email.value.trim(),
+                password: password.value,
+            }),
+        });
+
+        if (!response.ok) {
+            password.classList.add('error');
+            passwordError.textContent = 'البريد الإلكتروني أو كلمة المرور غير صحيحة.';
+            passwordError.classList.add('show');
+            return;
+        }
+
+        window.location.assign('/admin-requests');
+    } catch {
+        password.classList.add('error');
+        passwordError.textContent = 'تعذر الاتصال بالخادم. حاول مرة أخرى.';
+        passwordError.classList.add('show');
+    } finally {
         submitBtn.classList.remove('loading');
         submitBtn.disabled = false;
-        alert('تم تسجيل الدخول بنجاح ');
-    }, 1200);
+    }
 });
