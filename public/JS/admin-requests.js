@@ -6,6 +6,8 @@
     const emptyState = document.getElementById("adminEmpty");
     const filterSelect = document.getElementById("approvalFilter");
     const pendingCount = document.getElementById("pendingCount");
+    const loadingState = document.getElementById("adminLoading");
+    const errorState = document.getElementById("adminError");
 
     if (!tbody) return;
 
@@ -124,6 +126,8 @@
     }
 
     async function loadRequests() {
+        window.SANADUI?.setLoading(loadingState, true, "جارٍ تحميل طلبات التبرعات…");
+        if (errorState) errorState.hidden = true;
         try {
             const response = await fetch("/api/admin/donations", { credentials: "same-origin" });
             if (!response.ok) throw new Error("تعذر تحميل طلبات التبرعات.");
@@ -133,7 +137,9 @@
         } catch (error) {
             requests = [];
             render();
-            showToast(error.message || "تعذر تحميل طلبات التبرعات.");
+            window.SANADUI?.setError(errorState, error.message || "تعذر تحميل طلبات التبرعات.", loadRequests);
+        } finally {
+            window.SANADUI?.setLoading(loadingState, false);
         }
     }
 

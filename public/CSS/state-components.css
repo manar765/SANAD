@@ -1,0 +1,91 @@
+/* ========================================================================== 
+   Shared Loading, Alert, Error, and Empty States
+   ========================================================================== */
+.ui-state {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    width: 100%;
+    margin: var(--space-4) 0;
+    padding: var(--space-4) var(--space-5);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--text-dark);
+}
+
+.ui-state[hidden] {
+    display: none;
+}
+
+.ui-state i {
+    color: var(--green);
+}
+
+.ui-state p {
+    margin: 0;
+}
+
+.ui-loading {
+    justify-content: center;
+    color: var(--text-muted);
+}
+
+.ui-loading i {
+    animation: sanad-spin 0.9s linear infinite;
+}
+
+.ui-alert {
+    border-color: var(--green-soft);
+    background: var(--mint-soft);
+}
+
+.ui-alert.success i {
+    color: var(--green);
+}
+
+.ui-alert.warning {
+    border-color: var(--orange);
+    background: var(--orange-tint);
+}
+
+.ui-alert.warning i {
+    color: var(--orange);
+}
+
+.ui-alert.error,
+.ui-error {
+    border-color: var(--red);
+    background: var(--red-tint);
+}
+
+.ui-alert.error i,
+.ui-error i {
+    color: var(--red);
+}
+
+.ui-error {
+    justify-content: space-between;
+}
+
+.ui-error-content {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.ui-error-retry {
+    flex-shrink: 0;
+}
+
+@keyframes sanad-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ui-loading i {
+        animation: none;
+    }
+}

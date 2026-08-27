@@ -116,6 +116,19 @@
                                 </div>
                             </div>
 
+                            <div class="ui-state ui-loading" id="adminLoading" role="status" aria-live="polite"
+                                aria-busy="true">
+                                <i class="fa-solid fa-spinner" aria-hidden="true"></i>
+                                <span data-state-message>جارٍ تحميل طلبات التبرعات…</span>
+                            </div>
+                            <div class="ui-state ui-error" id="adminError" role="alert" hidden>
+                                <div class="ui-error-content">
+                                    <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>
+                                    <span data-state-message>تعذر تحميل طلبات التبرعات.</span>
+                                </div>
+                                <button type="button" class="btn btn-outline ui-error-retry" data-state-retry>إعادة
+                                    المحاولة</button>
+                            </div>
                             <div class="admin-card reveal">
                                 <div class="admin-table-wrap">
                                     <table class="dash-table admin-table">
@@ -157,7 +170,7 @@
         <!-- ============================================================
          FOOTER
     ============================================================ -->
-        <%- include('../partials/footer') %>
+        <!-- <%- include('../partials/footer') %> -->
 
         <!-- toast notification -->
         <div class="toast" id="toast" role="status" aria-live="polite">
@@ -173,6 +186,7 @@
         <!-- scripts -->
         <script src="/JS/main.js"></script>
         <script src="/JS/donations-store.js"></script>
+        <script src="/JS/ui-states.js"></script>
         <script src="/JS/admin-requests.js"></script>
         <script src="/JS/admin-sidebar.js"></script>
         <script src="/JS/logout.js"></script>
