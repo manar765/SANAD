@@ -1,0 +1,283 @@
+/* ==========================================================================
+    12. Footer
+   ========================================================================== */
+.footer {
+    background: var(--footer-bg);
+    color: var(--footer-text);
+    padding-top: 64px;
+}
+
+.footer-grid {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr 1fr 1.2fr;
+    gap: 44px;
+    padding-bottom: 48px;
+}
+
+.footer-brand .brand-ar {
+    color: #fff;
+}
+
+.footer-brand .brand-en {
+    color: #7FA694;
+}
+
+.footer-brand p {
+    color: var(--footer-text);
+    font-size: 0.95rem;
+    line-height: 1.9;
+    margin: 16px 0 22px;
+    max-width: 300px;
+}
+
+.footer-social {
+    display: flex;
+    gap: 10px;
+}
+
+.footer-social a {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+}
+
+.footer-social a:hover {
+    transform: translateY(-3px);
+}
+
+.footer-social a:nth-child(1):hover {
+    background: var(--green);
+}
+
+.footer-social a:nth-child(2):hover {
+    background: var(--orange);
+}
+
+.footer-social a:nth-child(3):hover {
+    background: var(--coral);
+}
+
+.footer-social a:nth-child(4):hover {
+    background: var(--green-soft);
+}
+
+.footer-col h4 {
+    color: #fff;
+    font-size: 1.02rem;
+    margin-bottom: 18px;
+}
+
+.footer-col ul {
+    display: grid;
+    gap: 12px;
+}
+
+.footer-col a {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--footer-text);
+    font-size: 0.92rem;
+    transition: var(--transition);
+}
+
+.footer-col a:hover {
+    color: #fff;
+    transform: translateX(-4px);
+}
+
+.footer-col a i {
+    font-size: 0.7rem;
+    color: #6FA98F;
+}
+
+.footer-bottom {
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    padding: 20px 0;
+    text-align: center;
+    color: var(--footer-muted);
+    font-size: 0.85rem;
+}
+
+/* ==========================================================================
+    13. Progress bar & back-to-top
+   ========================================================================== */
+.progress-bar {
+    position: fixed;
+    top: 0;
+    inset-inline-start: 0;
+    height: 4px;
+    width: 100%;
+    transform: scaleX(0);
+    transform-origin: right;
+    z-index: 300;
+    background: linear-gradient(90deg, var(--green), var(--green-soft));
+    will-change: transform;
+}
+
+.back-to-top {
+    position: fixed;
+    bottom: 24px;
+    inset-inline-start: 24px;
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, var(--green), var(--green-dark));
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.05rem;
+    box-shadow: 0 10px 24px rgba(15, 91, 70, 0.35);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(16px);
+    transition: var(--transition);
+    z-index: 150;
+}
+
+.back-to-top:hover {
+    background: var(--green-dark);
+    transform: translateY(-3px);
+}
+
+.back-to-top.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+/* ==========================================================================
+    14. Toast
+   ========================================================================== */
+.toast {
+    position: fixed;
+    bottom: 26px;
+    inset-inline-start: 50%;
+    transform: translateX(50%) translateY(120px);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--text-dark);
+    color: #fff;
+    padding: 14px 22px;
+    border-radius: 14px;
+    font-size: 0.92rem;
+    font-weight: 600;
+    box-shadow: var(--shadow-lg);
+    z-index: 200;
+    opacity: 0;
+    transition: var(--transition);
+    max-width: calc(100vw - 48px);
+}
+
+.toast i {
+    color: var(--green-soft);
+}
+
+.toast.show {
+    opacity: 1;
+    transform: translateX(50%) translateY(0);
+}
+
+/* ==========================================================================
+    15. Reveal animations
+   ========================================================================== */
+.reveal {
+    opacity: 0;
+}
+
+@keyframes fadeUp {
+    from {
+        opacity: 0;
+        transform: translateY(26px);
+    }
+
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+.reveal.visible {
+    opacity: 1;
+    animation: fadeUp 0.6s ease both;
+}
+
+/* stagger */
+.how-steps .how-card:nth-child(2) {
+    animation-delay: 0.1s;
+}
+
+.how-steps .how-card:nth-child(3) {
+    animation-delay: 0.2s;
+}
+
+.how-steps .how-card:nth-child(4) {
+    animation-delay: 0.3s;
+}
+
+.how-steps .how-card:nth-child(5) {
+    animation-delay: 0.4s;
+}
+
+.how-steps .how-card:nth-child(6) {
+    animation-delay: 0.5s;
+}
+
+.features-grid .feature-card:nth-child(2) {
+    animation-delay: 0.1s;
+}
+
+.features-grid .feature-card:nth-child(3) {
+    animation-delay: 0.2s;
+}
+
+.features-grid .feature-card:nth-child(4) {
+    animation-delay: 0.3s;
+}
+
+.benefits-card .benefit:nth-child(2) {
+    animation-delay: 0.1s;
+}
+
+.benefits-card .benefit:nth-child(3) {
+    animation-delay: 0.2s;
+}
+
+.benefits-card .benefit:nth-child(4) {
+    animation-delay: 0.3s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+
+    .reveal {
+        opacity: 1;
+        transform: none;
+    }
+
+    .reveal.visible {
+        animation: none;
+    }
+
+    .float-chip,
+    .hero-img,
+    .hero-deco,
+    .ph-tile {
+        animation: none;
+    }
+
+    .chart-bar {
+        transform: scaleY(1);
+        transition: none;
+    }
+}

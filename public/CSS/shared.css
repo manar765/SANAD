@@ -1,0 +1,304 @@
+/* ==========================================================================
+   SANAD — Home Page Styles
+   منصة سند — الصفحة الرئيسية
+   Theme: modern Arabic RTL landing page
+   Color system: deep green / soft mint / warm off-white with subtle orange, coral, blue & purple accents
+   ==========================================================================
+
+    Table of contents:
+    01. CSS variables
+    02. Reset & base
+    03. Utilities (container, section-head, eyebrow, buttons, accent)
+    04. Navbar
+    05. Hero
+    06. Statistics
+    07. How SANAD works
+    08. Dashboard preview
+    09. Features
+    10. Benefits
+    11. Donations page
+    12. Footer
+    13. Progress bar & back-to-top
+    14. Toast
+    15. Reveal animations
+    16. Responsive
+   ========================================================================== */
+
+/* ==========================================================================
+   01. CSS variables
+   ========================================================================== */
+:root {
+    /* brand greens */
+    --green-dark: #0F5B46;
+    --green: #1F7A5C;
+    --green-soft: #6BAA75;
+    --mint: #E7F3EE;
+    --mint-soft: #F3FAF7;
+
+    /* neutrals */
+    --cream: #F8F7F3;
+    --surface: #FFFFFF;
+    --text-dark: #1F2937;
+    --text-muted: #6B7280;
+    --border: #E6ECE8;
+    --border-soft: #EEF2EF;
+
+    /* accents — used sparingly on icons, badges, charts & small details */
+    --orange: #F5A623;
+    --orange-tint: #FDF0DC;
+    --coral: #E76F51;
+    --coral-tint: #FCEBE6;
+    --red: #D92D20;
+    --red-tint: #FDECEA;
+    --blue: #5B8DEF;
+    --blue-tint: #E9F0FC;
+    --purple: #8B7CC8;
+    --purple-tint: #F0EDF9;
+
+    /* footer */
+    --footer-bg: #0F5B46;
+    --footer-text: #C7DCD3;
+    --footer-muted: #8FB5A6;
+
+    /* radius */
+    --radius-sm: 12px;
+    --radius: 18px;
+    --radius-lg: 24px;
+    --radius-xl: 28px;
+
+    /* shadows */
+    --shadow-sm: 0 2px 12px rgba(15, 91, 70, 0.06);
+    --shadow: 0 10px 30px rgba(15, 91, 70, 0.1);
+    --shadow-lg: 0 24px 60px rgba(15, 91, 70, 0.16);
+
+    /* layout */
+    --container: 1200px;
+    --nav-height: 78px;
+
+    /* motion */
+    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ==========================================================================
+   02. Reset & base
+   ========================================================================== */
+*,
+*::before,
+*::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+    scroll-padding-top: calc(var(--nav-height) + 14px);
+}
+
+body {
+    font-family: "IBM Plex Sans Arabic", "Cairo", system-ui, -apple-system, sans-serif;
+    font-size: 1rem;
+    line-height: 1.7;
+    color: var(--text-dark);
+    background: var(--cream);
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+}
+
+img,
+svg {
+    max-width: 100%;
+    display: block;
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
+}
+
+ul {
+    list-style: none;
+}
+
+button {
+    font: inherit;
+    color: inherit;
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+h1,
+h2,
+h3,
+h4 {
+    font-weight: 800;
+    line-height: 1.35;
+}
+
+::selection {
+    background: var(--mint);
+    color: var(--green-dark);
+}
+
+a:focus-visible,
+button:focus-visible {
+    outline: 2px solid var(--green);
+    outline-offset: 2px;
+    border-radius: 6px;
+}
+
+section[id],
+footer[id] {
+    scroll-margin-top: calc(var(--nav-height) + 14px);
+}
+
+/* ==========================================================================
+   03. Utilities
+   ========================================================================== */
+.container {
+    width: 100%;
+    max-width: var(--container);
+    margin-inline: auto;
+    padding-inline: 24px;
+}
+
+/* eyebrow pill */
+.eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--mint);
+    color: var(--green);
+    font-size: 0.9rem;
+    font-weight: 700;
+    padding: 8px 16px;
+    border-radius: 999px;
+}
+
+.eyebrow i {
+    font-size: 0.95rem;
+}
+
+/* section heading */
+.section-head {
+    text-align: center;
+    max-width: 680px;
+    margin-inline: auto;
+}
+
+.section-title {
+    font-size: clamp(1.6rem, 3vw, 2.25rem);
+    font-weight: 900;
+    margin: 18px 0 14px;
+    color: var(--text-dark);
+}
+
+.section-title::after {
+    content: "";
+    display: block;
+    width: 68px;
+    height: 4px;
+    border-radius: 999px;
+    margin: 16px auto 0;
+    background: linear-gradient(90deg, var(--green), var(--green-soft));
+}
+
+.section-desc {
+    color: var(--text-muted);
+    font-size: 1.05rem;
+    line-height: 1.9;
+}
+
+/* buttons */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-weight: 700;
+    font-size: 0.98rem;
+    padding: 12px 26px;
+    border-radius: var(--radius-sm);
+    border: 1.5px solid transparent;
+    cursor: pointer;
+    transition: var(--transition);
+    white-space: nowrap;
+}
+
+.btn-lg {
+    padding: 14px 32px;
+    font-size: 1.05rem;
+}
+
+.btn i {
+    font-size: 0.85em;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--green), var(--green-dark));
+    color: #fff;
+    box-shadow: 0 8px 20px rgba(31, 122, 92, 0.26);
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, var(--green-dark), var(--green-dark));
+    transform: translateY(-2px);
+    box-shadow: 0 14px 28px rgba(15, 91, 70, 0.34);
+}
+
+.btn-outline {
+    background: transparent;
+    border-color: #CBD6D0;
+    color: var(--text-dark);
+}
+
+.btn-outline:hover {
+    border-color: var(--green);
+    color: var(--green);
+    background: var(--mint);
+    transform: translateY(-2px);
+}
+
+.btn-logout {
+    background: transparent;
+    border-color: #CBD6D0;
+    color: var(--text-dark);
+}
+
+.btn-logout:hover {
+    border-color: var(--red);
+    color: var(--red);
+    transform: translateY(-2px);
+}
+
+.btn:active {
+    transform: translateY(0) scale(0.98);
+}
+
+/* green accent text */
+.text-accent {
+    color: var(--green-dark);
+}
+
+/* soft icon backgrounds */
+.icon-green {
+    background: var(--mint);
+    color: var(--green);
+}
+
+.icon-orange {
+    background: var(--orange-tint);
+    color: var(--orange);
+}
+
+.icon-coral {
+    background: var(--coral-tint);
+    color: var(--coral);
+}
+
+.icon-purple {
+    background: var(--purple-tint);
+    color: var(--purple);
+}
+

@@ -32,6 +32,7 @@ function removeExpiredSessions() {
     )
       sessions.delete(tokenHash);
   }
+  removeExpiredResetTokens();
 }
 
 const sessionCleanup = setInterval(removeExpiredSessions, 5 * 60 * 1000);
@@ -40,6 +41,15 @@ sessionCleanup.unref();
 const loginAttempts = new Map();
 const LOGIN_WINDOW_MS = 15 * 60 * 1000;
 const LOGIN_MAX_ATTEMPTS = 5;
+const resetTokens = new Map();
+const RESET_TOKEN_TTL_MS = 15 * 60 * 1000;
+
+function removeExpiredResetTokens() {
+  const now = Date.now();
+  for (const [tokenHash, record] of resetTokens) {
+    if (record.expiresAt <= now) resetTokens.delete(tokenHash);
+  }
+}
 
 function loginAttemptKey(req, email) {
   return `${req.ip || "unknown"}:${email}`;
@@ -174,6 +184,8 @@ const pageRoutes = Object.freeze({
   "/": "index",
   "/login": "login",
   "/signup": "signup",
+  "/forgot-password": "forgot-password",
+  "/reset-password": "reset-password",
   "/profile": "profile",
   "/dashboard": "profile",
   "/donations": "donations",
@@ -434,6 +446,66 @@ app.post("/api/auth/logout", requireAuth, requireCsrf, (req, res) => {
   if (token) sessions.delete(hashSessionToken(token));
   res.setHeader("Set-Cookie", cookieOptions(0));
   return res.json({ success: true });
+});
+
+app.post("/api/auth/forgot-password", async (req, res) => {
+  const email = String(req.body?.email || "").trim().toLowerCase();
+  const genericMessage = "If an account exists for this email, a reset link has been created.";
+  if (!isValidEmail(email)) return res.json({ message: genericMessage });
+
+  try {
+    const result = await pool.query("SELECT id FROM users WHERE email = $1", [email]);
+    const user = result.rows[0];
+    if (!user) return res.json({ message: genericMessage });
+
+    const token = randomBytes(32).toString("hex");
+    resetTokens.set(hashSessionToken(token), {
+      userId: user.id,
+      expiresAt: Date.now() + RESET_TOKEN_TTL_MS,
+    });
+    const baseUrl = process.env.APP_URL || `${req.protocol}://${req.get("host")}`;
+    const resetUrl = `${baseUrl}/reset-password?token=${encodeURIComponent(token)}`;
+    if (process.env.NODE_ENV !== "production") {
+      console.log(`Password reset link for ${email}: ${resetUrl}`);
+      return res.json({ message: genericMessage, resetUrl });
+    }
+    return res.json({ message: genericMessage });
+  } catch (error) {
+    console.error("Forgot-password request failed:", error);
+    return res.json({ message: genericMessage });
+  }
+});
+
+app.post("/api/auth/reset-password", async (req, res) => {
+  const token = String(req.body?.token || "");
+  const newPassword = String(req.body?.newPassword || "");
+  const confirmPassword = String(req.body?.confirmPassword || "");
+  if (newPassword.length < 8) return res.status(400).json({ message: "The new password must be at least 8 characters." });
+  if (newPassword !== confirmPassword) return res.status(400).json({ message: "Password confirmation does not match." });
+
+  const tokenHash = hashSessionToken(token);
+  const record = resetTokens.get(tokenHash);
+  if (!record || record.expiresAt <= Date.now()) {
+    resetTokens.delete(tokenHash);
+    return res.status(400).json({ message: "This reset link is invalid or has expired." });
+  }
+
+  try {
+    const passwordHash = await hashPassword(newPassword);
+    const result = await pool.query(
+      "UPDATE users SET password_hash = $1, password = $1 WHERE id = $2 RETURNING id",
+      [passwordHash, record.userId],
+    );
+    if (!result.rows[0]) return res.status(400).json({ message: "This reset link is invalid or has expired." });
+    resetTokens.delete(tokenHash);
+    for (const [sessionHash, session] of sessions) {
+      if (session.id === record.userId) sessions.delete(sessionHash);
+    }
+    return res.json({ message: "Password reset successfully. You can now log in." });
+  } catch (error) {
+    console.error("Password reset failed:", error);
+    return res.status(503).json({ message: "Password reset is temporarily unavailable." });
+  }
 });
 
 app.post("/api/auth/login", async (req, res) => {
