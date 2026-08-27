@@ -30,6 +30,7 @@ const users = {
 
 let server;
 let pool;
+const cleanupProbeHash = `expired-session-probe-${testSuffix}`;
 
 function cookieFrom(response) {
     const cookies = response.headers.getSetCookie?.() || [];
@@ -86,6 +87,13 @@ async function login(user) {
 
 before(async () => {
     pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+    await pool.query(
+        `INSERT INTO user_sessions
+      (token_hash, role, email, csrf_token, expires_at, last_seen_at)
+     VALUES ($1, 'donor', 'cleanup-probe@example.com', 'cleanup-probe-csrf', NOW() - INTERVAL '1 minute', NOW())
+     ON CONFLICT (token_hash) DO UPDATE SET expires_at = NOW() - INTERVAL '1 minute'`,
+        [cleanupProbeHash],
+    );
     server = spawn(process.execPath, ["server/app.js"], {
         cwd: process.cwd(),
         env: { ...process.env, PORT: String(port) },
@@ -124,6 +132,11 @@ after(async () => {
     }
 });
 
+test("removes expired sessions during server startup cleanup", async () => {
+    const result = await pool.query("SELECT 1 FROM user_sessions WHERE token_hash = $1", [cleanupProbeHash]);
+    assert.equal(result.rowCount, 0);
+});
+
 test("protects pages and APIs from unauthenticated access", async () => {
     const page = await request("/donations");
     assert.equal(page.status, 302);
@@ -156,6 +169,27 @@ test("allows authenticated users into protected pages but denies admin pages", a
     const beneficiaryAdminPage = await request("/admin-requests", { headers: { Cookie: beneficiary.cookie } });
     assert.equal(beneficiaryAdminPage.status, 403);
     await logout(beneficiary.cookie);
+});
+
+test("rotates the session token when an already-sessioned user logs in again", async () => {
+    const firstLogin = await login(users.donor);
+    const secondResponse = await request("/api/auth/login", {
+        method: "POST",
+        headers: {
+            Cookie: firstLogin.cookie,
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email: users.donor.email, password: users.donor.password }),
+    });
+    assert.equal(secondResponse.status, 200);
+    const secondCookie = cookieFrom(secondResponse);
+    assert.notEqual(secondCookie, firstLogin.cookie);
+
+    const oldSession = await request("/api/auth/me", { headers: { Cookie: firstLogin.cookie } });
+    assert.equal(oldSession.status, 401);
+    const newSession = await request("/api/auth/me", { headers: { Cookie: secondCookie } });
+    assert.equal(newSession.status, 200);
+    await logout(secondCookie);
 });
 
 test("allows the configured administrator to access the admin page", async () => {

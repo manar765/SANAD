@@ -121,6 +121,17 @@ async function createSession(user, rememberMe = false) {
   return { token, maxAge: sessionTtlMs };
 }
 
+async function rotateSession(req, res, user, rememberMe = false) {
+  const currentToken = parseCookies(req)[SESSION_COOKIE];
+  if (currentToken) {
+    await pool.query(
+      "DELETE FROM user_sessions WHERE token_hash = $1",
+      [hashSessionToken(currentToken)],
+    );
+  }
+  setSessionCookie(res, await createSession(user, rememberMe));
+}
+
 async function getSession(req) {
   const token = parseCookies(req)[SESSION_COOKIE];
   const tokenHash = token ? hashSessionToken(token) : null;
@@ -553,7 +564,7 @@ app.post("/api/auth/login", async (req, res) => {
 
   if (credentialsMatch(email, password)) {
     clearLoginFailures(attemptKey);
-    setSessionCookie(res, await createSession({ role: "admin", email }, rememberMe));
+    await rotateSession(req, res, { role: "admin", email }, rememberMe);
     return res.json({ role: "admin" });
   }
 
@@ -571,16 +582,18 @@ app.post("/api/auth/login", async (req, res) => {
     }
 
     clearLoginFailures(attemptKey);
-    setSessionCookie(
+    await rotateSession(
+      req,
       res,
-      await createSession({
+      {
         id: user.id,
         role: user.role,
         email: user.email,
         name: user.full_name,
         firstName: user.first_name,
         lastName: user.last_name,
-      }, rememberMe),
+      },
+      rememberMe,
     );
     return res.json({
       role: user.role,
@@ -639,6 +652,7 @@ app.use((error, _req, res, _next) => {
 async function start() {
   try {
     await migrate();
+    await removeExpiredSessions();
     console.log("Database migration completed.");
   } catch (error) {
     console.error("Database migration failed; server will not start:", error.message);
