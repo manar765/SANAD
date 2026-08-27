@@ -14,7 +14,6 @@ const adminEmail = (process.env.ADMIN_EMAIL || "admin@sanad.com")
   .toLowerCase();
 const adminPassword = process.env.ADMIN_PASSWORD || "Sanad@2026";
 const scryptAsync = promisify(scrypt);
-const sessions = new Map();
 const SESSION_TTL_MS = 8 * 60 * 60 * 1000;
 const SESSION_IDLE_TTL_MS = 30 * 60 * 1000;
 const SESSION_COOKIE = "sanad_session";
@@ -23,19 +22,19 @@ function hashSessionToken(token) {
   return createHash("sha256").update(token).digest("hex");
 }
 
-function removeExpiredSessions() {
-  const now = Date.now();
-  for (const [tokenHash, session] of sessions) {
-    if (
-      session.expiresAt <= now ||
-      session.lastSeenAt + SESSION_IDLE_TTL_MS <= now
-    )
-      sessions.delete(tokenHash);
-  }
+async function removeExpiredSessions() {
+  await pool.query(
+    `DELETE FROM user_sessions
+     WHERE expires_at <= NOW()
+        OR last_seen_at + ($1 * INTERVAL '1 millisecond') <= NOW()`,
+    [SESSION_IDLE_TTL_MS],
+  );
   removeExpiredResetTokens();
 }
 
-const sessionCleanup = setInterval(removeExpiredSessions, 5 * 60 * 1000);
+const sessionCleanup = setInterval(() => {
+  removeExpiredSessions().catch(error => console.error("Session cleanup failed:", error));
+}, 5 * 60 * 1000);
 sessionCleanup.unref();
 
 const loginAttempts = new Map();
@@ -99,34 +98,39 @@ function cookieOptions(maxAge = SESSION_TTL_MS) {
   return `${SESSION_COOKIE}=; Max-Age=${Math.floor(maxAge / 1000)}; Path=/; HttpOnly; SameSite=Lax${secure}`;
 }
 
-function createSession(user) {
+async function createSession(user) {
   const token = randomBytes(32).toString("hex");
-  const now = Date.now();
-  sessions.set(hashSessionToken(token), {
-    ...user,
-    createdAt: now,
-    lastSeenAt: now,
-    expiresAt: now + SESSION_TTL_MS,
-    csrfToken: randomBytes(32).toString("hex"),
-  });
+  const tokenHash = hashSessionToken(token);
+  const csrfToken = randomBytes(32).toString("hex");
+  await pool.query(
+    `INSERT INTO user_sessions
+      (token_hash, user_id, role, email, display_name, csrf_token, expires_at)
+     VALUES ($1, $2, $3, $4, $5, $6, NOW() + ($7 * INTERVAL '1 millisecond'))`,
+    [tokenHash, user.id || null, user.role, user.email, user.name || null, csrfToken, SESSION_TTL_MS],
+  );
   return token;
 }
 
-function getSession(req) {
+async function getSession(req) {
   const token = parseCookies(req)[SESSION_COOKIE];
   const tokenHash = token ? hashSessionToken(token) : null;
-  const session = tokenHash ? sessions.get(tokenHash) : null;
+  if (!tokenHash) return null;
+  const result = await pool.query(
+    `SELECT token_hash, user_id AS id, role, email, display_name AS name,
+            csrf_token AS "csrfToken", created_at AS "createdAt",
+            last_seen_at AS "lastSeenAt", expires_at AS "expiresAt"
+     FROM user_sessions WHERE token_hash = $1`,
+    [tokenHash],
+  );
+  const session = result.rows[0];
+  if (!session) return null;
   const now = Date.now();
-  if (
-    !session ||
-    session.expiresAt <= now ||
-    session.lastSeenAt + SESSION_IDLE_TTL_MS <= now
-  ) {
-    if (tokenHash) sessions.delete(tokenHash);
+  if (new Date(session.expiresAt).getTime() <= now || new Date(session.lastSeenAt).getTime() + SESSION_IDLE_TTL_MS <= now) {
+    await pool.query("DELETE FROM user_sessions WHERE token_hash = $1", [tokenHash]);
     return null;
   }
-  session.lastSeenAt = now;
-  return { ...session };
+  await pool.query("UPDATE user_sessions SET last_seen_at = NOW() WHERE token_hash = $1", [tokenHash]);
+  return session;
 }
 
 function requireCsrf(req, res, next) {
@@ -152,15 +156,22 @@ function setSessionCookie(res, token) {
   );
 }
 
-function requireAuth(req, res, next) {
-  const session = getSession(req);
-  if (session) {
-    req.user = session;
-    return next();
+async function requireAuth(req, res, next) {
+  try {
+    const session = await getSession(req);
+    if (session) {
+      req.user = session;
+      return next();
+    }
+    if (req.path.startsWith("/api/"))
+      return res.status(401).json({ message: "Authentication required." });
+    return res.redirect(`/login?returnTo=${encodeURIComponent(req.originalUrl)}`);
+  } catch (error) {
+    console.error("Session lookup failed:", error);
+    if (req.path.startsWith("/api/"))
+      return res.status(503).json({ message: "Authentication is temporarily unavailable." });
+    return res.status(503).render("errors/server-error");
   }
-  if (req.path.startsWith("/api/"))
-    return res.status(401).json({ message: "Authentication required." });
-  return res.redirect(`/login?returnTo=${encodeURIComponent(req.originalUrl)}`);
 }
 
 function requireAdmin(req, res, next) {
@@ -339,7 +350,7 @@ app.post("/api/auth/signup", async (req, res) => {
     await client.query("COMMIT");
     setSessionCookie(
       res,
-      createSession({ id: user.id, role: user.role, email: user.email, name: user.full_name }),
+      await createSession({ id: user.id, role: user.role, email: user.email, name: user.full_name }),
     );
     return res.status(201).json({ user });
   } catch (error) {
@@ -409,8 +420,12 @@ app.patch("/api/profile", requireAuth, requireCsrf, async (req, res) => {
     const user = result.rows[0];
     if (!user) return res.status(404).json({ message: "Profile not found." });
     const token = parseCookies(req)[SESSION_COOKIE];
-    const session = token ? sessions.get(hashSessionToken(token)) : null;
-    if (session) session.name = fullName;
+    if (token) {
+      await pool.query(
+        "UPDATE user_sessions SET display_name = $1 WHERE token_hash = $2",
+        [fullName, hashSessionToken(token)],
+      );
+    }
     return res.json({ message: "Profile updated successfully.", user });
   } catch (error) {
     console.error("Profile update failed:", error);
@@ -441,9 +456,9 @@ app.post("/api/profile/password", requireAuth, requireCsrf, async (req, res) => 
   }
 });
 
-app.post("/api/auth/logout", requireAuth, requireCsrf, (req, res) => {
+app.post("/api/auth/logout", requireAuth, requireCsrf, async (req, res) => {
   const token = parseCookies(req)[SESSION_COOKIE];
-  if (token) sessions.delete(hashSessionToken(token));
+  if (token) await pool.query("DELETE FROM user_sessions WHERE token_hash = $1", [hashSessionToken(token)]);
   res.setHeader("Set-Cookie", cookieOptions(0));
   return res.json({ success: true });
 });
@@ -498,9 +513,7 @@ app.post("/api/auth/reset-password", async (req, res) => {
     );
     if (!result.rows[0]) return res.status(400).json({ message: "This reset link is invalid or has expired." });
     resetTokens.delete(tokenHash);
-    for (const [sessionHash, session] of sessions) {
-      if (session.id === record.userId) sessions.delete(sessionHash);
-    }
+    await pool.query("DELETE FROM user_sessions WHERE user_id = $1", [record.userId]);
     return res.json({ message: "Password reset successfully. You can now log in." });
   } catch (error) {
     console.error("Password reset failed:", error);
@@ -524,7 +537,7 @@ app.post("/api/auth/login", async (req, res) => {
 
   if (credentialsMatch(email, password)) {
     clearLoginFailures(attemptKey);
-    setSessionCookie(res, createSession({ role: "admin", email }));
+    setSessionCookie(res, await createSession({ role: "admin", email }));
     return res.json({ role: "admin" });
   }
 
@@ -543,7 +556,7 @@ app.post("/api/auth/login", async (req, res) => {
     clearLoginFailures(attemptKey);
     setSessionCookie(
       res,
-      createSession({ id: user.id, role: user.role, email: user.email, name: user.full_name }),
+      await createSession({ id: user.id, role: user.role, email: user.email, name: user.full_name }),
     );
     return res.json({
       role: user.role,
@@ -595,21 +608,19 @@ app.use((error, _req, res, _next) => {
   res.status(500).render("errors/server-error");
 });
 
-function start() {
-  const server = app.listen(port, () => {
+async function start() {
+  try {
+    await migrate();
+    console.log("Database migration completed.");
+  } catch (error) {
+    console.error("Database migration failed; server will not start:", error.message);
+    process.exitCode = 1;
+    return;
+  }
+
+  app.listen(port, () => {
     console.log(`SANAD running at http://localhost:${port}`);
   });
-
-  migrate()
-    .then(() => console.log("Database migration completed."))
-    .catch((error) => {
-      console.error(
-        "Database migration failed; database features are unavailable:",
-        error.message,
-      );
-    });
-
-  return server;
 }
 
 start();
