@@ -77,6 +77,7 @@ form.addEventListener('submit', async (e) => {
             return;
         }
 
+        localStorage.setItem('sanadUser', JSON.stringify(payload.user || { role: payload.role, email: email.value.trim() }));
         window.location.assign(payload.role === 'admin' ? '/admin-requests' : '/donations');
     } catch {
         password.classList.add('error');

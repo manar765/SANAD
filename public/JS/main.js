@@ -1,4 +1,4 @@
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
     const navbar = document.getElementById("navbar");
     const navToggle = document.getElementById("navToggle");
     const progressBar = document.getElementById("progressBar");
@@ -121,6 +121,25 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         }, { rootMargin: "-45% 0px -50% 0px" });
         sections.forEach((section) => spyObserver.observe(section));
+    }
+
+    const guestActions = document.getElementById("guestActions");
+    const userActions = document.getElementById("userActions");
+    const homeUserName = document.getElementById("homeUserName");
+
+    if (guestActions && userActions && homeUserName) {
+        try {
+            const response = await fetch("/api/auth/me", { credentials: "same-origin", headers: { Accept: "application/json" } });
+            if (response.ok) {
+                const payload = await response.json();
+                const name = String(payload.user?.name || payload.user?.email || "صديق سند").trim();
+                homeUserName.textContent = name;
+                guestActions.classList.add("hidden");
+                userActions.classList.remove("hidden");
+            }
+        } catch {
+            // Keep the guest state if the session check is unavailable.
+        }
     }
 
     const store = window.SANADDonationsStore;

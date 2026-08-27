@@ -2926,3 +2926,40 @@ footer[id] {
 .don-empty-action {
     margin-top: 16px;
 }
+/* ---------- authenticated home navigation ---------- */
+.hidden {
+    display: none !important;
+}
+
+.guest-actions,
+.user-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.user-greeting {
+    color: var(--text-dark);
+    font-size: 14px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.user-greeting strong {
+    color: var(--green-dark);
+    font-weight: 800;
+}
+
+@media (max-width: 900px) {
+    .guest-actions,
+    .user-actions {
+        flex-direction: column;
+        align-items: stretch;
+        width: 100%;
+    }
+
+    .user-greeting {
+        text-align: center;
+        padding: 6px 0;
+    }
+}

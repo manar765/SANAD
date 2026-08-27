@@ -58,10 +58,15 @@
                     </div>
 
                     <div class="nav-actions">
-                        <a href="/login" class="btn btn-outline" data-page="تسجيل الدخول">تسجيل
-                            دخول</a>
-                        <a href="/signup" class="btn btn-primary" data-page="إنشاء حساب">إنشاء
-                            حساب</a>
+                        <div class="guest-actions" id="guestActions">
+                            <a href="/login" class="btn btn-outline" data-page="تسجيل الدخول">تسجيل دخول</a>
+                            <a href="/signup" class="btn btn-primary" data-page="إنشاء حساب">إنشاء حساب</a>
+                        </div>
+                        <div class="user-actions hidden" id="userActions" aria-live="polite">
+                            <span class="user-greeting">أهلاً، <strong id="homeUserName">صديق سند</strong></span>
+                            <a href="/donations" class="btn btn-outline">لوحتي</a>
+                            <a href="/login" class="btn btn-logout" data-logout>تسجيل خروج</a>
+                        </div>
                     </div>
                 </nav>
 
@@ -575,6 +580,7 @@
 
         <!-- scripts -->
         <script src="/JS/main.js"></script>
+        <script src="/JS/logout.js"></script>
     </body>
 
 </html>
