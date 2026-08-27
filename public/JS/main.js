@@ -132,7 +132,11 @@ document.addEventListener("DOMContentLoaded", async () => {
             const response = await fetch("/api/auth/me", { credentials: "same-origin", headers: { Accept: "application/json" } });
             if (response.ok) {
                 const payload = await response.json();
-                const name = String(payload.user?.name || payload.user?.email || "صديق سند").trim();
+                const user = payload.user || {};
+                const fullName = user.name || user.full_name || [user.firstName || user.first_name, user.lastName || user.last_name]
+                    .filter(Boolean)
+                    .join(" ");
+                const name = String(fullName || user.email || "صديق سند").trim();
                 homeUserName.textContent = name;
                 guestActions.classList.add("hidden");
                 userActions.classList.remove("hidden");

@@ -15,6 +15,7 @@ const adminEmail = (process.env.ADMIN_EMAIL || "admin@sanad.com")
 const adminPassword = process.env.ADMIN_PASSWORD || "Sanad@2026";
 const scryptAsync = promisify(scrypt);
 const SESSION_TTL_MS = 8 * 60 * 60 * 1000;
+const REMEMBER_ME_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const SESSION_IDLE_TTL_MS = 30 * 60 * 1000;
 const SESSION_COOKIE = "sanad_session";
 
@@ -98,17 +99,26 @@ function cookieOptions(maxAge = SESSION_TTL_MS) {
   return `${SESSION_COOKIE}=; Max-Age=${Math.floor(maxAge / 1000)}; Path=/; HttpOnly; SameSite=Lax${secure}`;
 }
 
-async function createSession(user) {
+function resolveDisplayName(user) {
+  const name = user.name || user.full_name || user.displayName;
+  const parts = [user.firstName || user.first_name, user.lastName || user.last_name]
+    .map((part) => String(part || "").trim())
+    .filter(Boolean);
+  return String(name || parts.join(" ") || "").trim() || null;
+}
+
+async function createSession(user, rememberMe = false) {
   const token = randomBytes(32).toString("hex");
   const tokenHash = hashSessionToken(token);
   const csrfToken = randomBytes(32).toString("hex");
+  const sessionTtlMs = rememberMe ? REMEMBER_ME_TTL_MS : SESSION_TTL_MS;
   await pool.query(
     `INSERT INTO user_sessions
-      (token_hash, user_id, role, email, display_name, csrf_token, expires_at)
-     VALUES ($1, $2, $3, $4, $5, $6, NOW() + ($7 * INTERVAL '1 millisecond'))`,
-    [tokenHash, user.id || null, user.role, user.email, user.name || null, csrfToken, SESSION_TTL_MS],
+      (token_hash, user_id, role, email, display_name, csrf_token, remember_me, expires_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, NOW() + ($8 * INTERVAL '1 millisecond'))`,
+    [tokenHash, user.id || null, user.role, user.email, resolveDisplayName(user), csrfToken, rememberMe, sessionTtlMs],
   );
-  return token;
+  return { token, maxAge: sessionTtlMs };
 }
 
 async function getSession(req) {
@@ -116,10 +126,15 @@ async function getSession(req) {
   const tokenHash = token ? hashSessionToken(token) : null;
   if (!tokenHash) return null;
   const result = await pool.query(
-    `SELECT token_hash, user_id AS id, role, email, display_name AS name,
-            csrf_token AS "csrfToken", created_at AS "createdAt",
-            last_seen_at AS "lastSeenAt", expires_at AS "expiresAt"
-     FROM user_sessions WHERE token_hash = $1`,
+    `SELECT s.token_hash, s.user_id AS id, s.role, s.email,
+            COALESCE(NULLIF(s.display_name, ''), NULLIF(u.full_name, ''),
+                     NULLIF(trim(concat_ws(' ', u.first_name, u.last_name)), ''),
+                     NULLIF(u.name, '')) AS name,
+            s.csrf_token AS "csrfToken", s.created_at AS "createdAt",
+            s.last_seen_at AS "lastSeenAt", s.expires_at AS "expiresAt"
+     FROM user_sessions s
+     LEFT JOIN users u ON u.id = s.user_id
+     WHERE s.token_hash = $1`,
     [tokenHash],
   );
   const session = result.rows[0];
@@ -148,11 +163,11 @@ function requireCsrf(req, res, next) {
   return next();
 }
 
-function setSessionCookie(res, token) {
+function setSessionCookie(res, session) {
   const secure = process.env.NODE_ENV === "production" ? "; Secure" : "";
   res.setHeader(
     "Set-Cookie",
-    `${SESSION_COOKIE}=${encodeURIComponent(token)}; Max-Age=${Math.floor(SESSION_TTL_MS / 1000)}; Path=/; HttpOnly; SameSite=Lax${secure}`,
+    `${SESSION_COOKIE}=${encodeURIComponent(session.token)}; Max-Age=${Math.floor(session.maxAge / 1000)}; Path=/; HttpOnly; SameSite=Lax${secure}`,
   );
 }
 
@@ -315,7 +330,7 @@ app.post("/api/auth/signup", async (req, res) => {
     const result = await client.query(
       `INSERT INTO users (name, first_name, last_name, full_name, email, password, password_hash, phone, role)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-       RETURNING id, name, first_name, last_name, email, phone, role`,
+       RETURNING id, name, first_name, last_name, full_name, email, phone, role`,
       [
         fullName,
         firstName,
@@ -350,7 +365,7 @@ app.post("/api/auth/signup", async (req, res) => {
     await client.query("COMMIT");
     setSessionCookie(
       res,
-      await createSession({ id: user.id, role: user.role, email: user.email, name: user.full_name }),
+      await createSession({ id: user.id, role: user.role, email: user.email, name: fullName }),
     );
     return res.status(201).json({ user });
   } catch (error) {
@@ -526,6 +541,7 @@ app.post("/api/auth/login", async (req, res) => {
     .trim()
     .toLowerCase();
   const password = String(req.body?.password || "");
+  const rememberMe = req.body?.rememberMe === true;
   const attemptKey = loginAttemptKey(req, email);
 
   if (isLoginRateLimited(attemptKey)) {
@@ -537,13 +553,14 @@ app.post("/api/auth/login", async (req, res) => {
 
   if (credentialsMatch(email, password)) {
     clearLoginFailures(attemptKey);
-    setSessionCookie(res, await createSession({ role: "admin", email }));
+    setSessionCookie(res, await createSession({ role: "admin", email }, rememberMe));
     return res.json({ role: "admin" });
   }
 
   try {
     const result = await pool.query(
-      "SELECT id, full_name, email, password_hash, role FROM users WHERE email = $1",
+      `SELECT id, name, first_name, last_name, full_name, email, password_hash, role
+       FROM users WHERE email = $1`,
       [email],
     );
     const user = result.rows[0];
@@ -556,11 +573,22 @@ app.post("/api/auth/login", async (req, res) => {
     clearLoginFailures(attemptKey);
     setSessionCookie(
       res,
-      await createSession({ id: user.id, role: user.role, email: user.email, name: user.full_name }),
+      await createSession({
+        id: user.id,
+        role: user.role,
+        email: user.email,
+        name: user.full_name,
+        firstName: user.first_name,
+        lastName: user.last_name,
+      }, rememberMe),
     );
     return res.json({
       role: user.role,
-      user: { id: user.id, name: user.full_name, email: user.email },
+      user: {
+        id: user.id,
+        name: resolveDisplayName(user),
+        email: user.email,
+      },
     });
   } catch (error) {
     console.error("Login failed:", error);

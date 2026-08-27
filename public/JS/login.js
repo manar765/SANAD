@@ -7,6 +7,7 @@ const emailError = document.getElementById('emailError');
 const passwordError = document.getElementById('passwordError');
 const togglePass = document.getElementById('togglePass');
 const submitBtn = document.getElementById('submitBtn');
+const rememberMe = document.getElementById('remember');
 
 togglePass.addEventListener('click', () => {
     const isHidden = password.type === 'password';
@@ -65,6 +66,7 @@ form.addEventListener('submit', async (e) => {
             body: JSON.stringify({
                 email: email.value.trim(),
                 password: password.value,
+                rememberMe: rememberMe?.checked === true,
             }),
         });
 
