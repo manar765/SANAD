@@ -35,55 +35,7 @@
         <!-- ============================================================
                 NAVBAR
         ============================================================ -->
-        <header class="navbar" id="navbar">
-            <div class="container nav-inner">
-
-                <!-- logo -->
-                <a href="#home" class="brand" aria-label="سند — الصفحة الرئيسية">
-                    <img src="/assets/images/LogoSANAD.png" alt="شعار سند" class="brand-logo" />
-                    <span class="brand-text">
-                        <span class="brand-ar">سند</span>
-                        <span class="brand-en">SANAD</span>
-                    </span>
-                </a>
-
-                <!-- menu (links + actions) -->
-                <nav class="nav-menu" id="navMenu" aria-label="التنقل الرئيسي">
-                    <div class="nav-links">
-                        <a href="#home" class="nav-link active">الرئيسية</a>
-                        <a href="#dashboard" class="nav-link">لوحة البيانات</a>
-                        <a href="#about" class="nav-link">عن سند</a>
-                        <a href="/donations" class="nav-link">التبرعات</a>
-                        <a href="/beneficiaries" class="nav-link">المستفيدون</a>
-                        <a href="#contact" class="nav-link">تواصل معنا</a>
-                    </div>
-
-                    <div class="nav-actions">
-                        <div class="guest-actions" id="guestActions">
-                            <a href="/login" class="btn btn-outline" data-page="تسجيل الدخول">تسجيل دخول</a>
-                            <a href="/signup" class="btn btn-primary" data-page="إنشاء حساب">إنشاء حساب</a>
-                        </div>
-                        <div class="user-actions hidden" id="userActions" aria-live="polite">
-                            <span class="user-greeting">أهلاً، <strong id="homeUserName">صديق سند</strong></span>
-                            <a href="/dashboard" class="btn btn-outline avatar-action" aria-label="فتح الملف الشخصي"
-                                title="الملف الشخصي">
-                                <i class="fa-solid fa-user" aria-hidden="true"></i>
-                            </a>
-                            <a href="/login" class="btn btn-logout logout-action" data-logout><i
-                                    class="fa-solid fa-right-from-bracket"></i> تسجيل خروج</a>
-                        </div>
-                    </div>
-                </nav>
-
-                <!-- mobile toggle -->
-                <button class="nav-toggle" id="navToggle" aria-label="فتح القائمة" aria-expanded="false"
-                    aria-controls="navMenu">
-                    <span class="bar"></span>
-                    <span class="bar"></span>
-                    <span class="bar"></span>
-                </button>
-            </div>
-        </header>
+        <%- include('../partials/navbar', { activePath: '/' }) %>
 
         <main id="main-content">
 
@@ -504,73 +456,7 @@
         <!-- ============================================================
          FOOTER
     ============================================================ -->
-        <footer class="footer" id="contact">
-            <div class="container footer-grid">
-
-                <!-- brand -->
-                <div class="footer-brand">
-                    <a href="#home" class="brand" aria-label="سند — الصفحة الرئيسية">
-                        <img src="/assets/images/LogoSANAD.png" alt="شعار سند" class="brand-logo" />
-                        <span class="brand-text">
-                            <span class="brand-ar">سند</span>
-                            <span class="brand-en">SANAD</span>
-                        </span>
-                    </a>
-                    <p>منصة تساعد على تنظيم التبرعات العينية وربط الخير بالاحتياج الحقيقي.</p>
-                    <div class="footer-social">
-                        <a href="#" class="placeholder" data-page="فيسبوك" aria-label="فيسبوك"><i
-                                class="fa-brands fa-facebook-f"></i></a>
-                        <a href="#" class="placeholder" data-page="تويتر" aria-label="تويتر"><i
-                                class="fa-brands fa-x-twitter"></i></a>
-                        <a href="#" class="placeholder" data-page="إنستغرام" aria-label="إنستغرام"><i
-                                class="fa-brands fa-instagram"></i></a>
-                        <a href="#" class="placeholder" data-page="لينكد إن" aria-label="لينكد إن"><i
-                                class="fa-brands fa-linkedin-in"></i></a>
-                    </div>
-                </div>
-
-                <!-- quick links -->
-                <div class="footer-col">
-                    <h4>روابط سريعة</h4>
-                    <ul>
-                        <li><a href="#home"><i class="fa-solid fa-angle-left"></i> الرئيسية</a></li>
-                        <li><a href="#about"><i class="fa-solid fa-angle-left"></i> عن سند</a></li>
-                        <li><a href="/donations"><i class="fa-solid fa-angle-left"></i> التبرعات</a></li>
-                        <li><a href="/beneficiaries"><i class="fa-solid fa-angle-left"></i> المستفيدون</a></li>
-                        <li><a href="#contact"><i class="fa-solid fa-angle-left"></i> تواصل معنا</a></li>
-                    </ul>
-                </div>
-
-                <!-- platform -->
-                <div class="footer-col">
-                    <h4>المنصة</h4>
-                    <ul>
-                        <li><a href="#how"><i class="fa-solid fa-angle-left"></i> كيف يعمل سند</a></li>
-                        <li><a href="#dashboard"><i class="fa-solid fa-angle-left"></i> لوحة البيانات</a></li>
-                        <li><a href="/login"><i class="fa-solid fa-angle-left"></i> تسجيل الدخول</a></li>
-                        <li><a href="/signup"><i class="fa-solid fa-angle-left"></i> إنشاء حساب</a></li>
-                    </ul>
-                </div>
-
-                <!-- contact -->
-                <div class="footer-col">
-                    <h4>تواصل معنا</h4>
-                    <ul>
-                        <li><a href="mailto:hello@sanad.org"><i class="fa-solid fa-envelope"></i> hello@sanad.org</a>
-                        </li>
-                        <li><a href="tel:+201000000000"><i class="fa-solid fa-phone"></i> +20 100 000 0000</a></li>
-                        <li><a href="#contact"><i class="fa-solid fa-location-dot"></i> القاهرة، مصر</a></li>
-                    </ul>
-                </div>
-
-            </div>
-
-            <div class="footer-bottom">
-                <div class="container">
-                    <p>© 2026 سند | SANAD — جميع الحقوق محفوظة</p>
-                </div>
-            </div>
-        </footer>
+        <%- include('../partials/footer') %>
 
         <!-- toast notification -->
         <div class="toast" id="toast" role="status" aria-live="polite">

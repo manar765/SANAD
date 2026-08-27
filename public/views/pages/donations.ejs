@@ -32,44 +32,7 @@
         <!-- ============================================================
          NAVBAR
     ============================================================ -->
-        <header class="navbar" id="navbar">
-            <div class="container nav-inner">
-
-                <!-- logo -->
-                <a href="/" class="brand" aria-label="سند — الصفحة الرئيسية">
-                    <img src="/assets/images/LogoSANAD.png" alt="شعار سند" class="brand-logo" />
-                    <span class="brand-text">
-                        <span class="brand-ar">سند</span>
-                        <span class="brand-en">SANAD</span>
-                    </span>
-                </a>
-
-                <!-- menu (links + actions) -->
-                <nav class="nav-menu" id="navMenu" aria-label="التنقل الرئيسي">
-                    <div class="nav-links">
-                        <a href="#contact" class="nav-link">تواصل معنا</a>
-                        <a href="/" class="nav-link"> الرئيسية</a>
-                    </div>
-
-                    <div class="nav-actions">
-                        <a href="/dashboard" class="btn btn-outline avatar-action" aria-label="فتح الملف الشخصي"
-                            title="الملف الشخصي">
-                            <i class="fa-solid fa-user" aria-hidden="true"></i>
-                        </a>
-                        <a href="/login" class="btn btn-logout logout-action" data-logout><i
-                                class="fa-solid fa-right-from-bracket"></i> تسجيل خروج</a>
-                    </div>
-                </nav>
-
-                <!-- mobile toggle -->
-                <button class="nav-toggle" id="navToggle" aria-label="فتح القائمة" aria-expanded="false"
-                    aria-controls="navMenu">
-                    <span class="bar"></span>
-                    <span class="bar"></span>
-                    <span class="bar"></span>
-                </button>
-            </div>
-        </header>
+        <%- include('../partials/navbar', { activePath: '/donations' }) %>
 
         <main id="main-content">
 
@@ -367,37 +330,21 @@
             </section>
 
             <div class="drawer-backdrop" id="addDonationModalBackdrop" aria-hidden="true"></div>
-            <section class="drawer add-donation-modal" id="addDonationModal" role="dialog" aria-modal="true"
-                aria-labelledby="addDonationTitle" aria-hidden="true">
+            <section class="drawer add-donation-modal" id="addDonationModal" role="dialog" aria-modal="true" aria-labelledby="addDonationTitle" aria-hidden="true">
                 <header class="drawer-header">
                     <div class="drawer-header-info">
                         <span class="drawer-id"><i class="fa-solid fa-plus" aria-hidden="true"></i></span>
                         <h2 class="drawer-title" id="addDonationTitle">إضافة تبرع</h2>
                     </div>
-                    <button type="button" class="drawer-close" id="addDonationCloseBtn"
-                        aria-label="إغلاق نموذج إضافة التبرع"><i class="fa-solid fa-xmark"
-                            aria-hidden="true"></i></button>
+                    <button type="button" class="drawer-close" id="addDonationCloseBtn" aria-label="إغلاق نموذج إضافة التبرع"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
                 </header>
                 <form class="drawer-body add-donation-form" id="addDonationForm">
-                    <label class="drawer-field"><span class="drawer-field-label">اسم التبرع</span><input
-                            id="donationName" required maxlength="120" autocomplete="off"></label>
-                    <label class="drawer-field"><span class="drawer-field-label">الفئة</span><select
-                            id="donationCategory">
-                            <option>ملابس</option>
-                            <option>مواد غذائية</option>
-                            <option>أدوات مدرسية</option>
-                            <option>أثاث</option>
-                            <option>أجهزة</option>
-                            <option>أخرى</option>
-                        </select></label>
-                    <label class="drawer-field"><span class="drawer-field-label">الكمية</span><input id="donationQty"
-                            type="number" min="1" max="100000" required></label>
-                    <label class="drawer-field"><span class="drawer-field-label">الحالة</span><input
-                            id="donationCondition" value="جيدة" maxlength="80"></label>
-                    <label class="drawer-field"><span class="drawer-field-label">المخزن</span><input
-                            id="donationWarehouse" maxlength="160" placeholder="مخزن القاهرة"></label>
-                    <label class="drawer-field"><span class="drawer-field-label">الوصف</span><textarea id="donationDesc"
-                            maxlength="2000" rows="4"></textarea></label>
+                    <label class="drawer-field"><span class="drawer-field-label">اسم التبرع</span><input id="donationName" required maxlength="120" autocomplete="off"></label>
+                    <label class="drawer-field"><span class="drawer-field-label">الفئة</span><select id="donationCategory"><option>ملابس</option><option>مواد غذائية</option><option>أدوات مدرسية</option><option>أثاث</option><option>أجهزة</option><option>أخرى</option></select></label>
+                    <label class="drawer-field"><span class="drawer-field-label">الكمية</span><input id="donationQty" type="number" min="1" max="100000" required></label>
+                    <label class="drawer-field"><span class="drawer-field-label">الحالة</span><input id="donationCondition" value="جيدة" maxlength="80"></label>
+                    <label class="drawer-field"><span class="drawer-field-label">المخزن</span><input id="donationWarehouse" maxlength="160" placeholder="مخزن القاهرة"></label>
+                    <label class="drawer-field"><span class="drawer-field-label">الوصف</span><textarea id="donationDesc" maxlength="2000" rows="4"></textarea></label>
                     <input id="donationDate" type="hidden">
                     <input id="donorName" type="hidden">
                 </form>
@@ -412,69 +359,7 @@
         <!-- ============================================================
          FOOTER
     ============================================================ -->
-        <footer class="footer" id="contact">
-            <div class="container footer-grid">
-
-                <!-- brand -->
-                <div class="footer-brand">
-                    <a href="/" class="brand" aria-label="سند — الصفحة الرئيسية">
-                        <img src="/assets/images/LogoSANAD.png" alt="شعار سند" class="brand-logo" />
-                        <span class="brand-text">
-                            <span class="brand-ar">سند</span>
-                            <span class="brand-en">SANAD</span>
-                        </span>
-                    </a>
-                    <p>منصة تساعد على تنظيم التبرعات العينية وربط الخير بالاحتياج الحقيقي.</p>
-                    <div class="footer-social">
-                        <a href="#" class="placeholder" data-page="فيسبوك" aria-label="فيسبوك"><i
-                                class="fa-brands fa-facebook-f"></i></a>
-                        <a href="#" class="placeholder" data-page="تويتر" aria-label="تويتر"><i
-                                class="fa-brands fa-x-twitter"></i></a>
-                        <a href="#" class="placeholder" data-page="إنستغرام" aria-label="إنستغرام"><i
-                                class="fa-brands fa-instagram"></i></a>
-                        <a href="#" class="placeholder" data-page="لينكد إن" aria-label="لينكد إن"><i
-                                class="fa-brands fa-linkedin-in"></i></a>
-                    </div>
-                </div>
-
-                <!-- quick links -->
-                <div class="footer-col">
-                    <h4>روابط سريعة</h4>
-                    <ul>
-                        <li><a href="/donations"><i class="fa-solid fa-angle-left"></i> التبرعات</a></li>
-                        <li><a href="/beneficiaries"><i class="fa-solid fa-angle-left"></i> المستفيدون</a></li>
-                        <li><a href="#contact"><i class="fa-solid fa-angle-left"></i> تواصل معنا</a></li>
-                    </ul>
-                </div>
-
-                <!-- platform -->
-                <div class="footer-col">
-                    <h4>المنصة</h4>
-                    <ul>
-                        <li><a href="/login"><i class="fa-solid fa-angle-left"></i> تسجيل الدخول</a></li>
-                        <li><a href="/signup"><i class="fa-solid fa-angle-left"></i> إنشاء حساب</a></li>
-                    </ul>
-                </div>
-
-                <!-- contact -->
-                <div class="footer-col">
-                    <h4>تواصل معنا</h4>
-                    <ul>
-                        <li><a href="mailto:hello@sanad.org"><i class="fa-solid fa-envelope"></i> hello@sanad.org</a>
-                        </li>
-                        <li><a href="tel:+201000000000"><i class="fa-solid fa-phone"></i> +20 100 000 0000</a></li>
-                        <li><a href="#contact"><i class="fa-solid fa-location-dot"></i> القاهرة، مصر</a></li>
-                    </ul>
-                </div>
-
-            </div>
-
-            <div class="footer-bottom">
-                <div class="container">
-                    <p>© 2026 سند | SANAD — جميع الحقوق محفوظة</p>
-                </div>
-            </div>
-        </footer>
+        <%- include('../partials/footer') %>
 
         <!-- toast notification -->
         <div class="toast" id="toast" role="status" aria-live="polite">
