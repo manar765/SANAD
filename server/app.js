@@ -174,7 +174,8 @@ const pageRoutes = Object.freeze({
   "/": "index",
   "/login": "login",
   "/signup": "signup",
-  "/dashboard": "dashboard",
+  "/profile": "profile",
+  "/dashboard": "profile",
   "/donations": "donations",
   "/admin-requests": "AdminRequests",
   "/inventory": "inventory",
@@ -356,6 +357,78 @@ app.get("/api/auth/csrf", requireAuth, (req, res) => {
   return res.json({ csrfToken: req.user.csrfToken });
 });
 
+app.get("/api/profile", requireAuth, async (req, res) => {
+  if (!req.user.id) return res.status(404).json({ message: "Profile not found." });
+  try {
+    const result = await pool.query(
+      `SELECT id, first_name, last_name, full_name, email, phone, role
+       FROM users WHERE id = $1`,
+      [req.user.id],
+    );
+    const user = result.rows[0];
+    if (!user) return res.status(404).json({ message: "Profile not found." });
+    return res.json({ user });
+  } catch (error) {
+    console.error("Profile fetch failed:", error);
+    return res.status(503).json({ message: "Profile is temporarily unavailable." });
+  }
+});
+
+app.patch("/api/profile", requireAuth, requireCsrf, async (req, res) => {
+  if (!req.user.id) return res.status(404).json({ message: "Profile not found." });
+  const firstName = String(req.body?.firstName || "").trim();
+  const lastName = String(req.body?.lastName || "").trim();
+  const phone = String(req.body?.phone || "").trim();
+  if (firstName.length < 2 || firstName.length > 50 || lastName.length < 2 || lastName.length > 50) {
+    return res.status(400).json({ message: "Please enter a valid first and last name." });
+  }
+  if (phone && !/^[+0-9()\s-]{7,20}$/.test(phone)) {
+    return res.status(400).json({ message: "Please enter a valid phone number." });
+  }
+  const fullName = `${firstName} ${lastName}`.trim();
+  try {
+    const result = await pool.query(
+      `UPDATE users
+       SET first_name = $1, last_name = $2, full_name = $3, name = $3, phone = $4
+       WHERE id = $5
+       RETURNING id, first_name, last_name, full_name, email, phone, role`,
+      [firstName, lastName, fullName, phone || null, req.user.id],
+    );
+    const user = result.rows[0];
+    if (!user) return res.status(404).json({ message: "Profile not found." });
+    const token = parseCookies(req)[SESSION_COOKIE];
+    const session = token ? sessions.get(hashSessionToken(token)) : null;
+    if (session) session.name = fullName;
+    return res.json({ message: "Profile updated successfully.", user });
+  } catch (error) {
+    console.error("Profile update failed:", error);
+    return res.status(503).json({ message: "Profile update is temporarily unavailable." });
+  }
+});
+
+app.post("/api/profile/password", requireAuth, requireCsrf, async (req, res) => {
+  if (!req.user.id) return res.status(404).json({ message: "Profile not found." });
+  const currentPassword = String(req.body?.currentPassword || "");
+  const newPassword = String(req.body?.newPassword || "");
+  const confirmPassword = String(req.body?.confirmPassword || "");
+  if (newPassword.length < 8) return res.status(400).json({ message: "The new password must be at least 8 characters." });
+  if (newPassword !== confirmPassword) return res.status(400).json({ message: "Password confirmation does not match." });
+  try {
+    const result = await pool.query("SELECT password_hash, password FROM users WHERE id = $1", [req.user.id]);
+    const user = result.rows[0];
+    const storedHash = user?.password_hash || user?.password;
+    if (!user || !(await passwordMatches(currentPassword, storedHash))) {
+      return res.status(401).json({ message: "The current password is incorrect." });
+    }
+    const passwordHash = await hashPassword(newPassword);
+    await pool.query("UPDATE users SET password_hash = $1, password = $1 WHERE id = $2", [passwordHash, req.user.id]);
+    return res.json({ message: "Password changed successfully." });
+  } catch (error) {
+    console.error("Password update failed:", error);
+    return res.status(503).json({ message: "Password update is temporarily unavailable." });
+  }
+});
+
 app.post("/api/auth/logout", requireAuth, requireCsrf, (req, res) => {
   const token = parseCookies(req)[SESSION_COOKIE];
   if (token) sessions.delete(hashSessionToken(token));
@@ -413,6 +486,7 @@ app.post("/api/auth/login", async (req, res) => {
 });
 
 const protectedPages = new Set([
+  "/profile",
   "/dashboard",
   "/donations",
   "/admin-requests",
