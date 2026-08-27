@@ -5,6 +5,7 @@ import { promisify } from "node:util";
 import express from "express";
 import pool from "./database/index.js";
 import { migrate } from "./database/schema.js";
+import { sendVerificationEmail } from "./email-service.js";
 import {
   authenticateUser,
   changeUserPassword,
@@ -13,6 +14,8 @@ import {
   getUserPasswordRecord,
   getUserProfile,
   registerUser,
+  issueEmailVerificationToken,
+  verifyEmailToken,
 } from "./user-service.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -63,6 +66,8 @@ const FORGOT_PASSWORD_MAX_ATTEMPTS = 5;
 const RESET_PASSWORD_MAX_ATTEMPTS = 10;
 const resetTokens = new Map();
 const RESET_TOKEN_TTL_MS = 15 * 60 * 1000;
+const EMAIL_VERIFICATION_TTL_MS = 24 * 60 * 60 * 1000;
+const REQUIRE_EMAIL_VERIFICATION = process.env.REQUIRE_EMAIL_VERIFICATION === "true";
 
 function removeExpiredResetTokens() {
   const now = Date.now();
@@ -146,6 +151,11 @@ function cookieOptions(maxAge = SESSION_TTL_MS) {
   return `${SESSION_COOKIE}=; Max-Age=${Math.floor(maxAge / 1000)}; Path=/; HttpOnly; SameSite=Lax${secure}`;
 }
 
+function verificationUrl(req, token) {
+  const baseUrl = process.env.APP_URL || `${req.protocol}://${req.get("host")}`;
+  return `${baseUrl}/verify-email?token=${encodeURIComponent(token)}`;
+}
+
 function resolveDisplayName(user) {
   const name = user.name || user.full_name || user.displayName;
   const parts = [user.firstName || user.first_name, user.lastName || user.last_name]
@@ -213,7 +223,8 @@ async function getSession(req) {
                      NULLIF(trim(concat_ws(' ', u.first_name, u.last_name)), ''),
                      NULLIF(u.name, '')) AS name,
             s.csrf_token AS "csrfToken", s.created_at AS "createdAt",
-            s.last_seen_at AS "lastSeenAt", s.expires_at AS "expiresAt"
+            s.last_seen_at AS "lastSeenAt", s.expires_at AS "expiresAt",
+            u.email_verified_at IS NOT NULL AS "emailVerified"
      FROM user_sessions s
      LEFT JOIN users u ON u.id = s.user_id
      WHERE s.token_hash = $1`,
@@ -294,6 +305,7 @@ const pageRoutes = Object.freeze({
   "/signup": "signup",
   "/forgot-password": "forgot-password",
   "/reset-password": "reset-password",
+  "/verify-email": "verify-email",
   "/profile": "profile",
   "/dashboard": "profile",
   "/donations": "donations",
@@ -594,12 +606,26 @@ app.post("/api/auth/signup", async (req, res) => {
       donorType,
       organizationName,
     });
-    setSessionCookie(
-      res,
-      await createSession({ id: user.id, role: user.role, email: user.email, name: fullName }),
+    const verificationToken = randomBytes(32).toString("hex");
+    await issueEmailVerificationToken(
+      user.id,
+      hashSessionToken(verificationToken),
+      new Date(Date.now() + EMAIL_VERIFICATION_TTL_MS),
     );
+    const verificationLink = verificationUrl(req, verificationToken);
+    await sendVerificationEmail({ to: user.email, name: fullName, verificationUrl: verificationLink });
+    if (!REQUIRE_EMAIL_VERIFICATION) {
+      setSessionCookie(
+        res,
+        await createSession({ id: user.id, role: user.role, email: user.email, name: fullName }),
+      );
+    }
     await recordAuditEvent(req, { userId: user.id, action: "signup_success", metadata: { role: user.role } });
-    return res.status(201).json({ user });
+    return res.status(201).json({
+      user: { ...user, emailVerified: false },
+      verificationRequired: REQUIRE_EMAIL_VERIFICATION,
+      ...(process.env.NODE_ENV !== "production" ? { verificationUrl: verificationLink } : {}),
+    });
   } catch (error) {
     if (error.code === "23505") {
       return res
@@ -614,9 +640,55 @@ app.post("/api/auth/signup", async (req, res) => {
   }
 });
 
+app.get("/api/auth/verify-email", async (req, res) => {
+  const token = String(req.query?.token || "");
+  if (!/^[a-f0-9]{64}$/i.test(token)) {
+    return res.status(400).json({ message: "This verification link is invalid or has expired." });
+  }
+  try {
+    const user = await verifyEmailToken(hashSessionToken(token));
+    if (!user) return res.status(400).json({ message: "This verification link is invalid or has expired." });
+    await recordAuditEvent(req, { userId: user.id, action: "email_verified" });
+    return res.json({ message: "Email verified successfully. You can now log in." });
+  } catch (error) {
+    console.error("Email verification failed:", error);
+    return res.status(503).json({ message: "Email verification is temporarily unavailable." });
+  }
+});
+
+app.post("/api/auth/resend-verification", requireAuth, requireCsrf, async (req, res) => {
+  if (!req.user.id) return res.status(404).json({ message: "Profile not found." });
+  try {
+    const user = await getUserProfile(req.user.id);
+    if (!user) return res.status(404).json({ message: "Profile not found." });
+    const verificationToken = randomBytes(32).toString("hex");
+    await issueEmailVerificationToken(
+      user.id,
+      hashSessionToken(verificationToken),
+      new Date(Date.now() + EMAIL_VERIFICATION_TTL_MS),
+    );
+    const link = verificationUrl(req, verificationToken);
+    await sendVerificationEmail({ to: user.email, name: resolveDisplayName(user), verificationUrl: link });
+    return res.json({
+      message: "A new verification link has been sent.",
+      ...(process.env.NODE_ENV !== "production" ? { verificationUrl: link } : {}),
+    });
+  } catch (error) {
+    console.error("Verification email resend failed:", error);
+    return res.status(503).json({ message: "Verification email could not be sent." });
+  }
+});
+
 app.get("/api/auth/me", requireAuth, (req, res) => {
   return res.json({
-    user: { id: req.user.id, role: req.user.role, email: req.user.email, name: req.user.name || req.user.email },
+    user: {
+      id: req.user.id,
+      role: req.user.role,
+      email: req.user.email,
+      name: req.user.name || req.user.email,
+      emailVerified: Boolean(req.user.emailVerified),
+    },
+
   });
 });
 
@@ -849,6 +921,11 @@ app.post("/api/auth/login", async (req, res) => {
       return res.status(401).json({ message: "Invalid email or password." });
     }
 
+    if (REQUIRE_EMAIL_VERIFICATION && !user.email_verified_at) {
+      await recordAuditEvent(req, { action: "login_unverified_email", success: false });
+      return res.status(403).json({ message: "Please verify your email before logging in." });
+    }
+
     clearLoginFailures(attemptKey);
     await rotateSession(
       req,
@@ -857,6 +934,7 @@ app.post("/api/auth/login", async (req, res) => {
         id: user.id,
         role: user.role,
         email: user.email,
+        emailVerified: Boolean(user.email_verified_at),
         name: user.full_name,
         firstName: user.first_name,
         lastName: user.last_name,

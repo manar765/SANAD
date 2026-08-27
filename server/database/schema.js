@@ -25,6 +25,7 @@ export async function migrate() {
         password_hash TEXT NOT NULL,
         phone TEXT,
         role TEXT NOT NULL DEFAULT 'donor' CHECK (role IN ('donor', 'beneficiary', 'admin')),
+        email_verified_at TIMESTAMPTZ,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       );
     `);
@@ -37,6 +38,7 @@ export async function migrate() {
     await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS first_name TEXT`);
     await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS last_name TEXT`);
     await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS phone TEXT`);
+    await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified_at TIMESTAMPTZ`);
     await client.query(`UPDATE users SET full_name = trim(concat_ws(' ', first_name, last_name)) WHERE full_name IS NULL`);
     await client.query(`UPDATE users SET name = COALESCE(NULLIF(trim(name), ''), full_name) WHERE name IS NULL OR NULLIF(trim(name), '') IS NULL`);
     await client.query(`UPDATE users SET full_name = 'User ' || id WHERE NULLIF(trim(full_name), '') IS NULL`);
@@ -70,6 +72,15 @@ export async function migrate() {
       );
     `);
 
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS email_verification_tokens (
+        token_hash TEXT PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        expires_at TIMESTAMPTZ NOT NULL,
+        used_at TIMESTAMPTZ,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+    `);
     await client.query(`
       CREATE TABLE IF NOT EXISTS user_sessions (
         token_hash TEXT PRIMARY KEY,
@@ -118,6 +129,8 @@ export async function migrate() {
       );
     `);
     await client.query(`ALTER TABLE user_sessions ADD COLUMN IF NOT EXISTS remember_me BOOLEAN NOT NULL DEFAULT FALSE`);
+    await client.query(`CREATE INDEX IF NOT EXISTS email_verification_tokens_user_idx ON email_verification_tokens (user_id, expires_at)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS email_verification_tokens_expires_at_idx ON email_verification_tokens (expires_at)`);
     await client.query(`CREATE INDEX IF NOT EXISTS user_sessions_expires_at_idx ON user_sessions (expires_at)`);
     await client.query(`CREATE INDEX IF NOT EXISTS user_sessions_last_seen_at_idx ON user_sessions (last_seen_at)`);
     await client.query(`CREATE INDEX IF NOT EXISTS user_sessions_user_id_idx ON user_sessions (user_id)`);

@@ -116,7 +116,13 @@ form.addEventListener("submit", async event => {
       formError.classList.add("show");
       return;
     }
-    window.location.assign("/donations");
+    if (payload.verificationRequired) {
+      const preview = payload.verificationUrl ? `\n\nرابط التطوير: ${payload.verificationUrl}` : "";
+      window.alert(`تم إنشاء الحساب. تحقق من بريدك الإلكتروني لتفعيل الحساب.${preview}`);
+      window.location.assign("/login");
+    } else {
+      window.location.assign("/donations");
+    }
   } catch {
     formError.textContent = "تعذر الاتصال بالخادم. حاول مرة أخرى.";
     formError.classList.add("show");

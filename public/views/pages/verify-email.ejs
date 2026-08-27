@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>سند — تفعيل البريد الإلكتروني</title>
+    <link rel="icon" type="image/png" href="/assets/images/LogoSANAD.png" />
+    <link rel="stylesheet" href="/CSS/login.css" />
+    <style>
+      .auth-message-page { min-height: 100vh; display: grid; place-items: center; padding: 1.5rem; background: var(--page-bg, #f6faf8); }
+      .auth-message-box { width: min(100%, 30rem); max-width: 30rem; text-align: center; padding: 2.5rem 2rem; }
+      .auth-message-logo { width: 6rem; height: auto; margin: 0 auto 1.5rem; }
+      .auth-message-box h1 { margin-bottom: .75rem; }
+      .auth-message-box p { margin-bottom: 1.5rem; color: var(--muted-text, #667085); }
+      .auth-message-box .btn { display: inline-flex; justify-content: center; }
+    </style>
+  </head>
+  <body>
+    <main class="auth-message-page" aria-live="polite">
+      <div class="form-box auth-message-box">
+        <img class="auth-message-logo" src="/assets/images/LogoSANAD.png" alt="شعار سند" />
+        <h1 id="verificationTitle">جارٍ تفعيل البريد الإلكتروني</h1>
+        <p id="verificationMessage">يرجى الانتظار لحظات...</p>
+        <a class="btn btn-primary" href="/login">الانتقال إلى تسجيل الدخول</a>
+      </div>
+    </main>
+    <script>
+      const title = document.getElementById("verificationTitle");
+      const message = document.getElementById("verificationMessage");
+      const token = new URLSearchParams(window.location.search).get("token") || "";
+      fetch(`/api/auth/verify-email?token=${encodeURIComponent(token)}`)
+        .then(async response => ({ ok: response.ok, payload: await response.json() }))
+        .then(({ ok, payload }) => {
+          title.textContent = ok ? "تم تفعيل البريد الإلكتروني" : "تعذر تفعيل البريد الإلكتروني";
+          message.textContent = payload.message || "انتهت صلاحية رابط التفعيل أو أصبح غير صالح.";
+        })
+        .catch(() => {
+          title.textContent = "تعذر الاتصال بالخادم";
+          message.textContent = "حاول مرة أخرى لاحقًا.";
+        });
+    </script>
+  </body>
+</html>

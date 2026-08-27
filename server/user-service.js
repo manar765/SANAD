@@ -1,10 +1,13 @@
 import {
+    consumeEmailVerificationToken,
+    createEmailVerificationToken,
     createUserWithProfile,
     findPasswordHashById,
     findUserByEmail,
     findUserIdByEmail,
     findUserProfileById,
     updateUserPassword,
+    markEmailVerified,
     updateUserProfile,
 } from "./user-repository.js";
 
@@ -35,3 +38,14 @@ export async function getUserPasswordRecord(userId) {
 export async function changeUserPassword(userId, passwordHash) {
     return updateUserPassword(userId, passwordHash);
 }
+
+export async function issueEmailVerificationToken(userId, tokenHash, expiresAt) {
+    return createEmailVerificationToken(userId, tokenHash, expiresAt);
+}
+
+export async function verifyEmailToken(tokenHash) {
+    const userId = await consumeEmailVerificationToken(tokenHash);
+    if (!userId) return null;
+    return markEmailVerified(userId);
+}
+    
