@@ -412,3 +412,153 @@ input.field.error:focus {
         padding: 36px 24px;
     }
 }
+
+
+/* ---------- role-first signup ---------- */
+.signup-box {
+    max-width: 430px;
+}
+
+.hidden {
+    display: none !important;
+}
+
+.role-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    margin-top: 24px;
+}
+
+.role-card {
+    min-height: 170px;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: #fff;
+    color: #333;
+    font-family: inherit;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 18px 12px;
+    transition: border-color .18s ease, background-color .18s ease, transform .18s ease, box-shadow .18s ease;
+}
+
+.role-card:hover,
+.role-card:focus-visible {
+    border-color: var(--green-med);
+    box-shadow: 0 8px 22px rgba(18, 70, 58, .09);
+    outline: none;
+    transform: translateY(-2px);
+}
+
+.role-card.selected {
+    border-color: var(--green-med);
+    background: var(--green-light);
+    box-shadow: 0 0 0 3px rgba(30, 107, 79, .12);
+}
+
+.role-card strong {
+    color: var(--green);
+    font-size: 17px;
+}
+
+.role-card > span:last-child {
+    color: #888;
+    font-size: 12px;
+}
+
+.role-icon {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--green-med);
+    background: #fff;
+}
+
+.role-icon svg {
+    width: 21px;
+    height: 21px;
+}
+
+.role-error {
+    text-align: center;
+    margin-top: 12px;
+}
+
+.two-col-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.choice-row {
+    display: flex;
+    gap: 12px;
+}
+
+.choice {
+    flex: 1;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+    color: #666;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.choice:has(input:checked) {
+    border-color: var(--green-med);
+    background: var(--green-light);
+    color: var(--green);
+}
+
+.choice input {
+    accent-color: var(--green-med);
+    margin-inline-end: 5px;
+}
+
+.back-link {
+    border: 0;
+    background: transparent;
+    color: var(--green-med);
+    font-family: inherit;
+    font-size: 12px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 0;
+    margin-bottom: 18px;
+}
+
+.back-link:hover {
+    text-decoration: underline;
+}
+
+.back-link svg {
+    width: 14px;
+    height: 14px;
+}
+
+.form-server-error {
+    margin: -4px 0 12px;
+    text-align: center;
+}
+
+@media(max-width:520px) {
+    .role-grid,
+    .two-col-fields {
+        grid-template-columns: 1fr;
+    }
+
+    .role-card {
+        min-height: 135px;
+    }
+}

@@ -260,6 +260,18 @@ footer[id] {
     transform: translateY(-2px);
 }
 
+.btn-logout {
+    background: transparent;
+    border-color: #CBD6D0;
+    color: var(--text-dark);
+}
+
+.btn-logout:hover {
+    border-color: var(--red);
+    color: var(--red);
+    transform: translateY(-2px);
+}
+
 .btn:active {
     transform: translateY(0) scale(0.98);
 }

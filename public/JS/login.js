@@ -68,14 +68,16 @@ form.addEventListener('submit', async (e) => {
             }),
         });
 
+        const payload = await response.json();
+
         if (!response.ok) {
             password.classList.add('error');
-            passwordError.textContent = 'البريد الإلكتروني أو كلمة المرور غير صحيحة.';
+            passwordError.textContent = payload.message || 'البريد الإلكتروني أو كلمة المرور غير صحيحة.';
             passwordError.classList.add('show');
             return;
         }
 
-        window.location.assign('/admin-requests');
+        window.location.assign(payload.role === 'admin' ? '/admin-requests' : '/donations');
     } catch {
         password.classList.add('error');
         passwordError.textContent = 'تعذر الاتصال بالخادم. حاول مرة أخرى.';

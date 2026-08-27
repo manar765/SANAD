@@ -1,0 +1,127 @@
+const form = document.getElementById("signupForm");
+const roleStep = document.getElementById("roleStep");
+const formStep = document.getElementById("formStep");
+const roleInput = document.getElementById("role");
+const donorFields = document.getElementById("donorFields");
+const organizationField = document.getElementById("organizationField");
+const organizationName = document.getElementById("organizationName");
+const submitBtn = document.getElementById("submitBtn");
+const formError = document.getElementById("formError");
+let selectedRole = "";
+
+const fieldRules = [
+  { input: document.getElementById("firstName"), error: document.getElementById("firstNameError"), valid: value => value.trim().length >= 2 },
+  { input: document.getElementById("lastName"), error: document.getElementById("lastNameError"), valid: value => value.trim().length >= 2 },
+  { input: document.getElementById("email"), error: document.getElementById("emailError"), valid: value => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim()) },
+  { input: document.getElementById("phone"), error: document.getElementById("phoneError"), valid: value => /^[+\d][\d\s()-]{7,19}$/.test(value.trim()) },
+  { input: document.getElementById("password"), error: document.getElementById("passwordError"), valid: value => value.length >= 8 },
+  { input: document.getElementById("confirmPassword"), error: document.getElementById("confirmPasswordError"), valid: value => value === document.getElementById("password").value && value.length > 0 },
+];
+
+function setFieldState(rule) {
+  const valid = rule.valid(rule.input.value);
+  rule.input.classList.toggle("error", !valid);
+  rule.error.classList.toggle("show", !valid);
+  return valid;
+}
+
+function validate() {
+  const valid = fieldRules.map(setFieldState).every(Boolean);
+  const isOrganization = selectedRole === "donor" && document.querySelector('input[name="donorType"]:checked')?.value === "organization";
+  const organizationValid = !isOrganization || organizationName.value.trim().length >= 2;
+  organizationName.classList.toggle("error", !organizationValid);
+  document.getElementById("organizationNameError").classList.toggle("show", !organizationValid);
+  return valid && organizationValid;
+}
+
+function chooseRole(role) {
+  selectedRole = role;
+  roleInput.value = role;
+  document.querySelectorAll(".role-card").forEach(card => {
+    const active = card.dataset.role === role;
+    card.classList.toggle("selected", active);
+    card.setAttribute("aria-pressed", String(active));
+  });
+  document.getElementById("roleError").classList.remove("show");
+  roleStep.classList.add("hidden");
+  roleStep.setAttribute("aria-hidden", "true");
+  formStep.classList.remove("hidden");
+  formStep.setAttribute("aria-hidden", "false");
+  const donor = role === "donor";
+  document.getElementById("badgeText").textContent = donor ? "انضم كمتبرع" : "انضم كمستفيد";
+  document.getElementById("formTitle").textContent = donor ? "إنشاء حساب متبرع" : "إنشاء حساب مستفيد";
+  document.getElementById("formSubtitle").textContent = donor ? "أدخل بياناتك للبدء في تقديم الدعم." : "أدخل بياناتك للبدء في الاستفادة من الدعم.";
+  document.querySelector(".btn-text").textContent = donor ? "إنشاء حساب متبرع" : "إنشاء حساب مستفيد";
+  donorFields.classList.toggle("hidden", !donor);
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+document.querySelectorAll(".role-card").forEach(card => card.addEventListener("click", () => chooseRole(card.dataset.role)));
+document.getElementById("backToRoles").addEventListener("click", () => {
+  formStep.classList.add("hidden");
+  formStep.setAttribute("aria-hidden", "true");
+  roleStep.classList.remove("hidden");
+  roleStep.setAttribute("aria-hidden", "false");
+});
+
+document.querySelectorAll('input[name="donorType"]').forEach(input => input.addEventListener("change", () => {
+  const isOrganization = input.value === "organization" && input.checked;
+  organizationField.classList.toggle("hidden", !isOrganization);
+  organizationName.required = isOrganization;
+  if (!isOrganization) {
+    organizationName.value = "";
+    organizationName.classList.remove("error");
+    document.getElementById("organizationNameError").classList.remove("show");
+  }
+}));
+
+document.querySelectorAll("[data-toggle-password]").forEach(button => button.addEventListener("click", () => {
+  const input = document.getElementById(button.dataset.togglePassword);
+  const isHidden = input.type === "password";
+  input.type = isHidden ? "text" : "password";
+  button.innerHTML = `<svg data-feather="${isHidden ? "eye-off" : "eye"}"></svg>`;
+  feather.replace();
+}));
+
+fieldRules.forEach(rule => rule.input.addEventListener("input", () => {
+  if (rule.input.classList.contains("error")) setFieldState(rule);
+  if (rule.input.id === "password" && document.getElementById("confirmPassword").value) setFieldState(fieldRules[5]);
+}));
+
+form.addEventListener("submit", async event => {
+  event.preventDefault();
+  formError.classList.remove("show");
+  if (!selectedRole || !validate()) return;
+  submitBtn.classList.add("loading");
+  submitBtn.disabled = true;
+  const donorType = document.querySelector('input[name="donorType"]:checked')?.value;
+  try {
+    const response = await fetch("/api/auth/signup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        role: selectedRole,
+        firstName: document.getElementById("firstName").value.trim(),
+        lastName: document.getElementById("lastName").value.trim(),
+        email: document.getElementById("email").value.trim(),
+        phone: document.getElementById("phone").value.trim(),
+        password: document.getElementById("password").value,
+        donorType: selectedRole === "donor" ? donorType : undefined,
+        organizationName: selectedRole === "donor" && donorType === "organization" ? organizationName.value.trim() : undefined,
+      }),
+    });
+    const payload = await response.json();
+    if (!response.ok) {
+      formError.textContent = payload.message || "تعذر إنشاء الحساب.";
+      formError.classList.add("show");
+      return;
+    }
+    window.location.assign("/donations");
+  } catch {
+    formError.textContent = "تعذر الاتصال بالخادم. حاول مرة أخرى.";
+    formError.classList.add("show");
+  } finally {
+    submitBtn.classList.remove("loading");
+    submitBtn.disabled = false;
+  }
+});
