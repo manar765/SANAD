@@ -5,6 +5,15 @@ import { promisify } from "node:util";
 import express from "express";
 import pool from "./database/index.js";
 import { migrate } from "./database/schema.js";
+import {
+  authenticateUser,
+  changeUserPassword,
+  editUserProfile,
+  getUserIdByEmail,
+  getUserPasswordRecord,
+  getUserProfile,
+  registerUser,
+} from "./user-service.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.join(__dirname, "..");
@@ -572,46 +581,19 @@ app.post("/api/auth/signup", async (req, res) => {
     return res.status(400).json({ message: "Organization name is required." });
   }
 
-  const client = await pool.connect();
   try {
     const passwordHash = await hashPassword(password);
-    await client.query("BEGIN");
-    const result = await client.query(
-      `INSERT INTO users (name, first_name, last_name, full_name, email, password, password_hash, phone, role)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-       RETURNING id, name, first_name, last_name, full_name, email, phone, role`,
-      [
-        fullName,
-        firstName,
-        lastName,
-        fullName,
-        email,
-        passwordHash,
-        passwordHash,
-        phone,
-        role,
-      ],
-    );
-    const user = result.rows[0];
-
-    if (role === "donor") {
-      await client.query(
-        `INSERT INTO donor_profiles (user_id, donor_type, organization_name)
-         VALUES ($1, $2, NULLIF($3, ''))`,
-        [
-          user.id,
-          donorType,
-          donorType === "organization" ? organizationName : "",
-        ],
-      );
-    } else {
-      await client.query(
-        "INSERT INTO beneficiary_profiles (user_id) VALUES ($1)",
-        [user.id],
-      );
-    }
-
-    await client.query("COMMIT");
+    const user = await registerUser({
+      firstName,
+      lastName,
+      fullName,
+      email,
+      passwordHash,
+      phone,
+      role,
+      donorType,
+      organizationName,
+    });
     setSessionCookie(
       res,
       await createSession({ id: user.id, role: user.role, email: user.email, name: fullName }),
@@ -619,7 +601,6 @@ app.post("/api/auth/signup", async (req, res) => {
     await recordAuditEvent(req, { userId: user.id, action: "signup_success", metadata: { role: user.role } });
     return res.status(201).json({ user });
   } catch (error) {
-    await client.query("ROLLBACK");
     if (error.code === "23505") {
       return res
         .status(409)
@@ -630,8 +611,6 @@ app.post("/api/auth/signup", async (req, res) => {
     return res
       .status(503)
       .json({ message: "Registration is temporarily unavailable." });
-  } finally {
-    client.release();
   }
 });
 
@@ -690,12 +669,7 @@ app.post("/api/auth/sessions/revoke-others", requireAuth, requireCsrf, async (re
 app.get("/api/profile", requireAuth, async (req, res) => {
   if (!req.user.id) return res.status(404).json({ message: "Profile not found." });
   try {
-    const result = await pool.query(
-      `SELECT id, first_name, last_name, full_name, email, phone, role
-       FROM users WHERE id = $1`,
-      [req.user.id],
-    );
-    const user = result.rows[0];
+    const user = await getUserProfile(req.user.id);
     if (!user) return res.status(404).json({ message: "Profile not found." });
     return res.json({ user });
   } catch (error) {
@@ -717,14 +691,13 @@ app.patch("/api/profile", requireAuth, requireCsrf, async (req, res) => {
   }
   const fullName = `${firstName} ${lastName}`.trim();
   try {
-    const result = await pool.query(
-      `UPDATE users
-       SET first_name = $1, last_name = $2, full_name = $3, name = $3, phone = $4
-       WHERE id = $5
-       RETURNING id, first_name, last_name, full_name, email, phone, role`,
-      [firstName, lastName, fullName, phone || null, req.user.id],
-    );
-    const user = result.rows[0];
+    const user = await editUserProfile({
+      userId: req.user.id,
+      firstName,
+      lastName,
+      fullName,
+      phone,
+    });
     if (!user) return res.status(404).json({ message: "Profile not found." });
     const token = parseCookies(req)[SESSION_COOKIE];
     if (token) {
@@ -749,14 +722,13 @@ app.post("/api/profile/password", requireAuth, requireCsrf, async (req, res) => 
   if (!isValidPassword(newPassword)) return res.status(400).json({ message: "The new password must be between 8 and 128 characters." });
   if (newPassword !== confirmPassword) return res.status(400).json({ message: "Password confirmation does not match." });
   try {
-    const result = await pool.query("SELECT password_hash, password FROM users WHERE id = $1", [req.user.id]);
-    const user = result.rows[0];
+    const user = await getUserPasswordRecord(req.user.id);
     const storedHash = user?.password_hash || user?.password;
     if (!user || !(await passwordMatches(currentPassword, storedHash))) {
       return res.status(401).json({ message: "The current password is incorrect." });
     }
     const passwordHash = await hashPassword(newPassword);
-    await pool.query("UPDATE users SET password_hash = $1, password = $1 WHERE id = $2", [passwordHash, req.user.id]);
+    await changeUserPassword(req.user.id, passwordHash);
     await recordAuditEvent(req, { userId: req.user.id, action: "password_changed" });
     return res.json({ message: "Password changed successfully." });
   } catch (error) {
@@ -785,17 +757,16 @@ app.post("/api/auth/forgot-password", async (req, res) => {
   if (!isValidEmail(email)) return res.json({ message: genericMessage });
 
   try {
-    const result = await pool.query("SELECT id FROM users WHERE email = $1", [email]);
-    const user = result.rows[0];
-    if (!user) return res.json({ message: genericMessage });
+    const userId = await getUserIdByEmail(email);
+    if (!userId) return res.json({ message: genericMessage });
 
     for (const [tokenHash, record] of resetTokens) {
-      if (record.userId === user.id) resetTokens.delete(tokenHash);
+      if (record.userId === userId) resetTokens.delete(tokenHash);
     }
 
     const token = randomBytes(32).toString("hex");
     resetTokens.set(hashSessionToken(token), {
-      userId: user.id,
+      userId,
       expiresAt: Date.now() + RESET_TOKEN_TTL_MS,
     });
     const baseUrl = process.env.APP_URL || `${req.protocol}://${req.get("host")}`;
@@ -836,11 +807,8 @@ app.post("/api/auth/reset-password", async (req, res) => {
 
   try {
     const passwordHash = await hashPassword(newPassword);
-    const result = await pool.query(
-      "UPDATE users SET password_hash = $1, password = $1 WHERE id = $2 RETURNING id",
-      [passwordHash, record.userId],
-    );
-    if (!result.rows[0]) return res.status(400).json({ message: "This reset link is invalid or has expired." });
+    const user = await changeUserPassword(record.userId, passwordHash);
+    if (!user) return res.status(400).json({ message: "This reset link is invalid or has expired." });
     await pool.query("DELETE FROM user_sessions WHERE user_id = $1", [record.userId]);
     await recordAuditEvent(req, { userId: record.userId, action: "password_reset_success" });
     return res.json({ message: "Password reset successfully. You can now log in." });
@@ -873,12 +841,7 @@ app.post("/api/auth/login", async (req, res) => {
   }
 
   try {
-    const result = await pool.query(
-      `SELECT id, name, first_name, last_name, full_name, email, password_hash, role
-       FROM users WHERE email = $1`,
-      [email],
-    );
-    const user = result.rows[0];
+    const user = await authenticateUser(email);
 
     if (!user || !(await passwordMatches(password, user.password_hash))) {
       recordLoginFailure(attemptKey);
