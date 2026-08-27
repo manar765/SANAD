@@ -41,6 +41,81 @@ document.addEventListener("DOMContentLoaded", async () => {
         setStatus(profileStatus, error.message === "SESSION_EXPIRED" ? "انتهت الجلسة، برجاء تسجيل الدخول مرة أخرى." : "تعذر تحميل بيانات الحساب.", "error");
     }
 
+    const sessionsList = document.getElementById("sessionsList");
+    const sessionsStatus = document.getElementById("sessionsStatus");
+    const revokeOtherSessions = document.getElementById("revokeOtherSessions");
+
+    const formatSessionDate = value => {
+        const date = new Date(value);
+        return Number.isNaN(date.getTime()) ? "غير متاح" : date.toLocaleString("ar-EG", { dateStyle: "medium", timeStyle: "short" });
+    };
+
+    const renderSessions = sessions => {
+        if (!sessionsList) return;
+        sessionsList.replaceChildren();
+        if (!sessions.length) {
+            const empty = document.createElement("p");
+            empty.className = "sessions-empty";
+            empty.textContent = "لا توجد جلسات نشطة.";
+            sessionsList.appendChild(empty);
+            return;
+        }
+        sessions.forEach(session => {
+            const item = document.createElement("article");
+            item.className = `session-item${session.current ? " current" : ""}`;
+            const icon = document.createElement("span");
+            icon.className = "session-icon";
+            icon.innerHTML = '<i class="fa-solid fa-desktop" aria-hidden="true"></i>';
+            const details = document.createElement("div");
+            details.className = "session-details";
+            const title = document.createElement("strong");
+            title.textContent = session.current ? "الجلسة الحالية" : "جلسة مسجلة الدخول";
+            const metadata = document.createElement("span");
+            metadata.textContent = `آخر نشاط: ${formatSessionDate(session.lastSeenAt)} — تنتهي: ${formatSessionDate(session.expiresAt)}`;
+            details.append(title, metadata);
+            const badge = document.createElement("span");
+            badge.className = "session-badge";
+            badge.textContent = session.rememberMe ? "تذكرني" : "جلسة عادية";
+            item.append(icon, details, badge);
+            sessionsList.appendChild(item);
+        });
+    };
+
+    const loadSessions = async () => {
+        if (!sessionsList) return;
+        try {
+            const response = await fetch("/api/auth/sessions", { credentials: "same-origin", headers: { Accept: "application/json" } });
+            if (!response.ok) throw new Error("تعذر تحميل الجلسات.");
+            const payload = await response.json();
+            renderSessions(payload.sessions || []);
+        } catch (error) {
+            sessionsList.textContent = error.message;
+        }
+    };
+
+    revokeOtherSessions?.addEventListener("click", async () => {
+        revokeOtherSessions.disabled = true;
+        setStatus(sessionsStatus, "جارٍ إنهاء الجلسات الأخرى…");
+        try {
+            const csrfToken = await getCsrfToken();
+            const response = await fetch("/api/auth/sessions/revoke-others", {
+                method: "POST",
+                credentials: "same-origin",
+                headers: { Accept: "application/json", "X-CSRF-Token": csrfToken },
+            });
+            const payload = await response.json();
+            if (!response.ok) throw new Error(payload.message || "تعذر إنهاء الجلسات الأخرى.");
+            setStatus(sessionsStatus, `تم إنهاء ${payload.revoked} جلسة أخرى.`, "success");
+            await loadSessions();
+        } catch (error) {
+            setStatus(sessionsStatus, error.message, "error");
+        } finally {
+            revokeOtherSessions.disabled = false;
+        }
+    });
+
+    await loadSessions();
+
     profileForm?.addEventListener("submit", async event => {
         event.preventDefault();
         setStatus(profileStatus, "جارٍ حفظ التعديلات…");

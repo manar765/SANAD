@@ -478,6 +478,47 @@ app.get("/api/auth/csrf", requireAuth, (req, res) => {
   return res.json({ csrfToken: req.user.csrfToken });
 });
 
+app.get("/api/auth/sessions", requireAuth, async (req, res) => {
+  const currentToken = parseCookies(req)[SESSION_COOKIE];
+  const currentTokenHash = currentToken ? hashSessionToken(currentToken) : "";
+  try {
+    const result = await pool.query(
+      `SELECT token_hash AS "sessionId", created_at AS "createdAt",
+              last_seen_at AS "lastSeenAt", expires_at AS "expiresAt",
+              remember_me AS "rememberMe",
+              token_hash = $1 AS "current"
+       FROM user_sessions
+       WHERE (user_id = $2)
+          OR (user_id IS NULL AND role = $3 AND email = $4)
+       ORDER BY last_seen_at DESC`,
+      [currentTokenHash, req.user.id || null, req.user.role, req.user.email],
+    );
+    return res.json({
+      sessions: result.rows.map(({ sessionId: _sessionId, ...session }) => session),
+    });
+  } catch (error) {
+    console.error("Session listing failed:", error);
+    return res.status(503).json({ message: "Sessions are temporarily unavailable." });
+  }
+});
+
+app.post("/api/auth/sessions/revoke-others", requireAuth, requireCsrf, async (req, res) => {
+  const currentToken = parseCookies(req)[SESSION_COOKIE];
+  const currentTokenHash = currentToken ? hashSessionToken(currentToken) : "";
+  try {
+    const result = await pool.query(
+      `DELETE FROM user_sessions
+       WHERE token_hash <> $1
+         AND ((user_id = $2) OR (user_id IS NULL AND role = $3 AND email = $4))`,
+      [currentTokenHash, req.user.id || null, req.user.role, req.user.email],
+    );
+    return res.json({ revoked: result.rowCount });
+  } catch (error) {
+    console.error("Other-session revocation failed:", error);
+    return res.status(503).json({ message: "Other sessions could not be revoked." });
+  }
+});
+
 app.get("/api/profile", requireAuth, async (req, res) => {
   if (!req.user.id) return res.status(404).json({ message: "Profile not found." });
   try {

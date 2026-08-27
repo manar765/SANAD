@@ -108,6 +108,24 @@
                         </form>
                     </section>
                 </div>
+
+                <section class="profile-card sessions-card" aria-labelledby="sessionsTitle">
+                    <div class="profile-card-heading sessions-heading">
+                        <div class="profile-icon profile-icon-blue"><i class="fa-solid fa-shield-halved"></i></div>
+                        <div>
+                            <h2 id="sessionsTitle">الجلسات النشطة</h2>
+                            <p>راجع أماكن تسجيل الدخول وألغِ الجلسات الأخرى عند الحاجة.</p>
+                        </div>
+                        <button class="btn btn-outline sessions-revoke" id="revokeOtherSessions" type="button">
+                            <i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i>
+                            تسجيل الخروج من الجلسات الأخرى
+                        </button>
+                    </div>
+                    <div class="sessions-list" id="sessionsList" aria-live="polite">
+                        <p class="sessions-empty">جارٍ تحميل الجلسات…</p>
+                    </div>
+                    <p class="profile-status" id="sessionsStatus" role="status" aria-live="polite"></p>
+                </section>
             </div>
         </main>
 

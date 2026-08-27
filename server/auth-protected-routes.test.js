@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { once } from "node:events";
 import { Pool } from "pg";
+import { migrate } from "./database/schema.js";
 
 const port = 3137;
 const baseUrl = `http://127.0.0.1:${port}`;
@@ -130,6 +131,26 @@ after(async () => {
         server.kill("SIGTERM");
         await once(server, "exit").catch(() => { });
     }
+});
+
+test("reruns migrations safely and preserves the required schema", async () => {
+    await migrate();
+    await migrate();
+    const tables = await pool.query(
+        `SELECT table_name FROM information_schema.tables
+     WHERE table_schema = 'public'
+       AND table_name = ANY($1::text[])`,
+        [["organizations", "users", "donor_profiles", "beneficiary_profiles", "user_sessions"]],
+    );
+    assert.equal(tables.rowCount, 5);
+
+    const columns = await pool.query(
+        `SELECT column_name FROM information_schema.columns
+     WHERE table_schema = 'public' AND table_name = 'user_sessions'
+       AND column_name = ANY($1::text[])`,
+        [["token_hash", "csrf_token", "remember_me", "last_seen_at", "expires_at"]],
+    );
+    assert.equal(columns.rowCount, 5);
 });
 
 test("removes expired sessions during server startup cleanup", async () => {
@@ -331,4 +352,38 @@ test("rejects malformed server-side input while accepting Arabic names", async (
         (await invalidRecovery.json()).message,
         "If an account exists for this email, a reset link has been created.",
     );
+});
+
+test("lists sessions without tokens and revokes other sessions securely", async () => {
+    const first = await login(users.donor);
+    const second = await login(users.donor);
+
+    const listed = await request("/api/auth/sessions", { headers: { Cookie: second.cookie } });
+    assert.equal(listed.status, 200);
+    const sessions = (await listed.json()).sessions;
+    assert.ok(sessions.length >= 2);
+    assert.equal(sessions.filter(session => session.current).length, 1);
+    assert.ok(sessions.every(session => !session.sessionId && !session.tokenHash));
+
+    const missingCsrf = await request("/api/auth/sessions/revoke-others", {
+        method: "POST",
+        headers: { Cookie: second.cookie },
+    });
+    assert.equal(missingCsrf.status, 403);
+
+    const revoke = await request("/api/auth/sessions/revoke-others", {
+        method: "POST",
+        headers: {
+            Cookie: second.cookie,
+            "X-CSRF-Token": await csrf(second.cookie),
+        },
+    });
+    assert.equal(revoke.status, 200);
+    assert.ok((await revoke.json()).revoked >= 1);
+
+    const oldSession = await request("/api/auth/me", { headers: { Cookie: first.cookie } });
+    assert.equal(oldSession.status, 401);
+    const remaining = await request("/api/auth/sessions", { headers: { Cookie: second.cookie } });
+    assert.equal((await remaining.json()).sessions.length, 1);
+    await logout(second.cookie);
 });
