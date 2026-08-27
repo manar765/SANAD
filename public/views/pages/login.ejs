@@ -52,6 +52,7 @@
                     <p class="sub">أدخل بياناتك للوصول إلى لوحة التحكم</p>
 
                     <form id="loginForm" novalidate>
+
                         <div class="field-group">
                             <label class="field-label" for="email">البريد الإلكتروني</label>
                             <input class="field" id="email" name="email" type="email"
@@ -85,8 +86,19 @@
                             <span class="spinner"></span>
                         </button>
                     </form>
+                    <form id="mfaLoginForm" class="mfa-login-form" hidden novalidate>
+                        <p class="sub">أدخل الرمز الظاهر في تطبيق المصادقة، أو استخدم رمز استرداد.</p>
+                        <div class="field-group">
+                            <label class="field-label" for="mfaLoginCode">رمز المصادقة</label>
+                            <input class="field" id="mfaLoginCode" inputmode="numeric" autocomplete="one-time-code"
+                                maxlength="12" required>
+                            <div class="error-msg" id="mfaLoginError"></div>
+                        </div>
+                        <button type="submit" class="btn btn-primary" id="mfaLoginSubmit">تأكيد الرمز</button>
+                    </form>
 
                     <p class="signup-line">لا يوجد حساب؟ <a href="/signup">إنشاء حساب جديد</a></p>
+
                 </div>
             </div>
 

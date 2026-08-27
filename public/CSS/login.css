@@ -740,3 +740,19 @@ html[data-theme="dark"] .password-toggle:focus-visible {
     background: #29463B;
     color: #B7E6CD;
 }
+
+.mfa-login-form {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border, #dbe8e1);
+}
+
+.mfa-login-form[hidden] {
+    display: none !important;
+}
+
+.mfa-login-form .field {
+    text-align: center;
+    letter-spacing: .18em;
+    font-variant-numeric: tabular-nums;
+}

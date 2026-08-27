@@ -82,6 +82,25 @@ export async function migrate() {
       );
     `);
     await client.query(`
+      CREATE TABLE IF NOT EXISTS user_mfa (
+        user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+        secret_ciphertext TEXT NOT NULL,
+        recovery_code_hashes TEXT[] NOT NULL DEFAULT '{}',
+        enabled_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+    `);
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS mfa_challenges (
+        challenge_hash TEXT PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        remember_me BOOLEAN NOT NULL DEFAULT FALSE,
+        expires_at TIMESTAMPTZ NOT NULL,
+        attempts INTEGER NOT NULL DEFAULT 0,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+    `);
+    await client.query(`
       CREATE TABLE IF NOT EXISTS user_sessions (
         token_hash TEXT PRIMARY KEY,
         user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
@@ -129,6 +148,9 @@ export async function migrate() {
       );
     `);
     await client.query(`ALTER TABLE user_sessions ADD COLUMN IF NOT EXISTS remember_me BOOLEAN NOT NULL DEFAULT FALSE`);
+    await client.query(`ALTER TABLE user_mfa ALTER COLUMN enabled_at DROP NOT NULL`);
+    await client.query(`CREATE INDEX IF NOT EXISTS user_mfa_updated_at_idx ON user_mfa (updated_at)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS mfa_challenges_user_expires_idx ON mfa_challenges (user_id, expires_at)`);
     await client.query(`CREATE INDEX IF NOT EXISTS email_verification_tokens_user_idx ON email_verification_tokens (user_id, expires_at)`);
     await client.query(`CREATE INDEX IF NOT EXISTS email_verification_tokens_expires_at_idx ON email_verification_tokens (expires_at)`);
     await client.query(`CREATE INDEX IF NOT EXISTS user_sessions_expires_at_idx ON user_sessions (expires_at)`);

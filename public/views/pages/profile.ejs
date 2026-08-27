@@ -110,6 +110,46 @@
                     </section>
                 </div>
 
+                <section class="profile-card mfa-card" aria-labelledby="mfaTitle">
+                    <div class="profile-card-heading">
+                        <div class="profile-icon profile-icon-blue"><i class="fa-solid fa-mobile-screen-button"></i>
+                        </div>
+                        <div>
+                            <h2 id="mfaTitle">المصادقة الثنائية</h2>
+                            <p>أضف طبقة حماية إضافية باستخدام تطبيق Authenticator.</p>
+                        </div>
+                    </div>
+                    <p id="mfaStatus" class="profile-status" role="status" aria-live="polite"></p>
+                    <div id="mfaDisabledState">
+                        <button class="btn btn-primary" id="startMfaSetup" type="button">إعداد المصادقة
+                            الثنائية</button>
+                    </div>
+                    <div id="mfaSetupState" hidden>
+                        <p>أضف هذا المفتاح إلى Google Authenticator أو Microsoft Authenticator:</p>
+                        <code id="mfaSecret" class="mfa-secret"></code>
+                        <p class="mfa-uri-label">أو استخدم URI التالي:</p>
+                        <textarea id="mfaUri" class="mfa-uri" readonly
+                            aria-label="رابط إعداد المصادقة الثنائية"></textarea>
+                        <p>احتفظ برموز الاسترداد التالية في مكان آمن. كل رمز يُستخدم مرة واحدة.</p>
+                        <pre id="mfaRecoveryCodes" class="mfa-recovery-codes"></pre>
+                        <form id="mfaEnableForm" class="mfa-enable-form">
+                            <label>رمز التطبيق<input id="mfaCode" inputmode="numeric" autocomplete="one-time-code"
+                                    maxlength="6" required></label>
+                            <input type="hidden" id="mfaSetupToken">
+                            <button class="btn btn-primary" type="submit">تأكيد وتفعيل المصادقة الثنائية</button>
+                        </form>
+                    </div>
+                    <div id="mfaEnabledState" hidden>
+                        <p class="mfa-enabled-label"><i class="fa-solid fa-circle-check"></i> المصادقة الثنائية مفعّلة
+                        </p>
+                        <form id="mfaDisableForm">
+                            <label>كلمة المرور للتأكيد<input id="mfaDisablePassword" type="password"
+                                    autocomplete="current-password" required></label>
+                            <button class="btn btn-outline" type="submit">تعطيل المصادقة الثنائية</button>
+                        </form>
+                    </div>
+                </section>
+
                 <section class="profile-card sessions-card" aria-labelledby="sessionsTitle">
                     <div class="profile-card-heading sessions-heading">
                         <div class="profile-icon profile-icon-blue"><i class="fa-solid fa-shield-halved"></i></div>
@@ -133,6 +173,7 @@
         <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/js/all.min.js"></script>
         <script src="/JS/password-toggle.js"></script>
         <script src="/JS/profile.js"></script>
+        <script src="/JS/mfa.js"></script>
         <script src="/JS/logout.js"></script>
         <script src="/JS/preferences.js"></script>
     </body>

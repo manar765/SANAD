@@ -419,6 +419,41 @@
     }
 }
 
+.mfa-card {
+    grid-column: 1 / -1;
+}
+
+.mfa-secret,
+.mfa-recovery-codes,
+.mfa-uri {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    margin: .75rem 0;
+    padding: .8rem;
+    border-radius: .65rem;
+    background: var(--bg-soft, #f4f7f6);
+    color: var(--text-dark);
+    overflow-wrap: anywhere;
+}
+
+.mfa-recovery-codes {
+    letter-spacing: .1em;
+    white-space: pre-wrap;
+}
+
+.mfa-uri {
+    min-height: 4.5rem;
+    resize: vertical;
+    direction: ltr;
+    text-align: left;
+}
+
+.mfa-enabled-label {
+    color: var(--green);
+    font-weight: 700;
+}
+
 /* ---------- active sessions ---------- */
 .sessions-card {
     margin-top: 24px;

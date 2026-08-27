@@ -8,6 +8,10 @@ const passwordError = document.getElementById('passwordError');
 const togglePass = document.getElementById('togglePass');
 const submitBtn = document.getElementById('submitBtn');
 const rememberMe = document.getElementById('remember');
+const mfaForm = document.getElementById('mfaLoginForm');
+const mfaCode = document.getElementById('mfaLoginCode');
+const mfaError = document.getElementById('mfaLoginError');
+let mfaChallengeToken = '';
 
 togglePass.addEventListener('click', () => {
     const isHidden = password.type === 'password';
@@ -72,6 +76,14 @@ form.addEventListener('submit', async (e) => {
 
         const payload = await response.json();
 
+        if (response.status === 202 && payload.mfaRequired) {
+            mfaChallengeToken = payload.challengeToken;
+            form.hidden = true;
+            mfaForm.hidden = false;
+            mfaCode.focus();
+            return;
+        }
+
         if (!response.ok) {
             password.classList.add('error');
             passwordError.textContent = payload.message || 'البريد الإلكتروني أو كلمة المرور غير صحيحة.';
@@ -88,5 +100,29 @@ form.addEventListener('submit', async (e) => {
     } finally {
         submitBtn.classList.remove('loading');
         submitBtn.disabled = false;
+    }
+});
+
+mfaForm?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    mfaError.textContent = '';
+    mfaError.classList.remove('show');
+    try {
+        const response = await fetch('/api/auth/mfa/verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ challengeToken: mfaChallengeToken, code: mfaCode.value.trim() }),
+        });
+        const payload = await response.json();
+        if (!response.ok) {
+            mfaError.textContent = payload.message || 'رمز المصادقة غير صحيح.';
+            mfaError.classList.add('show');
+            return;
+        }
+        localStorage.setItem('sanadUser', JSON.stringify(payload.user || { role: payload.role, email: email.value.trim() }));
+        window.location.assign(payload.role === 'admin' ? '/admin-requests' : '/donations');
+    } catch {
+        mfaError.textContent = 'تعذر الاتصال بالخادم. حاول مرة أخرى.';
+        mfaError.classList.add('show');
     }
 });

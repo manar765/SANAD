@@ -7,14 +7,34 @@ import pool from "./database/index.js";
 import { migrate } from "./database/schema.js";
 import { sendVerificationEmail } from "./email-service.js";
 import {
+  createChallenge,
+  createOtpAuthUri,
+  createRecoveryCodes,
+  createTotpSecret,
+  decryptSecret,
+  encryptSecret,
+  hashRecoveryCode,
+  MFA_MAX_ATTEMPTS,
+  verifyTotpCode,
+} from "./mfa-service.js";
+import {
   authenticateUser,
+  authenticateUserById,
+  countChallengeAttempt,
   changeUserPassword,
   editUserProfile,
   getUserIdByEmail,
   getUserPasswordRecord,
   getUserProfile,
+  finishMfaChallenge,
+  getChallenge,
+  getMfaSettings,
   registerUser,
   issueEmailVerificationToken,
+  removeMfaSettings,
+  saveMfaSettings,
+  startMfaChallenge,
+  useRecoveryCode,
   verifyEmailToken,
 } from "./user-service.js";
 
@@ -738,6 +758,66 @@ app.post("/api/auth/sessions/revoke-others", requireAuth, requireCsrf, async (re
   }
 });
 
+app.get("/api/profile/mfa", requireAuth, async (req, res) => {
+  const settings = await getMfaSettings(req.user.id);
+  return res.json({ enabled: Boolean(settings), enabledAt: settings?.enabled_at || null });
+});
+
+app.post("/api/profile/mfa/setup", requireAuth, requireCsrf, async (req, res) => {
+  try {
+    const existing = await getMfaSettings(req.user.id);
+    if (existing?.enabled_at) return res.status(409).json({ message: "MFA is already enabled." });
+    const secret = createTotpSecret();
+    const recoveryCodes = createRecoveryCodes();
+    const pendingToken = randomBytes(32).toString("hex");
+    await startMfaChallenge(hashSessionToken(pendingToken), req.user.id, false, new Date(Date.now() + 10 * 60 * 1000));
+    await saveMfaSettings(req.user.id, encryptSecret(`${pendingToken}:${secret}`), recoveryCodes.map(hashRecoveryCode));
+    return res.json({ secret, otpauthUri: createOtpAuthUri(secret, req.user.email), recoveryCodes, setupToken: pendingToken });
+  } catch (error) {
+    console.error("MFA setup failed:", error);
+    return res.status(503).json({ message: "MFA setup is temporarily unavailable." });
+  }
+});
+
+app.post("/api/profile/mfa/enable", requireAuth, requireCsrf, async (req, res) => {
+  const code = String(req.body?.code || "");
+  const setupToken = String(req.body?.setupToken || "");
+  try {
+    const settings = await getMfaSettings(req.user.id);
+    if (!settings || settings.enabled_at) return res.status(400).json({ message: "Start MFA setup first." });
+    const setupChallenge = await getChallenge(hashSessionToken(setupToken));
+    const combined = decryptSecret(settings.secret_ciphertext);
+    const separator = combined.indexOf(":");
+    const secret = combined.slice(separator + 1);
+    if (!setupChallenge || new Date(setupChallenge.expires_at).getTime() <= Date.now() || combined.slice(0, separator) !== setupToken || !verifyTotpCode(secret, code)) {
+      return res.status(400).json({ message: "The authenticator code is incorrect." });
+    }
+    await saveMfaSettings(req.user.id, encryptSecret(secret), settings.recovery_code_hashes, new Date());
+    await finishMfaChallenge(setupChallenge.challenge_hash);
+    await recordAuditEvent(req, { userId: req.user.id, action: "mfa_enabled" });
+    return res.json({ message: "MFA enabled successfully." });
+  } catch (error) {
+    console.error("MFA enable failed:", error);
+    return res.status(503).json({ message: "MFA could not be enabled." });
+  }
+});
+
+app.post("/api/profile/mfa/disable", requireAuth, requireCsrf, async (req, res) => {
+  const password = String(req.body?.password || "");
+  try {
+    const user = await getUserPasswordRecord(req.user.id);
+    if (!user || !(await passwordMatches(password, user.password_hash || user.password))) {
+      return res.status(401).json({ message: "The password is incorrect." });
+    }
+    await removeMfaSettings(req.user.id);
+    await recordAuditEvent(req, { userId: req.user.id, action: "mfa_disabled" });
+    return res.json({ message: "MFA disabled successfully." });
+  } catch (error) {
+    console.error("MFA disable failed:", error);
+    return res.status(503).json({ message: "MFA could not be disabled." });
+  }
+});
+
 app.get("/api/profile", requireAuth, async (req, res) => {
   if (!req.user.id) return res.status(404).json({ message: "Profile not found." });
   try {
@@ -890,6 +970,37 @@ app.post("/api/auth/reset-password", async (req, res) => {
   }
 });
 
+app.post("/api/auth/mfa/verify", async (req, res) => {
+  const challengeToken = String(req.body?.challengeToken || "");
+  const code = String(req.body?.code || "");
+  if (!/^[a-f0-9]{64}$/i.test(challengeToken)) return res.status(401).json({ message: "Invalid MFA challenge." });
+  try {
+    const challenge = await getChallenge(hashSessionToken(challengeToken));
+    if (!challenge || new Date(challenge.expires_at).getTime() <= Date.now() || challenge.attempts >= MFA_MAX_ATTEMPTS) {
+      return res.status(401).json({ message: "This MFA challenge is invalid or expired." });
+    }
+    const mfa = await getMfaSettings(challenge.user_id);
+    const validTotp = mfa && verifyTotpCode(decryptSecret(mfa.secret_ciphertext), code);
+    const validRecovery = mfa && !validTotp && await useRecoveryCode(challenge.user_id, hashRecoveryCode(code));
+    if (!validTotp && !validRecovery) {
+      const attempts = await countChallengeAttempt(challenge.challenge_hash);
+      if (attempts >= MFA_MAX_ATTEMPTS) await finishMfaChallenge(challenge.challenge_hash);
+      return res.status(401).json({ message: "The MFA code is incorrect." });
+    }
+    const user = await authenticateUserById(challenge.user_id);
+    await finishMfaChallenge(challenge.challenge_hash);
+    await rotateSession(req, res, {
+      id: user.id, role: user.role, email: user.email, emailVerified: Boolean(user.email_verified_at),
+      name: user.full_name, firstName: user.first_name, lastName: user.last_name,
+    }, challenge.remember_me);
+    await recordAuditEvent(req, { userId: user.id, action: "mfa_login_success", metadata: { recoveryCode: Boolean(validRecovery) } });
+    return res.json({ role: user.role, user: { id: user.id, name: resolveDisplayName(user), email: user.email } });
+  } catch (error) {
+    console.error("MFA verification failed:", error);
+    return res.status(503).json({ message: "MFA verification is temporarily unavailable." });
+  }
+});
+
 app.post("/api/auth/login", async (req, res) => {
   const email = String(req.body?.email || "")
     .trim()
@@ -924,6 +1035,15 @@ app.post("/api/auth/login", async (req, res) => {
     if (REQUIRE_EMAIL_VERIFICATION && !user.email_verified_at) {
       await recordAuditEvent(req, { action: "login_unverified_email", success: false });
       return res.status(403).json({ message: "Please verify your email before logging in." });
+    }
+
+    const mfa = await getMfaSettings(user.id);
+    if (mfa?.enabled_at) {
+      clearLoginFailures(attemptKey);
+      const challenge = createChallenge();
+      await startMfaChallenge(challenge.tokenHash, user.id, rememberMe, challenge.expiresAt);
+      await recordAuditEvent(req, { userId: user.id, action: "mfa_challenge_created" });
+      return res.status(202).json({ mfaRequired: true, challengeToken: challenge.token });
     }
 
     clearLoginFailures(attemptKey);

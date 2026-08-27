@@ -56,6 +56,15 @@ export async function findUserByEmail(email) {
     return result.rows[0] || null;
 }
 
+export async function findUserById(userId) {
+    const result = await pool.query(
+        `SELECT id, name, first_name, last_name, full_name, email, password_hash, role, email_verified_at
+     FROM users WHERE id = $1`,
+        [userId],
+    );
+    return result.rows[0] || null;
+}
+
 export async function findUserIdByEmail(email) {
     const result = await pool.query("SELECT id FROM users WHERE email = $1", [email]);
     return result.rows[0]?.id || null;
@@ -112,6 +121,71 @@ export async function consumeEmailVerificationToken(tokenHash) {
         [tokenHash],
     );
     return result.rows[0]?.user_id || null;
+}
+
+export async function getUserMfa(userId) {
+    const result = await pool.query(
+        "SELECT user_id, secret_ciphertext, recovery_code_hashes, enabled_at FROM user_mfa WHERE user_id = $1",
+        [userId],
+    );
+    return result.rows[0] || null;
+}
+
+export async function saveUserMfa(userId, secretCiphertext, recoveryCodeHashes, enabledAt = null) {
+    const result = await pool.query(
+        `INSERT INTO user_mfa (user_id, secret_ciphertext, recovery_code_hashes, enabled_at)
+     VALUES ($1, $2, $3, $4)
+     ON CONFLICT (user_id) DO UPDATE SET secret_ciphertext = EXCLUDED.secret_ciphertext,
+       recovery_code_hashes = EXCLUDED.recovery_code_hashes, enabled_at = EXCLUDED.enabled_at, updated_at = NOW()
+     RETURNING user_id, enabled_at`,
+        [userId, secretCiphertext, recoveryCodeHashes, enabledAt],
+    );
+    return result.rows[0];
+}
+
+export async function disableUserMfa(userId) {
+    const result = await pool.query("DELETE FROM user_mfa WHERE user_id = $1 RETURNING user_id", [userId]);
+    return Boolean(result.rows[0]);
+}
+
+export async function consumeRecoveryCode(userId, codeHash) {
+    const result = await pool.query(
+        `UPDATE user_mfa
+     SET recovery_code_hashes = array_remove(recovery_code_hashes, $2), updated_at = NOW()
+     WHERE user_id = $1 AND $2 = ANY(recovery_code_hashes)
+     RETURNING user_id`,
+        [userId, codeHash],
+    );
+    return Boolean(result.rows[0]);
+}
+
+export async function createMfaChallenge(challengeHash, userId, rememberMe, expiresAt) {
+    await pool.query("DELETE FROM mfa_challenges WHERE user_id = $1 OR expires_at <= NOW()", [userId]);
+    await pool.query(
+        `INSERT INTO mfa_challenges (challenge_hash, user_id, remember_me, expires_at)
+     VALUES ($1, $2, $3, $4)`,
+        [challengeHash, userId, rememberMe, expiresAt],
+    );
+}
+
+export async function getMfaChallenge(challengeHash) {
+    const result = await pool.query(
+        "SELECT challenge_hash, user_id, remember_me, expires_at, attempts FROM mfa_challenges WHERE challenge_hash = $1",
+        [challengeHash],
+    );
+    return result.rows[0] || null;
+}
+
+export async function incrementMfaChallengeAttempts(challengeHash) {
+    const result = await pool.query(
+        "UPDATE mfa_challenges SET attempts = attempts + 1 WHERE challenge_hash = $1 RETURNING attempts",
+        [challengeHash],
+    );
+    return result.rows[0]?.attempts || 0;
+}
+
+export async function deleteMfaChallenge(challengeHash) {
+    await pool.query("DELETE FROM mfa_challenges WHERE challenge_hash = $1", [challengeHash]);
 }
 
 export async function markEmailVerified(userId) {
