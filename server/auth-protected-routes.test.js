@@ -254,3 +254,43 @@ test("returns the full Arabic name on login and invalidates the session on logou
     const afterLogout = await request("/api/auth/me", { headers: { Cookie: donor.cookie } });
     assert.equal(afterLogout.status, 401);
 });
+
+test("uses reset tokens once and revokes existing sessions after password reset", async () => {
+    const beneficiary = await login(users.beneficiary);
+    const forgot = await request("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: users.beneficiary.email }),
+    });
+    assert.equal(forgot.status, 200);
+    const forgotPayload = await forgot.json();
+    assert.equal(forgotPayload.message, "If an account exists for this email, a reset link has been created.");
+    assert.ok(forgotPayload.resetUrl, "Development mode should expose the local reset URL for testing");
+    const token = new URL(forgotPayload.resetUrl).searchParams.get("token");
+    assert.ok(token);
+
+    const reset = await request("/api/auth/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, newPassword: "ResetTestPass123", confirmPassword: "ResetTestPass123" }),
+    });
+    assert.equal(reset.status, 200);
+
+    const revokedSession = await request("/api/auth/me", { headers: { Cookie: beneficiary.cookie } });
+    assert.equal(revokedSession.status, 401);
+
+    const reusedToken = await request("/api/auth/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, newPassword: "AnotherTestPass123", confirmPassword: "AnotherTestPass123" }),
+    });
+    assert.equal(reusedToken.status, 400);
+
+    const loginAfterReset = await request("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: users.beneficiary.email, password: "ResetTestPass123" }),
+    });
+    assert.equal(loginAfterReset.status, 200);
+    await logout(cookieFrom(loginAfterReset));
+});

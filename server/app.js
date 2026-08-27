@@ -550,6 +550,10 @@ app.post("/api/auth/forgot-password", async (req, res) => {
     const user = result.rows[0];
     if (!user) return res.json({ message: genericMessage });
 
+    for (const [tokenHash, record] of resetTokens) {
+      if (record.userId === user.id) resetTokens.delete(tokenHash);
+    }
+
     const token = randomBytes(32).toString("hex");
     resetTokens.set(hashSessionToken(token), {
       userId: user.id,
@@ -588,6 +592,7 @@ app.post("/api/auth/reset-password", async (req, res) => {
     resetTokens.delete(tokenHash);
     return res.status(400).json({ message: "This reset link is invalid or has expired." });
   }
+  resetTokens.delete(tokenHash);
 
   try {
     const passwordHash = await hashPassword(newPassword);
@@ -596,7 +601,6 @@ app.post("/api/auth/reset-password", async (req, res) => {
       [passwordHash, record.userId],
     );
     if (!result.rows[0]) return res.status(400).json({ message: "This reset link is invalid or has expired." });
-    resetTokens.delete(tokenHash);
     await pool.query("DELETE FROM user_sessions WHERE user_id = $1", [record.userId]);
     return res.json({ message: "Password reset successfully. You can now log in." });
   } catch (error) {
