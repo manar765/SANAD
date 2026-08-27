@@ -6,7 +6,8 @@
   "main": "server/app.js",
   "scripts": {
     "start": "node server/app.js",
-    "dev": "node --watch server/app.js"
+    "dev": "node --watch server/app.js",
+    "test": "node --test server/auth-protected-routes.test.js"
   },
   "dependencies": {
     "dotenv": "^17.4.2",
