@@ -31,6 +31,10 @@ async function removeExpiredSessions() {
     [SESSION_IDLE_TTL_MS],
   );
   removeExpiredResetTokens();
+  pruneRateLimitRecords(loginAttempts);
+  pruneRateLimitRecords(signupAttempts);
+  pruneRateLimitRecords(forgotPasswordAttempts);
+  pruneRateLimitRecords(resetPasswordAttempts);
 }
 
 const sessionCleanup = setInterval(() => {
@@ -39,8 +43,15 @@ const sessionCleanup = setInterval(() => {
 sessionCleanup.unref();
 
 const loginAttempts = new Map();
+const signupAttempts = new Map();
+const forgotPasswordAttempts = new Map();
+const resetPasswordAttempts = new Map();
 const LOGIN_WINDOW_MS = 15 * 60 * 1000;
 const LOGIN_MAX_ATTEMPTS = 5;
+const SIGNUP_WINDOW_MS = 15 * 60 * 1000;
+const SIGNUP_MAX_ATTEMPTS = 10;
+const FORGOT_PASSWORD_MAX_ATTEMPTS = 5;
+const RESET_PASSWORD_MAX_ATTEMPTS = 10;
 const resetTokens = new Map();
 const RESET_TOKEN_TTL_MS = 15 * 60 * 1000;
 
@@ -77,6 +88,33 @@ function recordLoginFailure(key) {
 
 function clearLoginFailures(key) {
   loginAttempts.delete(key);
+}
+
+function isRateLimited(records, key, maxAttempts, windowMs = LOGIN_WINDOW_MS) {
+  const record = records.get(key);
+  if (!record) return false;
+  if (record.resetAt <= Date.now()) {
+    records.delete(key);
+    return false;
+  }
+  return record.count >= maxAttempts;
+}
+
+function recordRateLimitAttempt(records, key, windowMs = LOGIN_WINDOW_MS) {
+  const now = Date.now();
+  const record = records.get(key);
+  if (!record || record.resetAt <= now) {
+    records.set(key, { count: 1, resetAt: now + windowMs });
+  } else {
+    record.count += 1;
+  }
+}
+
+function pruneRateLimitRecords(records) {
+  const now = Date.now();
+  for (const [key, record] of records) {
+    if (record.resetAt <= now) records.delete(key);
+  }
 }
 
 function parseCookies(req) {
@@ -285,6 +323,13 @@ app.get("/api/health", async (_req, res) => {
 });
 
 app.post("/api/auth/signup", async (req, res) => {
+  const signupKey = `signup:${req.ip || "unknown"}`;
+  if (isRateLimited(signupAttempts, signupKey, SIGNUP_MAX_ATTEMPTS)) {
+    res.setHeader("Retry-After", String(Math.ceil(SIGNUP_WINDOW_MS / 1000)));
+    return res.status(429).json({ message: "Too many signup attempts. Please try again later." });
+  }
+  recordRateLimitAttempt(signupAttempts, signupKey, SIGNUP_WINDOW_MS);
+
   const firstName = String(req.body?.firstName || "")
     .trim()
     .replace(/\s+/g, " ");
@@ -492,6 +537,12 @@ app.post("/api/auth/logout", requireAuth, requireCsrf, async (req, res) => {
 app.post("/api/auth/forgot-password", async (req, res) => {
   const email = String(req.body?.email || "").trim().toLowerCase();
   const genericMessage = "If an account exists for this email, a reset link has been created.";
+  const forgotKey = `${req.ip || "unknown"}:${email}`;
+  if (isRateLimited(forgotPasswordAttempts, forgotKey, FORGOT_PASSWORD_MAX_ATTEMPTS)) {
+    res.setHeader("Retry-After", String(Math.ceil(LOGIN_WINDOW_MS / 1000)));
+    return res.json({ message: genericMessage });
+  }
+  recordRateLimitAttempt(forgotPasswordAttempts, forgotKey);
   if (!isValidEmail(email)) return res.json({ message: genericMessage });
 
   try {
@@ -518,6 +569,13 @@ app.post("/api/auth/forgot-password", async (req, res) => {
 });
 
 app.post("/api/auth/reset-password", async (req, res) => {
+  const resetKey = `reset:${req.ip || "unknown"}`;
+  if (isRateLimited(resetPasswordAttempts, resetKey, RESET_PASSWORD_MAX_ATTEMPTS)) {
+    res.setHeader("Retry-After", String(Math.ceil(LOGIN_WINDOW_MS / 1000)));
+    return res.status(429).json({ message: "Too many password reset attempts. Please try again later." });
+  }
+  recordRateLimitAttempt(resetPasswordAttempts, resetKey);
+
   const token = String(req.body?.token || "");
   const newPassword = String(req.body?.newPassword || "");
   const confirmPassword = String(req.body?.confirmPassword || "");

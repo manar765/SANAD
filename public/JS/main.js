@@ -143,6 +143,9 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
         } catch {
             // Keep the guest state if the session check is unavailable.
+        } finally {
+            document.body.classList.remove("auth-pending");
+            document.body.classList.add("auth-ready");
         }
     }
 

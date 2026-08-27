@@ -208,6 +208,42 @@ test("allows the configured administrator to access the admin page", async () =>
     await logout(cookie);
 });
 
+test("rejects state-changing requests without a valid CSRF token", async () => {
+    const donor = await login(users.donor);
+    const missingToken = await request("/api/profile", {
+        method: "PATCH",
+        headers: { Cookie: donor.cookie, "Content-Type": "application/json" },
+        body: JSON.stringify({ firstName: "اختبار", lastName: "متبرع", phone: users.donor.phone }),
+    });
+    assert.equal(missingToken.status, 403);
+
+    const invalidToken = await request("/api/profile/password", {
+        method: "POST",
+        headers: {
+            Cookie: donor.cookie,
+            "Content-Type": "application/json",
+            "X-CSRF-Token": "invalid-token",
+        },
+        body: JSON.stringify({ currentPassword: users.donor.password, newPassword: "NewTestPass123", confirmPassword: "NewTestPass123" }),
+    });
+    assert.equal(invalidToken.status, 403);
+    await logout(donor.cookie);
+});
+
+test("rate-limits repeated failed login attempts", async () => {
+    const email = `rate-limit.${testSuffix}@example.com`;
+    const statuses = [];
+    for (let attempt = 0; attempt < 6; attempt += 1) {
+        const response = await request("/api/auth/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password: "wrong-password" }),
+        });
+        statuses.push(response.status);
+    }
+    assert.deepEqual(statuses, [401, 401, 401, 401, 401, 429]);
+});
+
 test("returns the full Arabic name on login and invalidates the session on logout", async () => {
     const donor = await login(users.donor);
     const me = await request("/api/auth/me", { headers: { Cookie: donor.cookie } });

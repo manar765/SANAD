@@ -26,7 +26,7 @@
         <link rel="stylesheet" href="/CSS/style.css" />
     </head>
 
-    <body>
+    <body class="auth-pending">
 
         <!-- scroll progress indicator -->
         <div class="progress-bar" id="progressBar" aria-hidden="true"></div>
@@ -64,8 +64,10 @@
                         </div>
                         <div class="user-actions hidden" id="userActions" aria-live="polite">
                             <span class="user-greeting">أهلاً، <strong id="homeUserName">صديق سند</strong></span>
-                            <a href="/dashboard" class="btn btn-outline"><i class="fa-solid fa-gauge-high"></i> الملف
-                                الشخصي</a>
+                            <a href="/dashboard" class="btn btn-outline avatar-action" aria-label="فتح الملف الشخصي"
+                                title="الملف الشخصي">
+                                <i class="fa-solid fa-user" aria-hidden="true"></i>
+                            </a>
                             <a href="/login" class="btn btn-logout logout-action" data-logout><i
                                     class="fa-solid fa-right-from-bracket"></i> تسجيل خروج</a>
                         </div>
