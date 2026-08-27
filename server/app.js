@@ -290,8 +290,41 @@ function credentialsMatch(email, password) {
   );
 }
 
+function normalizeWhitespace(value) {
+  return String(value || "").trim().replace(/\s+/g, " ");
+}
+
+function normalizeNamePart(value) {
+  return normalizeWhitespace(value);
+}
+
+function isValidNamePart(value, maxLength = 60) {
+  const name = normalizeNamePart(value);
+  return (
+    Array.from(name).length >= 2 &&
+    Array.from(name).length <= maxLength &&
+    /^[\p{L}\p{M}]+(?:[\s'’\u2010-\u2015-][\p{L}\p{M}]+)*$/u.test(name)
+  );
+}
+
 function isValidEmail(email) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  return String(email).length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function normalizePhone(value) {
+  return String(value || "").trim().replace(/\s+/g, " ");
+}
+
+function isValidPhone(value, { optional = false } = {}) {
+  const phone = normalizePhone(value);
+  if (optional && !phone) return true;
+  const digits = phone.replace(/\D/g, "");
+  return /^[+\d][\d\s()\-]{7,19}$/.test(phone) && digits.length >= 8 && digits.length <= 15;
+}
+
+function isValidPassword(value) {
+  const password = String(value || "");
+  return password.length >= 8 && password.length <= 128 && !/[\u0000-\u001F\u007F]/.test(password);
 }
 
 async function hashPassword(password) {
@@ -330,17 +363,13 @@ app.post("/api/auth/signup", async (req, res) => {
   }
   recordRateLimitAttempt(signupAttempts, signupKey, SIGNUP_WINDOW_MS);
 
-  const firstName = String(req.body?.firstName || "")
-    .trim()
-    .replace(/\s+/g, " ");
-  const lastName = String(req.body?.lastName || "")
-    .trim()
-    .replace(/\s+/g, " ");
+  const firstName = normalizeNamePart(req.body?.firstName);
+  const lastName = normalizeNamePart(req.body?.lastName);
   const fullName = `${firstName} ${lastName}`.trim();
   const email = String(req.body?.email || "")
     .trim()
     .toLowerCase();
-  const phone = String(req.body?.phone || "").trim();
+  const phone = normalizePhone(req.body?.phone);
   const password = String(req.body?.password || "");
   const role = String(req.body?.role || "")
     .trim()
@@ -351,13 +380,11 @@ app.post("/api/auth/signup", async (req, res) => {
   const organizationName = String(req.body?.organizationName || "").trim();
 
   if (
-    firstName.length < 2 ||
-    firstName.length > 60 ||
-    lastName.length < 2 ||
-    lastName.length > 60 ||
+    !isValidNamePart(firstName) ||
+    !isValidNamePart(lastName) ||
     !isValidEmail(email) ||
-    !/^[+\d][\d\s()-]{7,19}$/.test(phone) ||
-    password.length < 8 ||
+    !isValidPhone(phone) ||
+    !isValidPassword(password) ||
     !["donor", "beneficiary"].includes(role)
   ) {
     return res
@@ -470,13 +497,13 @@ app.get("/api/profile", requireAuth, async (req, res) => {
 
 app.patch("/api/profile", requireAuth, requireCsrf, async (req, res) => {
   if (!req.user.id) return res.status(404).json({ message: "Profile not found." });
-  const firstName = String(req.body?.firstName || "").trim();
-  const lastName = String(req.body?.lastName || "").trim();
-  const phone = String(req.body?.phone || "").trim();
-  if (firstName.length < 2 || firstName.length > 50 || lastName.length < 2 || lastName.length > 50) {
+  const firstName = normalizeNamePart(req.body?.firstName);
+  const lastName = normalizeNamePart(req.body?.lastName);
+  const phone = normalizePhone(req.body?.phone);
+  if (!isValidNamePart(firstName) || !isValidNamePart(lastName)) {
     return res.status(400).json({ message: "Please enter a valid first and last name." });
   }
-  if (phone && !/^[+0-9()\s-]{7,20}$/.test(phone)) {
+  if (!isValidPhone(phone, { optional: true })) {
     return res.status(400).json({ message: "Please enter a valid phone number." });
   }
   const fullName = `${firstName} ${lastName}`.trim();
@@ -509,7 +536,7 @@ app.post("/api/profile/password", requireAuth, requireCsrf, async (req, res) => 
   const currentPassword = String(req.body?.currentPassword || "");
   const newPassword = String(req.body?.newPassword || "");
   const confirmPassword = String(req.body?.confirmPassword || "");
-  if (newPassword.length < 8) return res.status(400).json({ message: "The new password must be at least 8 characters." });
+  if (!isValidPassword(newPassword)) return res.status(400).json({ message: "The new password must be between 8 and 128 characters." });
   if (newPassword !== confirmPassword) return res.status(400).json({ message: "Password confirmation does not match." });
   try {
     const result = await pool.query("SELECT password_hash, password FROM users WHERE id = $1", [req.user.id]);
@@ -583,7 +610,7 @@ app.post("/api/auth/reset-password", async (req, res) => {
   const token = String(req.body?.token || "");
   const newPassword = String(req.body?.newPassword || "");
   const confirmPassword = String(req.body?.confirmPassword || "");
-  if (newPassword.length < 8) return res.status(400).json({ message: "The new password must be at least 8 characters." });
+  if (!isValidPassword(newPassword)) return res.status(400).json({ message: "The new password must be between 8 and 128 characters." });
   if (newPassword !== confirmPassword) return res.status(400).json({ message: "Password confirmation does not match." });
 
   const tokenHash = hashSessionToken(token);
@@ -592,6 +619,7 @@ app.post("/api/auth/reset-password", async (req, res) => {
     resetTokens.delete(tokenHash);
     return res.status(400).json({ message: "This reset link is invalid or has expired." });
   }
+  // Consume the token before asynchronous work to prevent concurrent reuse.
   resetTokens.delete(tokenHash);
 
   try {

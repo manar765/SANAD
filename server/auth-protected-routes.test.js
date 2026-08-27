@@ -294,3 +294,41 @@ test("uses reset tokens once and revokes existing sessions after password reset"
     assert.equal(loginAfterReset.status, 200);
     await logout(cookieFrom(loginAfterReset));
 });
+
+test("rejects malformed server-side input while accepting Arabic names", async () => {
+    const invalidName = await request("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...users.donor, email: `invalid-name.${testSuffix}@example.com`, firstName: "محمد123" }),
+    });
+    assert.equal(invalidName.status, 400);
+
+    const invalidPhone = await request("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...users.donor, email: `invalid-phone.${testSuffix}@example.com`, phone: "not-a-phone" }),
+    });
+    assert.equal(invalidPhone.status, 400);
+
+    const invalidPassword = await request("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            ...users.donor,
+            email: `invalid-password.${testSuffix}@example.com`,
+            password: "x".repeat(129),
+        }),
+    });
+    assert.equal(invalidPassword.status, 400);
+
+    const invalidRecovery = await request("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: "not-an-email" }),
+    });
+    assert.equal(invalidRecovery.status, 200);
+    assert.equal(
+        (await invalidRecovery.json()).message,
+        "If an account exists for this email, a reset link has been created.",
+    );
+});
