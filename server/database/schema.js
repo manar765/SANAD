@@ -147,8 +147,86 @@ export async function migrate() {
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       );
     `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS inventory_items (
+        id BIGSERIAL PRIMARY KEY,
+        source_donation_id BIGINT REFERENCES donation_requests(id) ON DELETE SET NULL,
+        name TEXT NOT NULL CHECK (char_length(trim(name)) BETWEEN 2 AND 160),
+        category TEXT NOT NULL CHECK (char_length(trim(category)) BETWEEN 2 AND 80),
+        description TEXT NOT NULL DEFAULT '' CHECK (char_length(description) <= 2000),
+        unit TEXT NOT NULL CHECK (char_length(trim(unit)) BETWEEN 1 AND 40),
+        quantity_total INTEGER NOT NULL CHECK (quantity_total >= 0),
+        quantity_available INTEGER NOT NULL CHECK (quantity_available >= 0),
+        quantity_reserved INTEGER NOT NULL DEFAULT 0 CHECK (quantity_reserved >= 0),
+        low_stock_threshold INTEGER NOT NULL DEFAULT 1 CHECK (low_stock_threshold >= 0),
+        status TEXT NOT NULL DEFAULT 'available' CHECK (status IN ('available', 'low_stock', 'out_of_stock', 'in_distribution', 'surplus', 'archived')),
+        warehouse TEXT NOT NULL DEFAULT 'المخزن العام' CHECK (char_length(trim(warehouse)) BETWEEN 2 AND 160),
+        location TEXT NOT NULL CHECK (char_length(trim(location)) BETWEEN 2 AND 160),
+        condition TEXT NOT NULL DEFAULT 'standard' CHECK (char_length(trim(condition)) BETWEEN 2 AND 80),
+        created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        CHECK (quantity_available + quantity_reserved <= quantity_total)
+      );
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS beneficiary_needs (
+        id BIGSERIAL PRIMARY KEY,
+        beneficiary_id INTEGER NOT NULL REFERENCES beneficiary_profiles(id) ON DELETE CASCADE,
+        title TEXT NOT NULL CHECK (char_length(trim(title)) BETWEEN 2 AND 160),
+        description TEXT NOT NULL DEFAULT '' CHECK (char_length(description) <= 2000),
+        category TEXT NOT NULL CHECK (char_length(trim(category)) BETWEEN 2 AND 80),
+        quantity_requested INTEGER NOT NULL CHECK (quantity_requested > 0),
+        quantity_fulfilled INTEGER NOT NULL DEFAULT 0 CHECK (quantity_fulfilled >= 0),
+        unit TEXT NOT NULL CHECK (char_length(trim(unit)) BETWEEN 1 AND 40),
+        priority TEXT NOT NULL DEFAULT 'medium' CHECK (priority IN ('low', 'medium', 'high', 'urgent')),
+        status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'partially_fulfilled', 'fulfilled', 'cancelled')),
+        due_date DATE,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        CHECK (quantity_fulfilled <= quantity_requested)
+      );
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS distributions (
+        id BIGSERIAL PRIMARY KEY,
+        beneficiary_id INTEGER NOT NULL REFERENCES beneficiary_profiles(id) ON DELETE RESTRICT,
+        created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'planned', 'in_progress', 'completed', 'cancelled')),
+        scheduled_at TIMESTAMPTZ,
+        distributed_at TIMESTAMPTZ,
+        location TEXT CHECK (location IS NULL OR char_length(trim(location)) BETWEEN 2 AND 160),
+        notes TEXT NOT NULL DEFAULT '' CHECK (char_length(notes) <= 2000),
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        CHECK (distributed_at IS NULL OR status = 'completed')
+      );
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS distribution_items (
+        distribution_id BIGINT NOT NULL REFERENCES distributions(id) ON DELETE CASCADE,
+        inventory_item_id BIGINT NOT NULL REFERENCES inventory_items(id) ON DELETE RESTRICT,
+        quantity INTEGER NOT NULL CHECK (quantity > 0),
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        PRIMARY KEY (distribution_id, inventory_item_id)
+      );
+    `);
+
     await client.query(`ALTER TABLE user_sessions ADD COLUMN IF NOT EXISTS remember_me BOOLEAN NOT NULL DEFAULT FALSE`);
     await client.query(`ALTER TABLE user_mfa ALTER COLUMN enabled_at DROP NOT NULL`);
+    await client.query(`CREATE INDEX IF NOT EXISTS inventory_items_status_updated_at_idx ON inventory_items (status, updated_at DESC)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS inventory_items_category_idx ON inventory_items (category)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS inventory_items_source_donation_idx ON inventory_items (source_donation_id)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS beneficiary_needs_priority_status_idx ON beneficiary_needs (priority, status, created_at DESC)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS beneficiary_needs_beneficiary_idx ON beneficiary_needs (beneficiary_id, status, created_at DESC)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS beneficiary_needs_category_idx ON beneficiary_needs (category)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS distributions_status_scheduled_idx ON distributions (status, scheduled_at DESC)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS distributions_beneficiary_idx ON distributions (beneficiary_id, created_at DESC)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS distribution_items_inventory_idx ON distribution_items (inventory_item_id)`);
     await client.query(`CREATE INDEX IF NOT EXISTS user_mfa_updated_at_idx ON user_mfa (updated_at)`);
     await client.query(`CREATE INDEX IF NOT EXISTS mfa_challenges_user_expires_idx ON mfa_challenges (user_id, expires_at)`);
     await client.query(`CREATE INDEX IF NOT EXISTS email_verification_tokens_user_idx ON email_verification_tokens (user_id, expires_at)`);

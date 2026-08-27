@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>سند — لوحة البيانات</title>
+  <link rel="icon" type="image/png" href="/assets/images/LogoSANAD.png">
+  <link rel="stylesheet" href="/CSS/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+</head>
+<body class="dashboard-page">
+  <a class="skip-link" href="#main-content">تخطي إلى المحتوى الرئيسي</a>
+  <%- include('../partials/navbar', { activePath: '/dashboard' }) %>
+  <main id="main-content" class="dashboard-main">
+    <div class="container dashboard-container">
+      <header class="dashboard-heading">
+        <div>
+          <span class="eyebrow"><i class="fa-solid fa-chart-line" aria-hidden="true"></i> لوحة البيانات</span>
+          <h1>نظرة تشغيلية على سند</h1>
+          <p>تابع المخزون والتوزيعات والاحتياجات ذات الأولوية من مكان واحد.</p>
+        </div>
+        <button class="btn btn-outline dashboard-refresh" id="dashboardRefresh" type="button"><i class="fa-solid fa-rotate" aria-hidden="true"></i> تحديث البيانات</button>
+      </header>
+
+      <section class="dashboard-filters" aria-label="فلاتر لوحة البيانات">
+        <label>من تاريخ<input id="dashboardFrom" type="date"></label>
+        <label>إلى تاريخ<input id="dashboardTo" type="date"></label>
+        <label>حالة التوزيع<select id="distributionStatus"><option value="">كل الحالات</option><option value="planned">مخطط</option><option value="in_progress">قيد التنفيذ</option><option value="completed">مكتمل</option><option value="cancelled">ملغى</option></select></label>
+        <button class="btn btn-primary" id="applyDashboardFilters" type="button">تطبيق الفلاتر</button>
+      </section>
+
+      <div id="dashboardLoading" class="dashboard-state" role="status">جارٍ تحميل بيانات اللوحة…</div>
+      <div id="dashboardError" class="dashboard-state error-state" role="alert" hidden>تعذر تحميل بيانات اللوحة.</div>
+
+      <section class="dashboard-kpis" aria-label="المؤشرات الرئيسية">
+        <article class="dashboard-kpi"><span class="kpi-icon kpi-green"><i class="fa-solid fa-boxes-stacked"></i></span><div><strong id="kpiAvailable">—</strong><span>المخزون المتاح</span></div></article>
+        <article class="dashboard-kpi"><span class="kpi-icon kpi-blue"><i class="fa-solid fa-box"></i></span><div><strong id="kpiTotal">—</strong><span>إجمالي وحدات المخزون</span></div></article>
+        <article class="dashboard-kpi"><span class="kpi-icon kpi-orange"><i class="fa-solid fa-truck-ramp-box"></i></span><div><strong id="kpiDistributions">—</strong><span>التوزيعات</span></div></article>
+        <article class="dashboard-kpi"><span class="kpi-icon kpi-coral"><i class="fa-solid fa-list-check"></i></span><div><strong id="kpiNeeds">—</strong><span>الاحتياجات المفتوحة</span></div></article>
+      </section>
+
+      <section class="dashboard-grid dashboard-grid-top">
+        <article class="dashboard-card inventory-chart-card">
+          <div class="dashboard-card-heading"><div><h2>حالة المخزون</h2><p>توزيع الأصناف حسب حالتها الحالية</p></div><i class="fa-solid fa-chart-pie" aria-hidden="true"></i></div>
+          <div class="inventory-chart" id="inventoryChart" aria-label="رسم حالة المخزون"></div>
+        </article>
+        <article class="dashboard-card alerts-card">
+          <div class="dashboard-card-heading"><div><h2>التنبيهات</h2><p>عناصر تحتاج إلى متابعة</p></div><i class="fa-solid fa-bell" aria-hidden="true"></i></div>
+          <div class="alert-list" id="dashboardAlerts"></div>
+        </article>
+      </section>
+
+      <section class="dashboard-grid dashboard-grid-bottom">
+        <article class="dashboard-card table-card">
+          <div class="dashboard-card-heading"><div><h2>أحدث التوزيعات</h2><p>آخر العمليات المسجلة</p></div><span class="dashboard-count" id="distributionCount">0</span></div>
+          <div class="dashboard-table-wrap"><table class="dashboard-table"><thead><tr><th>المستفيد</th><th>الحالة</th><th>الموعد</th><th>الأصناف</th></tr></thead><tbody id="distributionRows"></tbody></table></div>
+        </article>
+        <article class="dashboard-card table-card">
+          <div class="dashboard-card-heading"><div><h2>الاحتياجات ذات الأولوية</h2><p>الأكثر إلحاحًا أولًا</p></div><span class="dashboard-count" id="needCount">0</span></div>
+          <div class="dashboard-table-wrap"><table class="dashboard-table"><thead><tr><th>الاحتياج</th><th>المستفيد</th><th>الأولوية</th><th>المتبقي</th></tr></thead><tbody id="needRows"></tbody></table></div>
+        </article>
+      </section>
+    </div>
+  </main>
+  <script src="/JS/dashboard.js"></script>
+  <script src="/JS/logout.js"></script>
+  <script src="/JS/preferences.js"></script>
+</body>
+</html>

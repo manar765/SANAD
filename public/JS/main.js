@@ -123,32 +123,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         sections.forEach((section) => spyObserver.observe(section));
     }
 
-    const guestActions = document.getElementById("guestActions");
-    const userActions = document.getElementById("userActions");
-    const homeUserName = document.getElementById("homeUserName");
-
-    if (guestActions && userActions && homeUserName) {
-        try {
-            const response = await fetch("/api/auth/me", { credentials: "same-origin", headers: { Accept: "application/json" } });
-            if (response.ok) {
-                const payload = await response.json();
-                const user = payload.user || {};
-                const fullName = user.name || user.full_name || [user.firstName || user.first_name, user.lastName || user.last_name]
-                    .filter(Boolean)
-                    .join(" ");
-                const name = String(fullName || user.email || "صديق سند").trim();
-                homeUserName.textContent = name;
-                guestActions.classList.add("hidden");
-                userActions.classList.remove("hidden");
-            }
-        } catch {
-            // Keep the guest state if the session check is unavailable.
-        } finally {
-            document.body.classList.remove("auth-pending");
-            document.body.classList.add("auth-ready");
-        }
-    }
-
     const store = window.SANADDonationsStore;
     if (!store) return;
 

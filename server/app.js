@@ -18,6 +18,18 @@ import {
   verifyTotpCode,
 } from "./mfa-service.js";
 import {
+  addDistribution,
+  addInventoryItem,
+  addNeed,
+  changeDistributionStatus,
+  editInventoryItem,
+  editNeed,
+  getBeneficiaryProfileId,
+  getDistributions,
+  getInventory,
+  getNeeds,
+} from "./operations-service.js";
+import {
   authenticateUser,
   authenticateUserById,
   countChallengeAttempt,
@@ -327,7 +339,7 @@ const pageRoutes = Object.freeze({
   "/reset-password": "reset-password",
   "/verify-email": "verify-email",
   "/profile": "profile",
-  "/dashboard": "profile",
+  "/dashboard": "dashboard",
   "/donations": "donations",
   "/admin-requests": "AdminRequests",
   "/inventory": "coming-soon",
@@ -452,6 +464,111 @@ function isValidDonationInput(input) {
     input.category.length >= 2 && Number.isInteger(input.quantity) && input.quantity > 0 && input.quantity <= 100000 &&
     input.unit.length >= 1 && input.condition.length >= 2 && input.warehouse.length >= 2 && input.location.length >= 2;
 }
+
+const operationError = (error, res) => {
+  const messages = {
+    INVALID_INVENTORY: "Please provide valid inventory details.",
+    INVALID_INVENTORY_STATUS: "Please provide a valid inventory status.",
+    INVALID_NEED: "Please provide valid beneficiary-need details.",
+    INVALID_NEED_PRIORITY: "Please provide a valid need priority.",
+    INVALID_NEED_STATUS: "Please provide a valid need status.",
+    INVALID_DISTRIBUTION: "Please provide valid distribution details.",
+    DUPLICATE_DISTRIBUTION_ITEM: "Each inventory item may appear only once in a distribution.",
+    INVALID_DISTRIBUTION_STATUS: "Please provide a valid distribution status.",
+    INVALID_DISTRIBUTION_TRANSITION: "This distribution can no longer change status.",
+    INSUFFICIENT_INVENTORY: "The requested quantity is not available in inventory.",
+  };
+  const message = messages[error.message];
+  if (message) return res.status(error.message === "INSUFFICIENT_INVENTORY" ? 409 : 400).json({ message });
+  console.error("Operations API failed:", error);
+  return res.status(503).json({ message: "The requested operation is temporarily unavailable." });
+};
+
+app.get("/api/inventory", requireAuth, async (req, res) => {
+  try { return res.json({ items: await getInventory(req.query) }); } catch (error) { return operationError(error, res); }
+});
+
+app.post("/api/admin/inventory", requireAdmin, requireCsrf, async (req, res) => {
+  try {
+    const item = await addInventoryItem(req.body, req.user.id);
+    await recordAuditEvent(req, { userId: req.user.id, action: "inventory_item_created", metadata: { inventoryItemId: item.id } });
+    return res.status(201).json({ item });
+  } catch (error) { return operationError(error, res); }
+});
+
+app.patch("/api/admin/inventory/:id", requireAdmin, requireCsrf, async (req, res) => {
+  const id = Number.parseInt(req.params.id, 10);
+  if (!Number.isInteger(id)) return res.status(400).json({ message: "Invalid inventory item." });
+  try {
+    const item = await editInventoryItem(id, req.body);
+    if (!item) return res.status(404).json({ message: "Inventory item not found." });
+    await recordAuditEvent(req, { userId: req.user.id, action: "inventory_item_updated", metadata: { inventoryItemId: id } });
+    return res.json({ item });
+  } catch (error) { return operationError(error, res); }
+});
+
+app.get("/api/beneficiary/needs", requireAuth, async (req, res) => {
+  try {
+    if (req.user.role === "admin") return res.json({ needs: await getNeeds(req.query) });
+    if (req.user.role !== "beneficiary") return res.status(403).json({ message: "Only beneficiaries can access beneficiary needs." });
+    const beneficiaryId = await getBeneficiaryProfileId(req.user.id);
+    if (!beneficiaryId) return res.status(404).json({ message: "Beneficiary profile not found." });
+    return res.json({ needs: await getNeeds({ ...req.query, beneficiaryId }) });
+  } catch (error) { return operationError(error, res); }
+});
+
+app.post("/api/beneficiary/needs", requireAuth, requireCsrf, async (req, res) => {
+  if (req.user.role !== "beneficiary") return res.status(403).json({ message: "Only beneficiaries can create needs." });
+  try {
+    const beneficiaryId = await getBeneficiaryProfileId(req.user.id);
+    if (!beneficiaryId) return res.status(404).json({ message: "Beneficiary profile not found." });
+    const need = await addNeed(req.body, beneficiaryId);
+    await recordAuditEvent(req, { userId: req.user.id, action: "beneficiary_need_created", metadata: { needId: need.id } });
+    return res.status(201).json({ need });
+  } catch (error) { return operationError(error, res); }
+});
+
+app.patch("/api/beneficiary/needs/:id", requireAuth, requireCsrf, async (req, res) => {
+  const id = Number.parseInt(req.params.id, 10);
+  if (!Number.isInteger(id)) return res.status(400).json({ message: "Invalid beneficiary need." });
+  try {
+    const beneficiaryId = req.user.role === "admin" ? null : await getBeneficiaryProfileId(req.user.id);
+    if (req.user.role !== "admin" && (!beneficiaryId || req.user.role !== "beneficiary")) return res.status(403).json({ message: "You cannot update this need." });
+    const need = await editNeed(id, req.body, beneficiaryId);
+    if (!need) return res.status(404).json({ message: "Beneficiary need not found." });
+    await recordAuditEvent(req, { userId: req.user.id, action: "beneficiary_need_updated", metadata: { needId: id } });
+    return res.json({ need });
+  } catch (error) { return operationError(error, res); }
+});
+
+app.get("/api/distributions", requireAuth, async (req, res) => {
+  try {
+    if (req.user.role === "admin") return res.json({ distributions: await getDistributions(req.query) });
+    if (req.user.role !== "beneficiary") return res.status(403).json({ message: "Only beneficiaries can access distributions." });
+    const beneficiaryId = await getBeneficiaryProfileId(req.user.id);
+    if (!beneficiaryId) return res.status(404).json({ message: "Beneficiary profile not found." });
+    return res.json({ distributions: await getDistributions({ ...req.query, beneficiaryId }) });
+  } catch (error) { return operationError(error, res); }
+});
+
+app.post("/api/admin/distributions", requireAdmin, requireCsrf, async (req, res) => {
+  try {
+    const distribution = await addDistribution(req.body, req.user.id);
+    await recordAuditEvent(req, { userId: req.user.id, action: "distribution_created", metadata: { distributionId: distribution.id } });
+    return res.status(201).json({ distribution });
+  } catch (error) { return operationError(error, res); }
+});
+
+app.patch("/api/admin/distributions/:id/status", requireAdmin, requireCsrf, async (req, res) => {
+  const id = Number.parseInt(req.params.id, 10);
+  if (!Number.isInteger(id)) return res.status(400).json({ message: "Invalid distribution." });
+  try {
+    const updated = await changeDistributionStatus(id, String(req.body?.status || ""));
+    if (updated === null) return res.status(404).json({ message: "Distribution not found." });
+    await recordAuditEvent(req, { userId: req.user.id, action: "distribution_status_changed", metadata: { distributionId: id, status: req.body?.status } });
+    return res.json({ message: "Distribution status updated." });
+  } catch (error) { return operationError(error, res); }
+});
 
 app.get("/api/donations", requireAuth, async (req, res) => {
   try {
