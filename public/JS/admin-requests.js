@@ -1,27 +1,23 @@
-// ==========================================================================
 // SANAD — Admin Donation Requests
-// Lists all user-submitted donation requests with their approval status.
-// Approve → the donation becomes public and affects statistics.
-// Reject → the donation is refused and never becomes public.
-// ==========================================================================
+// PostgreSQL-backed moderation for donation requests.
 
 (function () {
-    const store = window.SANADDonationsStore;
-
     const tbody = document.getElementById("adminTableBody");
     const emptyState = document.getElementById("adminEmpty");
     const filterSelect = document.getElementById("approvalFilter");
     const pendingCount = document.getElementById("pendingCount");
 
-    if (!store || !tbody) return;
+    if (!tbody) return;
 
     const APPROVAL_META = {
         pending: { label: "بانتظار الموافقة", className: "st-progress", icon: "fa-hourglass-half" },
         approved: { label: "تمت الموافقة", className: "st-done", icon: "fa-circle-check" },
-        rejected: { label: "مرفوض", className: "st-rejected", icon: "fa-circle-xmark" }
+        rejected: { label: "مرفوض", className: "st-rejected", icon: "fa-circle-xmark" },
+        in_progress: { label: "قيد التوزيع", className: "st-progress", icon: "fa-truck-fast" },
+        distributed: { label: "تم التوزيع", className: "st-done", icon: "fa-box-open" }
     };
-
-    const ORDER = { pending: 0, approved: 1, rejected: 2 };
+    const ORDER = { pending: 0, approved: 1, in_progress: 2, distributed: 3, rejected: 4 };
+    let requests = [];
 
     function escapeHtml(value) {
         return String(value == null ? "" : value)
@@ -32,35 +28,29 @@
             .replace(/'/g, "&#39;");
     }
 
-    function donationStatusClass(status) {
-        if (status === "قيد التوزيع") return "st-progress";
-        if (status === "تم التوزيع") return "st-done";
-        return "st-available";
-    }
-
     function showToast(message) {
         const toast = document.getElementById("toast");
         if (!toast) return;
         const span = toast.querySelector("span");
         if (span) span.textContent = message;
         toast.classList.add("show");
-        setTimeout(function () {
-            toast.classList.remove("show");
-        }, 3500);
+        setTimeout(function () { toast.classList.remove("show"); }, 3500);
+    }
+
+    function statusLabel(status) {
+        return APPROVAL_META[status]?.label || status;
     }
 
     function buildRow(request) {
         const tr = document.createElement("tr");
         const approval = APPROVAL_META[request.approvalStatus] || APPROVAL_META.pending;
-
+        const quantity = `${request.qty || "—"} ${request.unit || ""}`.trim();
+        const date = request.createdAt ? new Date(request.createdAt).toLocaleDateString("ar-EG") : "—";
         let actions = '<span class="admin-no-actions">—</span>';
         if (request.approvalStatus === "pending") {
-            actions =
-                '<div class="admin-actions">' +
-                '<button type="button" class="btn btn-sm btn-primary admin-approve-btn">' +
-                '<i class="fa-solid fa-check"></i> موافقة</button>' +
-                '<button type="button" class="btn btn-sm btn-danger admin-reject-btn">' +
-                '<i class="fa-solid fa-xmark"></i> رفض</button>' +
+            actions = '<div class="admin-actions">' +
+                '<button type="button" class="btn btn-sm btn-primary admin-approve-btn"><i class="fa-solid fa-check" aria-hidden="true"></i> موافقة</button>' +
+                '<button type="button" class="btn btn-sm btn-danger admin-reject-btn"><i class="fa-solid fa-xmark" aria-hidden="true"></i> رفض</button>' +
                 '</div>';
         }
 
@@ -69,70 +59,84 @@
             '<td><strong>' + escapeHtml(request.title) + '</strong></td>' +
             '<td>' + escapeHtml(request.donor) + '</td>' +
             '<td>' + escapeHtml(request.category) + '</td>' +
-            '<td>' + escapeHtml(request.qty || "—") + '</td>' +
-            '<td><span class="status-badge ' + donationStatusClass(request.status) + '">' + escapeHtml(request.status) + '</span></td>' +
+            '<td>' + escapeHtml(quantity) + '</td>' +
+            '<td><span class="status-badge ' + (request.approvalStatus === "approved" ? "st-done" : "st-progress") + '">' + escapeHtml(statusLabel(request.approvalStatus)) + '</span></td>' +
             '<td>' + escapeHtml(request.warehouse || request.location || "—") + '</td>' +
             '<td class="admin-desc-cell" title="' + escapeHtml(request.desc) + '">' + escapeHtml(request.desc || "—") + '</td>' +
-            '<td>' + escapeHtml(request.date || "—") + '</td>' +
-            '<td><span class="status-badge ' + approval.className + '"><i class="fa-solid ' + approval.icon + '"></i> ' + approval.label + '</span></td>' +
+            '<td>' + escapeHtml(date) + '</td>' +
+            '<td><span class="status-badge ' + approval.className + '"><i class="fa-solid ' + approval.icon + '" aria-hidden="true"></i> ' + approval.label + '</span></td>' +
             '<td>' + actions + '</td>';
+
+        const updateStatus = async function (status) {
+            const csrfResponse = await fetch("/api/auth/csrf", { credentials: "same-origin" });
+            if (!csrfResponse.ok) throw new Error("csrf");
+            const { csrfToken } = await csrfResponse.json();
+            const response = await fetch(`/api/admin/donations/${encodeURIComponent(request.id)}/status`, {
+                method: "PATCH",
+                credentials: "same-origin",
+                headers: { "Content-Type": "application/json", "X-CSRF-Token": csrfToken },
+                body: JSON.stringify({ status })
+            });
+            if (!response.ok) {
+                const payload = await response.json().catch(() => ({}));
+                throw new Error(payload.message || "update");
+            }
+        };
 
         const approveBtn = tr.querySelector(".admin-approve-btn");
         const rejectBtn = tr.querySelector(".admin-reject-btn");
-
-        if (approveBtn) {
-            approveBtn.addEventListener("click", function () {
-                store.setApprovalStatus(request.id, "approved");
-                showToast("تمت الموافقة على التبرع «" + request.title + "» وأصبح متاحاً للعرض.");
-                render();
-            });
-        }
-
-        if (rejectBtn) {
-            rejectBtn.addEventListener("click", function () {
-                store.setApprovalStatus(request.id, "rejected");
-                showToast("تم رفض طلب التبرع «" + request.title + "».");
-                render();
-            });
-        }
-
-        return tr;
-    }
-
-    function getRequests() {
-        return store.getAddedDonations().slice().sort(function (a, b) {
-            const orderA = ORDER[a.approvalStatus] !== undefined ? ORDER[a.approvalStatus] : 1;
-            const orderB = ORDER[b.approvalStatus] !== undefined ? ORDER[b.approvalStatus] : 1;
-            return orderA - orderB;
+        if (approveBtn) approveBtn.addEventListener("click", async function () {
+            approveBtn.disabled = true;
+            try {
+                await updateStatus("approved");
+                showToast("تمت الموافقة على طلب التبرع.");
+                await loadRequests();
+            } catch (error) {
+                approveBtn.disabled = false;
+                showToast(error.message || "تعذر تحديث حالة التبرع.");
+            }
         });
+        if (rejectBtn) rejectBtn.addEventListener("click", async function () {
+            rejectBtn.disabled = true;
+            try {
+                await updateStatus("rejected");
+                showToast("تم رفض طلب التبرع.");
+                await loadRequests();
+            } catch (error) {
+                rejectBtn.disabled = false;
+                showToast(error.message || "تعذر تحديث حالة التبرع.");
+            }
+        });
+        return tr;
     }
 
     function render() {
         const filter = filterSelect ? filterSelect.value : "all";
-        const requests = getRequests().filter(function (r) {
-            return filter === "all" || r.approvalStatus === filter;
+        const visible = requests.filter(function (item) {
+            return filter === "all" || item.approvalStatus === filter;
+        }).sort(function (a, b) {
+            return (ORDER[a.approvalStatus] ?? 99) - (ORDER[b.approvalStatus] ?? 99);
         });
-
         tbody.innerHTML = "";
-        requests.forEach(function (request) {
-            tbody.appendChild(buildRow(request));
-        });
+        visible.forEach(function (request) { tbody.appendChild(buildRow(request)); });
+        if (emptyState) emptyState.hidden = visible.length !== 0;
+        if (pendingCount) pendingCount.textContent = requests.filter(item => item.approvalStatus === "pending").length;
+    }
 
-        if (emptyState) {
-            emptyState.hidden = requests.length !== 0;
-        }
-
-        if (pendingCount) {
-            const pending = getRequests().filter(function (r) {
-                return r.approvalStatus === "pending";
-            }).length;
-            pendingCount.textContent = pending;
+    async function loadRequests() {
+        try {
+            const response = await fetch("/api/admin/donations", { credentials: "same-origin" });
+            if (!response.ok) throw new Error("تعذر تحميل طلبات التبرعات.");
+            const payload = await response.json();
+            requests = Array.isArray(payload.donations) ? payload.donations : [];
+            render();
+        } catch (error) {
+            requests = [];
+            render();
+            showToast(error.message || "تعذر تحميل طلبات التبرعات.");
         }
     }
 
-    if (filterSelect) {
-        filterSelect.addEventListener("change", render);
-    }
-
-    render();
+    if (filterSelect) filterSelect.addEventListener("change", render);
+    loadRequests();
 })();

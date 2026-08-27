@@ -63,8 +63,22 @@
         return true;
     }
 
+    let serverDonations = [];
+
     function getFilteredDonations() {
-        return store.getPublicDonations().filter(matchesFilters);
+        return serverDonations.concat(store.getPublicDonations()).filter(matchesFilters);
+    }
+
+    async function loadServerDonations() {
+        try {
+            const response = await fetch("/api/donations", { credentials: "same-origin" });
+            if (!response.ok) return;
+            const payload = await response.json();
+            serverDonations = Array.isArray(payload.donations) ? payload.donations : [];
+            renderDonations();
+        } catch {
+            // Keep the existing demo cards available if the API is temporarily unavailable.
+        }
     }
 
     /* ---------------------------------------------------------
@@ -331,6 +345,7 @@
 
     // Initial render
     renderDonations();
+    loadServerDonations();
 })();
 
 /* ==========================================================================
@@ -434,7 +449,7 @@
     }
 
     if (form) {
-        form.addEventListener("submit", function (e) {
+        form.addEventListener("submit", async function (e) {
             e.preventDefault();
 
             if (!nameInput || !nameInput.value.trim()) {
@@ -455,29 +470,31 @@
             const category = categoryInput && categoryInput.value ? categoryInput.value : "أخرى";
             const condition = conditionInput && conditionInput.value ? conditionInput.value : "حالة قياسية";
 
-            const donation = {
-                id: window.SANADDonationsStore.nextId(),
-                title: nameInput.value.trim(),
-                category: category,
-                location: detectLocation(warehouse),
-                status: "متاح",
-                condition: condition,
-                qty: qty,
-                warehouse: warehouse || "المخزن العام",
-                date: formatDate(date),
-                donor: donorInput ? donorInput.value.trim() : "فاعل خير",
-                desc: descInput ? descInput.value.trim() : "",
-                target: "حسب أولويات التوزيع المعتمدة"
-            };
-
-            // The donation is saved as a PENDING request. It is NOT added to
-            // the public grid and does NOT affect statistics until an admin
-            // approves it.
-            if (
-                window.SANADDonationsStore &&
-                typeof window.SANADDonationsStore.submitRequest === "function"
-            ) {
-                window.SANADDonationsStore.submitRequest(donation);
+            const csrfResponse = await fetch("/api/auth/csrf", { credentials: "same-origin" });
+            if (!csrfResponse.ok) {
+                showToast("يجب تسجيل الدخول لإضافة تبرع.");
+                return;
+            }
+            const { csrfToken } = await csrfResponse.json();
+            const response = await fetch("/api/donations", {
+                method: "POST",
+                credentials: "same-origin",
+                headers: { "Content-Type": "application/json", "X-CSRF-Token": csrfToken },
+                body: JSON.stringify({
+                    title: nameInput.value.trim(),
+                    description: descInput ? descInput.value.trim() : "",
+                    category,
+                    quantity: Number(qty),
+                    unit: "قطعة",
+                    condition,
+                    warehouse: warehouse || "المخزن العام",
+                    location: detectLocation(warehouse),
+                }),
+            });
+            if (!response.ok) {
+                const payload = await response.json().catch(() => ({}));
+                showToast(payload.message || "تعذر إرسال طلب التبرع.");
+                return;
             }
 
             showToast("تم إرسال طلب إضافة التبرع وبانتظار موافقة المسؤول.");

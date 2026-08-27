@@ -359,11 +359,52 @@
                         <span class="cta-icon" aria-hidden="true"><i class="fa-solid fa-hand-holding-heart"></i></span>
                         <h2 class="cta-title">لديك تبرع تريد مشاركته؟</h2>
                         <p class="cta-desc">أضف تبرعك الآن وساعد في وصوله إلى من يحتاجه.</p>
-                        <button type="button" class="btn btn-light btn-lg placeholder" data-page="إضافة تبرع">
+                        <button type="button" class="btn btn-light btn-lg" id="addDonationBtn">
                             <i class="fa-solid fa-plus"></i> إضافة تبرع
                         </button>
                     </div>
                 </div>
+            </section>
+
+            <div class="drawer-backdrop" id="addDonationModalBackdrop" aria-hidden="true"></div>
+            <section class="drawer add-donation-modal" id="addDonationModal" role="dialog" aria-modal="true"
+                aria-labelledby="addDonationTitle" aria-hidden="true">
+                <header class="drawer-header">
+                    <div class="drawer-header-info">
+                        <span class="drawer-id"><i class="fa-solid fa-plus" aria-hidden="true"></i></span>
+                        <h2 class="drawer-title" id="addDonationTitle">إضافة تبرع</h2>
+                    </div>
+                    <button type="button" class="drawer-close" id="addDonationCloseBtn"
+                        aria-label="إغلاق نموذج إضافة التبرع"><i class="fa-solid fa-xmark"
+                            aria-hidden="true"></i></button>
+                </header>
+                <form class="drawer-body add-donation-form" id="addDonationForm">
+                    <label class="drawer-field"><span class="drawer-field-label">اسم التبرع</span><input
+                            id="donationName" required maxlength="120" autocomplete="off"></label>
+                    <label class="drawer-field"><span class="drawer-field-label">الفئة</span><select
+                            id="donationCategory">
+                            <option>ملابس</option>
+                            <option>مواد غذائية</option>
+                            <option>أدوات مدرسية</option>
+                            <option>أثاث</option>
+                            <option>أجهزة</option>
+                            <option>أخرى</option>
+                        </select></label>
+                    <label class="drawer-field"><span class="drawer-field-label">الكمية</span><input id="donationQty"
+                            type="number" min="1" max="100000" required></label>
+                    <label class="drawer-field"><span class="drawer-field-label">الحالة</span><input
+                            id="donationCondition" value="جيدة" maxlength="80"></label>
+                    <label class="drawer-field"><span class="drawer-field-label">المخزن</span><input
+                            id="donationWarehouse" maxlength="160" placeholder="مخزن القاهرة"></label>
+                    <label class="drawer-field"><span class="drawer-field-label">الوصف</span><textarea id="donationDesc"
+                            maxlength="2000" rows="4"></textarea></label>
+                    <input id="donationDate" type="hidden">
+                    <input id="donorName" type="hidden">
+                </form>
+                <footer class="drawer-footer">
+                    <button type="button" class="btn btn-outline" id="addDonationCancelBtn">إلغاء</button>
+                    <button type="submit" form="addDonationForm" class="btn btn-primary">إرسال الطلب</button>
+                </footer>
             </section>
 
         </main>

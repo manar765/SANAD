@@ -38,7 +38,7 @@ async function removeExpiredSessions() {
 }
 
 const sessionCleanup = setInterval(() => {
-  removeExpiredSessions().catch(error => console.error("Session cleanup failed:", error));
+  removeExpiredSessions().catch(() => console.error("Session cleanup failed."));
 }, 5 * 60 * 1000);
 sessionCleanup.unref();
 
@@ -143,6 +143,30 @@ function resolveDisplayName(user) {
     .map((part) => String(part || "").trim())
     .filter(Boolean);
   return String(name || parts.join(" ") || "").trim() || null;
+}
+
+async function recordAuditEvent(req, { userId = null, action, success = true, metadata = {} }) {
+  const safeAction = String(action || "").trim().slice(0, 80);
+  if (!safeAction) return;
+  const safeMetadata = metadata && typeof metadata === "object" && !Array.isArray(metadata)
+    ? metadata
+    : {};
+  try {
+    await pool.query(
+      `INSERT INTO audit_logs (user_id, action, success, ip_address, user_agent, metadata)
+       VALUES ($1, $2, $3, $4, $5, $6::jsonb)`,
+      [
+        userId || null,
+        safeAction,
+        Boolean(success),
+        String(req.ip || "").slice(0, 100),
+        String(req.get("user-agent") || "").slice(0, 500),
+        JSON.stringify(safeMetadata),
+      ],
+    );
+  } catch {
+    console.error("Audit log write failed.");
+  }
 }
 
 async function createSession(user, rememberMe = false) {
@@ -355,6 +379,148 @@ app.get("/api/health", async (_req, res) => {
   }
 });
 
+const DONATION_STATUS_LABELS = Object.freeze({
+  pending: "قيد المراجعة",
+  approved: "متاح",
+  rejected: "مرفوض",
+  in_progress: "قيد التوزيع",
+  distributed: "تم التوزيع",
+});
+const DONATION_STATUSES = new Set(Object.keys(DONATION_STATUS_LABELS));
+
+function normalizeDonationText(value, maxLength) {
+  return String(value || "").trim().replace(/\s+/g, " ").slice(0, maxLength);
+}
+
+function donationInput(body) {
+  const quantity = Number.parseInt(body?.quantity, 10);
+  return {
+    title: normalizeDonationText(body?.title, 120),
+    description: normalizeDonationText(body?.description, 2000),
+    category: normalizeDonationText(body?.category, 60),
+    quantity,
+    unit: normalizeDonationText(body?.unit, 40),
+    condition: normalizeDonationText(body?.condition || body?.itemCondition || "حالة قياسية", 80),
+    warehouse: normalizeDonationText(body?.warehouse || "المخزن العام", 160),
+    location: normalizeDonationText(body?.location, 80),
+  };
+}
+
+function isValidDonationInput(input) {
+  return input.title.length >= 2 && input.description.length <= 2000 &&
+    input.category.length >= 2 && Number.isInteger(input.quantity) && input.quantity > 0 && input.quantity <= 100000 &&
+    input.unit.length >= 1 && input.condition.length >= 2 && input.warehouse.length >= 2 && input.location.length >= 2;
+}
+
+app.get("/api/donations", requireAuth, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT d.id, d.title, d.description AS "desc", d.category, d.quantity AS qty,
+              d.unit, d.item_condition AS condition, d.warehouse, d.location,
+              d.status, d.created_at AS "createdAt", d.donor_id AS "donorId",
+              COALESCE(NULLIF(u.full_name, ''), NULLIF(u.name, ''), u.email) AS donor
+       FROM donation_requests d
+       JOIN users u ON u.id = d.donor_id
+       WHERE d.status IN ('approved', 'in_progress', 'distributed') OR d.donor_id = $1
+       ORDER BY d.created_at DESC`,
+      [req.user.id || 0],
+    );
+    return res.json({
+      donations: result.rows.map(donation => ({
+        ...donation,
+        status: DONATION_STATUS_LABELS[donation.status] || donation.status,
+        qty: `${donation.qty} ${donation.unit}`,
+        date: new Date(donation.createdAt).toLocaleDateString("ar-EG"),
+      })),
+    });
+  } catch {
+    return res.status(503).json({ message: "Donations are temporarily unavailable." });
+  }
+});
+
+app.post("/api/donations", requireAuth, requireCsrf, async (req, res) => {
+  if (req.user.role !== "donor" || !req.user.id) {
+    return res.status(403).json({ message: "Only donors can submit donations." });
+  }
+  const input = donationInput(req.body);
+  if (!isValidDonationInput(input)) {
+    return res.status(400).json({ message: "Please provide valid donation details." });
+  }
+  try {
+    const result = await pool.query(
+      `INSERT INTO donation_requests
+        (donor_id, title, description, category, quantity, unit, item_condition, warehouse, location)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+       RETURNING id, title, description AS "desc", category, quantity AS qty, unit,
+                 item_condition AS condition, warehouse, location, status, created_at AS "createdAt"`,
+      [req.user.id, input.title, input.description, input.category, input.quantity, input.unit, input.condition, input.warehouse, input.location],
+    );
+    await recordAuditEvent(req, { userId: req.user.id, action: "donation_submitted", metadata: { donationId: result.rows[0].id } });
+    return res.status(201).json({ donation: { ...result.rows[0], status: DONATION_STATUS_LABELS.pending } });
+  } catch {
+    return res.status(503).json({ message: "Donation submission is temporarily unavailable." });
+  }
+});
+
+app.get("/api/admin/donations", requireAdmin, async (_req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT d.id, d.title, d.description AS desc, d.category, d.quantity AS qty,
+              d.unit, d.item_condition AS condition, d.warehouse, d.location,
+              d.status AS "approvalStatus", d.created_at AS "createdAt",
+              COALESCE(NULLIF(u.full_name, ''), NULLIF(u.name, ''), u.email) AS donor
+       FROM donation_requests d
+       JOIN users u ON u.id = d.donor_id
+       ORDER BY d.created_at DESC`,
+    );
+    return res.json({ donations: result.rows });
+  } catch {
+    return res.status(503).json({ message: "Donation requests are temporarily unavailable." });
+  }
+});
+
+app.patch("/api/admin/donations/:id/status", requireAdmin, requireCsrf, async (req, res) => {
+  const donationId = Number.parseInt(req.params.id, 10);
+  const status = String(req.body?.status || "").trim();
+  if (!Number.isInteger(donationId) || !DONATION_STATUSES.has(status) || status === "pending") {
+    return res.status(400).json({ message: "Please provide a valid donation status." });
+  }
+  try {
+    const result = await pool.query(
+      `UPDATE donation_requests
+       SET status = $1, reviewed_by = $2, reviewed_at = NOW(), updated_at = NOW()
+       WHERE id = $3
+       RETURNING id, status`,
+      [status, req.user.id || null, donationId],
+    );
+    if (!result.rows[0]) return res.status(404).json({ message: "Donation request not found." });
+    await recordAuditEvent(req, { userId: req.user.id, action: "donation_status_changed", metadata: { donationId, status } });
+    return res.json({ donation: { id: donationId, status: DONATION_STATUS_LABELS[status] } });
+  } catch {
+    return res.status(503).json({ message: "Donation status could not be updated." });
+  }
+});
+
+app.get("/api/admin/audit-logs", requireAdmin, async (req, res) => {
+  const requestedLimit = Number.parseInt(req.query.limit, 10);
+  const limit = Number.isFinite(requestedLimit) ? Math.min(Math.max(requestedLimit, 1), 100) : 50;
+  try {
+    const result = await pool.query(
+      `SELECT a.id, a.action, a.success, a.ip_address AS "ipAddress",
+              a.created_at AS "createdAt", a.user_id AS "userId",
+              COALESCE(NULLIF(u.full_name, ''), NULLIF(u.name, ''), u.email) AS "userName"
+       FROM audit_logs a
+       LEFT JOIN users u ON u.id = a.user_id
+       ORDER BY a.created_at DESC
+       LIMIT $1`,
+      [limit],
+    );
+    return res.json({ logs: result.rows });
+  } catch {
+    return res.status(503).json({ message: "Audit logs are temporarily unavailable." });
+  }
+});
+
 app.post("/api/auth/signup", async (req, res) => {
   const signupKey = `signup:${req.ip || "unknown"}`;
   if (isRateLimited(signupAttempts, signupKey, SIGNUP_MAX_ATTEMPTS)) {
@@ -450,6 +616,7 @@ app.post("/api/auth/signup", async (req, res) => {
       res,
       await createSession({ id: user.id, role: user.role, email: user.email, name: fullName }),
     );
+    await recordAuditEvent(req, { userId: user.id, action: "signup_success", metadata: { role: user.role } });
     return res.status(201).json({ user });
   } catch (error) {
     await client.query("ROLLBACK");
@@ -512,6 +679,7 @@ app.post("/api/auth/sessions/revoke-others", requireAuth, requireCsrf, async (re
          AND ((user_id = $2) OR (user_id IS NULL AND role = $3 AND email = $4))`,
       [currentTokenHash, req.user.id || null, req.user.role, req.user.email],
     );
+    await recordAuditEvent(req, { userId: req.user.id, action: "sessions_revoke_others", metadata: { revoked: result.rowCount } });
     return res.json({ revoked: result.rowCount });
   } catch (error) {
     console.error("Other-session revocation failed:", error);
@@ -565,6 +733,7 @@ app.patch("/api/profile", requireAuth, requireCsrf, async (req, res) => {
         [fullName, hashSessionToken(token)],
       );
     }
+    await recordAuditEvent(req, { userId: req.user.id, action: "profile_updated" });
     return res.json({ message: "Profile updated successfully.", user });
   } catch (error) {
     console.error("Profile update failed:", error);
@@ -588,6 +757,7 @@ app.post("/api/profile/password", requireAuth, requireCsrf, async (req, res) => 
     }
     const passwordHash = await hashPassword(newPassword);
     await pool.query("UPDATE users SET password_hash = $1, password = $1 WHERE id = $2", [passwordHash, req.user.id]);
+    await recordAuditEvent(req, { userId: req.user.id, action: "password_changed" });
     return res.json({ message: "Password changed successfully." });
   } catch (error) {
     console.error("Password update failed:", error);
@@ -598,6 +768,7 @@ app.post("/api/profile/password", requireAuth, requireCsrf, async (req, res) => 
 app.post("/api/auth/logout", requireAuth, requireCsrf, async (req, res) => {
   const token = parseCookies(req)[SESSION_COOKIE];
   if (token) await pool.query("DELETE FROM user_sessions WHERE token_hash = $1", [hashSessionToken(token)]);
+  await recordAuditEvent(req, { userId: req.user.id, action: "logout_success" });
   res.setHeader("Set-Cookie", cookieOptions(0));
   return res.json({ success: true });
 });
@@ -671,6 +842,7 @@ app.post("/api/auth/reset-password", async (req, res) => {
     );
     if (!result.rows[0]) return res.status(400).json({ message: "This reset link is invalid or has expired." });
     await pool.query("DELETE FROM user_sessions WHERE user_id = $1", [record.userId]);
+    await recordAuditEvent(req, { userId: record.userId, action: "password_reset_success" });
     return res.json({ message: "Password reset successfully. You can now log in." });
   } catch (error) {
     console.error("Password reset failed:", error);
@@ -696,6 +868,7 @@ app.post("/api/auth/login", async (req, res) => {
   if (credentialsMatch(email, password)) {
     clearLoginFailures(attemptKey);
     await rotateSession(req, res, { role: "admin", email }, rememberMe);
+    await recordAuditEvent(req, { action: "login_success", metadata: { role: "admin" } });
     return res.json({ role: "admin" });
   }
 
@@ -709,6 +882,7 @@ app.post("/api/auth/login", async (req, res) => {
 
     if (!user || !(await passwordMatches(password, user.password_hash))) {
       recordLoginFailure(attemptKey);
+      await recordAuditEvent(req, { action: "login_failed", success: false });
       return res.status(401).json({ message: "Invalid email or password." });
     }
 
@@ -726,6 +900,7 @@ app.post("/api/auth/login", async (req, res) => {
       },
       rememberMe,
     );
+    await recordAuditEvent(req, { userId: user.id, action: "login_success", metadata: { role: user.role } });
     return res.json({
       role: user.role,
       user: {
@@ -780,6 +955,24 @@ app.use((error, _req, res, _next) => {
   res.status(500).render("errors/server-error");
 });
 
+let httpServer;
+let shuttingDown = false;
+
+async function shutdown(signal) {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  clearInterval(sessionCleanup);
+  console.log(`SANAD shutting down after ${signal}.`);
+  await new Promise(resolve => {
+    if (!httpServer) return resolve();
+    httpServer.close(() => resolve());
+  });
+  await pool.end();
+}
+
+process.once("SIGINT", () => shutdown("SIGINT").catch(() => process.exitCode = 1));
+process.once("SIGTERM", () => shutdown("SIGTERM").catch(() => process.exitCode = 1));
+
 async function start() {
   try {
     await migrate();
@@ -791,7 +984,7 @@ async function start() {
     return;
   }
 
-  app.listen(port, () => {
+  httpServer = app.listen(port, () => {
     console.log(`SANAD running at http://localhost:${port}`);
   });
 }

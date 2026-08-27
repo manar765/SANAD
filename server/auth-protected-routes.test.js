@@ -123,7 +123,12 @@ before(async () => {
 
 after(async () => {
     if (pool) {
-        const emails = [users.donor.email, users.beneficiary.email];
+        const emails = [
+            users.donor.email,
+            users.beneficiary.email,
+            `donation.donor.${testSuffix}@example.com`,
+            `donation.beneficiary.${testSuffix}@example.com`,
+        ];
         await pool.query("DELETE FROM users WHERE email = ANY($1::text[])", [emails]);
         await pool.end();
     }
@@ -386,4 +391,123 @@ test("lists sessions without tokens and revokes other sessions securely", async 
     const remaining = await request("/api/auth/sessions", { headers: { Cookie: second.cookie } });
     assert.equal((await remaining.json()).sessions.length, 1);
     await logout(second.cookie);
+});
+
+test("records sensitive actions without exposing secrets and protects audit access", async () => {
+    const donor = await login(users.donor);
+    const token = await csrf(donor.cookie);
+    const profileUpdate = await request("/api/profile", {
+        method: "PATCH",
+        headers: {
+            Cookie: donor.cookie,
+            "Content-Type": "application/json",
+            "X-CSRF-Token": token,
+        },
+        body: JSON.stringify({ firstName: "اختبار", lastName: "متبرع", phone: users.donor.phone }),
+    });
+    assert.equal(profileUpdate.status, 200);
+    await logout(donor.cookie);
+
+    const rows = await pool.query(
+        `SELECT action, success, metadata::text AS metadata, user_agent
+     FROM audit_logs WHERE user_id = $1 ORDER BY created_at DESC LIMIT 20`,
+        [(await pool.query("SELECT id FROM users WHERE email = $1", [users.donor.email])).rows[0].id],
+    );
+    const actions = rows.rows.map(row => row.action);
+    assert.ok(actions.includes("login_success"));
+    assert.ok(actions.includes("profile_updated"));
+    assert.ok(actions.includes("logout_success"));
+    assert.ok(rows.rows.every(row => !/TestPass123|sanad_session|csrf|token/i.test(`${row.metadata} ${row.user_agent}`)));
+
+    const deniedSession = await login(users.donor);
+    const denied = await request("/api/admin/audit-logs", { headers: { Cookie: deniedSession.cookie } });
+    assert.equal(denied.status, 403);
+    await logout(deniedSession.cookie);
+
+    const admin = await request("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: process.env.ADMIN_EMAIL || "admin@sanad.com", password: process.env.ADMIN_PASSWORD || "Sanad@2026" }),
+    });
+    assert.equal(admin.status, 200);
+    const adminLogs = await request("/api/admin/audit-logs?limit=1000", { headers: { Cookie: cookieFrom(admin) } });
+    assert.equal(adminLogs.status, 200);
+    const logPayload = await adminLogs.json();
+    assert.ok(logPayload.logs.length <= 100);
+    assert.ok(logPayload.logs.every(log => !("metadata" in log) && !("tokenHash" in log)));
+    await logout(cookieFrom(admin));
+});
+
+test("stores donation requests securely and enforces donor/admin workflow", async () => {
+    const donor = await signup({
+        role: "donor",
+        firstName: "متبرع",
+        lastName: "التجربة",
+        email: `donation.donor.${testSuffix}@example.com`,
+        phone: "01011112222",
+        password: "DonationPass123",
+        donorType: "individual",
+    });
+    const csrfToken = await csrf(donor.cookie);
+    const create = await request("/api/donations", {
+        method: "POST",
+        headers: { Cookie: donor.cookie, "Content-Type": "application/json", "X-CSRF-Token": csrfToken },
+        body: JSON.stringify({
+            title: "بطاطين شتوية",
+            description: "بطاطين نظيفة للأسر المحتاجة",
+            category: "ملابس",
+            quantity: 20,
+            unit: "بطانية",
+            condition: "جيدة",
+            warehouse: "مخزن القاهرة",
+            location: "القاهرة",
+        }),
+    });
+    assert.equal(create.status, 201);
+    const donation = (await create.json()).donation;
+    assert.equal(donation.status, "قيد المراجعة");
+    assert.ok(donation.id);
+
+    const donorList = await request("/api/donations", { headers: { Cookie: donor.cookie } });
+    assert.ok((await donorList.json()).donations.some(item => item.id === donation.id));
+
+    const beneficiary = await signup({
+        role: "beneficiary",
+        firstName: "مستفيد",
+        lastName: "التجربة",
+        email: `donation.beneficiary.${testSuffix}@example.com`,
+        phone: "01033334444",
+        password: "DonationPass123",
+    });
+    const beneficiaryList = await request("/api/donations", { headers: { Cookie: beneficiary.cookie } });
+    assert.ok(!(await beneficiaryList.json()).donations.some(item => item.id === donation.id));
+
+    const forbidden = await request(`/api/admin/donations/${donation.id}/status`, {
+        method: "PATCH",
+        headers: { Cookie: donor.cookie, "Content-Type": "application/json", "X-CSRF-Token": csrfToken },
+        body: JSON.stringify({ status: "approved" }),
+    });
+    assert.equal(forbidden.status, 403);
+
+    const adminLogin = await request("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: process.env.ADMIN_EMAIL || "admin@sanad.com", password: process.env.ADMIN_PASSWORD || "Sanad@2026" }),
+    });
+    assert.equal(adminLogin.status, 200);
+    const adminCookie = cookieFrom(adminLogin);
+    const adminCsrf = await csrf(adminCookie);
+    const approve = await request(`/api/admin/donations/${donation.id}/status`, {
+        method: "PATCH",
+        headers: { Cookie: adminCookie, "Content-Type": "application/json", "X-CSRF-Token": adminCsrf },
+        body: JSON.stringify({ status: "approved" }),
+    });
+    assert.equal(approve.status, 200);
+    assert.equal((await approve.json()).donation.status, "متاح");
+
+    const visibleAfterApproval = await request("/api/donations", { headers: { Cookie: beneficiary.cookie } });
+    assert.ok((await visibleAfterApproval.json()).donations.some(item => item.id === donation.id));
+    await logout(donor.cookie);
+    await logout(beneficiary.cookie);
+    await logout(adminCookie);
 });

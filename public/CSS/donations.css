@@ -700,3 +700,47 @@
         padding-bottom: 96px;
     }
 }
+
+/* ---------- API-backed add donation form ---------- */
+.add-donation-modal {
+    max-width: 680px;
+}
+
+.add-donation-form {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.add-donation-form .drawer-field:last-of-type {
+    grid-column: 1 / -1;
+}
+
+.add-donation-form input,
+.add-donation-form select,
+.add-donation-form textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+    color: var(--text-dark);
+    font: inherit;
+}
+
+.add-donation-form input:focus-visible,
+.add-donation-form select:focus-visible,
+.add-donation-form textarea:focus-visible {
+    outline: 2px solid var(--green);
+    outline-offset: 2px;
+}
+
+@media (max-width: 640px) {
+    .add-donation-form {
+        grid-template-columns: 1fr;
+    }
+
+    .add-donation-form .drawer-field:last-of-type {
+        grid-column: auto;
+    }
+}

@@ -84,10 +84,47 @@ export async function migrate() {
         expires_at TIMESTAMPTZ NOT NULL
       );
     `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS audit_logs (
+        id BIGSERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        action TEXT NOT NULL CHECK (char_length(action) BETWEEN 3 AND 80),
+        success BOOLEAN NOT NULL DEFAULT TRUE,
+        ip_address TEXT,
+        user_agent TEXT,
+        metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS donation_requests (
+        id BIGSERIAL PRIMARY KEY,
+        donor_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        title TEXT NOT NULL CHECK (char_length(title) BETWEEN 2 AND 120),
+        description TEXT NOT NULL DEFAULT '' CHECK (char_length(description) <= 2000),
+        category TEXT NOT NULL CHECK (char_length(category) BETWEEN 2 AND 60),
+        quantity INTEGER NOT NULL CHECK (quantity > 0 AND quantity <= 100000),
+        unit TEXT NOT NULL CHECK (char_length(unit) BETWEEN 1 AND 40),
+        item_condition TEXT NOT NULL DEFAULT 'حالة قياسية' CHECK (char_length(item_condition) BETWEEN 2 AND 80),
+        warehouse TEXT NOT NULL DEFAULT 'المخزن العام' CHECK (char_length(warehouse) BETWEEN 2 AND 160),
+        location TEXT NOT NULL CHECK (char_length(location) BETWEEN 2 AND 80),
+        status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected', 'in_progress', 'distributed')),
+        reviewed_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        reviewed_at TIMESTAMPTZ,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+    `);
     await client.query(`ALTER TABLE user_sessions ADD COLUMN IF NOT EXISTS remember_me BOOLEAN NOT NULL DEFAULT FALSE`);
     await client.query(`CREATE INDEX IF NOT EXISTS user_sessions_expires_at_idx ON user_sessions (expires_at)`);
     await client.query(`CREATE INDEX IF NOT EXISTS user_sessions_last_seen_at_idx ON user_sessions (last_seen_at)`);
     await client.query(`CREATE INDEX IF NOT EXISTS user_sessions_user_id_idx ON user_sessions (user_id)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS audit_logs_user_created_at_idx ON audit_logs (user_id, created_at DESC)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS audit_logs_created_at_idx ON audit_logs (created_at DESC)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS donation_requests_status_created_at_idx ON donation_requests (status, created_at DESC)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS donation_requests_donor_created_at_idx ON donation_requests (donor_id, created_at DESC)`);
 
     await client.query("COMMIT");
   } catch (error) {
