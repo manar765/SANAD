@@ -16,7 +16,7 @@
     }
 
     function addThemeControl() {
-        const host = document.querySelector(".nav-actions") || document.querySelector(".profile-nav") || document.body;
+        const host = document.querySelector("[data-theme-host]") || document.querySelector(".nav-actions") || document.querySelector(".profile-nav") || document.body;
         if (host.querySelector("[data-theme-toggle]")) return;
         const controls = document.createElement("div");
         controls.className = "preference-controls";

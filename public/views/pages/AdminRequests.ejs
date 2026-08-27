@@ -34,93 +34,125 @@
         <!-- ============================================================
          NAVBAR
     ============================================================ -->
-        <%- include('../partials/navbar', { activePath: '/admin-requests' }) %>
+        <button type="button" class="btn btn-outline admin-sidebar-toggle" id="adminSidebarToggle" aria-expanded="false"
+            aria-controls="adminSidebar">
+            <i class="fa-solid fa-bars" aria-hidden="true"></i> قائمة الإدارة
+        </button>
+        <div class="admin-layout" id="adminLayout">
+            <aside class="admin-sidebar" id="adminSidebar" aria-label="قائمة الإدارة">
+                <div class="admin-sidebar-title"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i><span>إدارة
+                        سند</span></div>
+                <button type="button" class="admin-sidebar-collapse" id="adminSidebarCollapse"
+                    aria-label="طي القائمة الجانبية" aria-expanded="true">
+                    <i class="fa-solid fa-angles-right" aria-hidden="true"></i><span>طي القائمة</span>
+                </button>
+                <div class="admin-theme-control" data-theme-host aria-label="إعدادات المظهر"></div>
+                <nav class="admin-sidebar-nav" aria-label="روابط لوحة الإدارة">
+                    <a class="admin-sidebar-link" href="/dashboard"><i class="fa-solid fa-gauge-high"
+                            aria-hidden="true"></i><span>لوحة الحساب</span></a>
+                    <a class="admin-sidebar-link active" href="/admin-requests" aria-current="page"><i
+                            class="fa-solid fa-inbox" aria-hidden="true"></i><span>طلبات التبرعات</span></a>
+                    <a class="admin-sidebar-link" href="/donations"><i class="fa-solid fa-hand-holding-heart"
+                            aria-hidden="true"></i><span>التبرعات</span></a>
+                    <a class="admin-sidebar-link" href="/inventory"><i class="fa-solid fa-boxes-stacked"
+                            aria-hidden="true"></i><span>المخزون</span></a>
+                    <a class="admin-sidebar-link" href="/beneficiaries"><i class="fa-solid fa-people-roof"
+                            aria-hidden="true"></i><span>المستفيدون</span></a>
+                    <a class="admin-sidebar-link" href="/distributions"><i class="fa-solid fa-truck-fast"
+                            aria-hidden="true"></i><span>التوزيعات</span></a>
+                </nav>
+            </aside>
+            <button type="button" class="admin-sidebar-overlay" id="adminSidebarOverlay"
+                aria-label="إغلاق قائمة الإدارة"></button>
+            <div class="admin-main">
+                <main id="main-content">
 
-            <main id="main-content">
-
-            <!-- ============================================================
+                    <!-- ============================================================
              PAGE HEADER
         ============================================================ -->
-            <section class="page-hero" id="admin-requests">
-                <div class="hero-blob hero-blob-1" aria-hidden="true"></div>
-                <div class="hero-blob hero-blob-2" aria-hidden="true"></div>
+                    <section class="page-hero" id="admin-requests">
+                        <div class="hero-blob hero-blob-1" aria-hidden="true"></div>
+                        <div class="hero-blob hero-blob-2" aria-hidden="true"></div>
 
-                <div class="container page-hero-grid">
+                        <div class="container page-hero-grid">
 
-                    <div class="page-hero-content">
-                        <span class="eyebrow reveal"><img src="/assets/images/LogoSANAD.png" alt="logo"
-                                style="width: 50px;">إدارة المنصة</span>
-                        <h1 class="page-hero-title reveal">طلبات الموافقة على التبرعات</h1>
-                        <p class="page-hero-sub reveal">راجع طلبات إضافة التبرعات المقدمة من المستخدمين ووافق عليها أو
-                            ارفضها.</p>
-                    </div>
+                            <div class="page-hero-content">
+                                <span class="eyebrow reveal"><img src="/assets/images/LogoSANAD.png" alt="logo"
+                                        style="width: 50px;">إدارة المنصة</span>
+                                <h1 class="page-hero-title reveal">طلبات الموافقة على التبرعات</h1>
+                                <p class="page-hero-sub reveal">راجع طلبات إضافة التبرعات المقدمة من المستخدمين ووافق
+                                    عليها أو
+                                    ارفضها.</p>
+                            </div>
 
-                    <div aria-hidden="true">
-                        <img src="/assets/images/Donations.png" alt="التبرعات">
-                    </div>
+                            <div aria-hidden="true">
+                                <img src="/assets/images/Donations.png" alt="التبرعات">
+                            </div>
 
-                </div>
-            </section>
+                        </div>
+                    </section>
 
-            <!-- ============================================================
+                    <!-- ============================================================
              REQUESTS SECTION
         ============================================================ -->
-            <section class="don-section" aria-label="طلبات التبرعات">
-                <div class="container">
+                    <section class="don-section" aria-label="طلبات التبرعات">
+                        <div class="container">
 
-                    <div class="admin-toolbar reveal">
-                        <div class="admin-toolbar-title">
-                            <i class="fa-solid fa-inbox"></i>
-                            <span>طلبات إضافة التبرعات</span>
-                            <span class="admin-pending-badge" id="pendingCount">0</span>
+                            <div class="admin-toolbar reveal">
+                                <div class="admin-toolbar-title">
+                                    <i class="fa-solid fa-inbox"></i>
+                                    <span>طلبات إضافة التبرعات</span>
+                                    <span class="admin-pending-badge" id="pendingCount">0</span>
+                                </div>
+
+                                <div class="admin-filter">
+                                    <i class="fa-solid fa-filter" aria-hidden="true"></i>
+                                    <select id="approvalFilter" aria-label="تصفية حالة الطلب">
+                                        <option value="all">كل الطلبات</option>
+                                        <option value="pending">بانتظار الموافقة</option>
+                                        <option value="approved">تمت الموافقة</option>
+                                        <option value="rejected">مرفوضة</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="admin-card reveal">
+                                <div class="admin-table-wrap">
+                                    <table class="dash-table admin-table">
+                                        <thead>
+                                            <tr>
+                                                <th>معرّف الطلب</th>
+                                                <th>التبرع</th>
+                                                <th>المتبرع</th>
+                                                <th>الفئة</th>
+                                                <th>الكمية</th>
+                                                <th>الحالة</th>
+                                                <th>المخزن / الموقع</th>
+                                                <th>الوصف</th>
+                                                <th>التاريخ</th>
+                                                <th>حالة الطلب</th>
+                                                <th>إجراءات</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="adminTableBody">
+                                            <!-- rows rendered by admin-requests.js -->
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <div class="don-empty admin-empty" id="adminEmpty" hidden>
+                                    <i class="fa-solid fa-inbox"></i>
+                                    <h3>لا توجد طلبات مطابقة</h3>
+                                    <p>عندما يرسل المستخدمون طلبات إضافة تبرع ستظهر هنا.</p>
+                                </div>
+                            </div>
+
                         </div>
+                    </section>
 
-                        <div class="admin-filter">
-                            <i class="fa-solid fa-filter" aria-hidden="true"></i>
-                            <select id="approvalFilter" aria-label="تصفية حالة الطلب">
-                                <option value="all">كل الطلبات</option>
-                                <option value="pending">بانتظار الموافقة</option>
-                                <option value="approved">تمت الموافقة</option>
-                                <option value="rejected">مرفوضة</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="admin-card reveal">
-                        <div class="admin-table-wrap">
-                            <table class="dash-table admin-table">
-                                <thead>
-                                    <tr>
-                                        <th>معرّف الطلب</th>
-                                        <th>التبرع</th>
-                                        <th>المتبرع</th>
-                                        <th>الفئة</th>
-                                        <th>الكمية</th>
-                                        <th>الحالة</th>
-                                        <th>المخزن / الموقع</th>
-                                        <th>الوصف</th>
-                                        <th>التاريخ</th>
-                                        <th>حالة الطلب</th>
-                                        <th>إجراءات</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="adminTableBody">
-                                    <!-- rows rendered by admin-requests.js -->
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <div class="don-empty admin-empty" id="adminEmpty" hidden>
-                            <i class="fa-solid fa-inbox"></i>
-                            <h3>لا توجد طلبات مطابقة</h3>
-                            <p>عندما يرسل المستخدمون طلبات إضافة تبرع ستظهر هنا.</p>
-                        </div>
-                    </div>
-
-                </div>
-            </section>
-
-        </main>
+                </main>
+            </div>
+        </div>
 
         <!-- ============================================================
          FOOTER
@@ -142,6 +174,7 @@
         <script src="/JS/main.js"></script>
         <script src="/JS/donations-store.js"></script>
         <script src="/JS/admin-requests.js"></script>
+        <script src="/JS/admin-sidebar.js"></script>
         <script src="/JS/logout.js"></script>
 
         <script src="/JS/preferences.js"></script>
