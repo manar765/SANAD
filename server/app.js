@@ -265,9 +265,9 @@ const pageRoutes = Object.freeze({
   "/dashboard": "profile",
   "/donations": "donations",
   "/admin-requests": "AdminRequests",
-  "/inventory": "inventory",
-  "/beneficiaries": "beneficiaries",
-  "/distributions": "distributions",
+  "/inventory": "coming-soon",
+  "/beneficiaries": "coming-soon",
+  "/distributions": "coming-soon",
 });
 
 const app = express();

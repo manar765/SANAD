@@ -79,7 +79,42 @@
     --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* ==========================================================================
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+.skip-link {
+    position: fixed;
+    top: 12px;
+    inset-inline-start: 12px;
+    z-index: 2000;
+    padding: 10px 16px;
+    border-radius: 10px;
+    background: var(--green-dark);
+    color: #fff;
+    font-weight: 700;
+    transform: translateY(-180%);
+    transition: transform 0.2s ease;
+}
+
+.skip-link:focus-visible {
+    transform: translateY(0);
+    outline: 3px solid var(--green-soft);
+    outline-offset: 3px;
+}
+
+/* ========================================================================== 
    02. Reset & base
    ========================================================================== */
 *,
@@ -301,4 +336,3 @@ footer[id] {
     background: var(--purple-tint);
     color: var(--purple);
 }
-

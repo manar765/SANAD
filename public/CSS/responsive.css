@@ -74,6 +74,12 @@
         width: 100%;
     }
 
+    .nav-actions .avatar-action {
+        width: 42px;
+        flex: 0 0 42px;
+        align-self: center;
+    }
+
     body.no-scroll {
         overflow: hidden;
     }
