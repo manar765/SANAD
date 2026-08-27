@@ -562,3 +562,27 @@ input.field.error:focus {
         min-height: 135px;
     }
 }
+
+/* ---------- auth-page preferences ---------- */
+html[data-theme="dark"] body { background: #101817; color: #F1F7F4; }
+html[data-theme="dark"] .form-panel { background: #182321; color: #F1F7F4; }
+html[data-theme="dark"] .form-box h3,
+html[data-theme="dark"] .form-box p,
+html[data-theme="dark"] .form-box label { color: #F1F7F4; }
+html[data-theme="dark"] .field { background: #20302B; color: #F1F7F4; border-color: #2B4039; }
+html[data-theme="dark"] .field::placeholder { color: #A8BBB4; }
+
+.standalone-preferences {
+    position: fixed;
+    z-index: 20;
+    top: 18px;
+    inset-inline-end: 18px;
+    margin: 0;
+}
+
+@media (max-width: 600px) {
+    .standalone-preferences {
+        top: 10px;
+        inset-inline-end: 10px;
+    }
+}

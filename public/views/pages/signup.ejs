@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
+
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -11,6 +12,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/feather-icons/4.29.0/feather.min.js"></script>
   </head>
+
   <body>
     <div class="page">
       <aside class="brand-panel">
@@ -18,9 +20,18 @@
         <h2>كل عطاء يبدأ بخطوة</h2>
         <p class="lead">أنشئ حسابك على سند وساهم في إيصال التبرعات العينية لمن يحتاجها بطريقة أكثر تنظيمًا وشفافية.</p>
         <div class="stat-row">
-          <div><div class="num">2,450+</div><div class="label">متبرع</div></div>
-          <div><div class="num">1,250+</div><div class="label">مستفيد</div></div>
-          <div><div class="num">85+</div><div class="label">جمعية</div></div>
+          <div>
+            <div class="num">2,450+</div>
+            <div class="label">متبرع</div>
+          </div>
+          <div>
+            <div class="num">1,250+</div>
+            <div class="label">مستفيد</div>
+          </div>
+          <div>
+            <div class="num">85+</div>
+            <div class="label">جمعية</div>
+          </div>
         </div>
       </aside>
 
@@ -46,7 +57,8 @@
           </section>
 
           <section id="formStep" class="signup-step hidden" aria-hidden="true">
-            <button type="button" class="back-link" id="backToRoles"><svg data-feather="arrow-right"></svg> تغيير نوع الحساب</button>
+            <button type="button" class="back-link" id="backToRoles"><svg data-feather="arrow-right"></svg> تغيير نوع
+              الحساب</button>
             <h3 id="formTitle">إنشاء حساب متبرع</h3>
             <p class="sub" id="formSubtitle">أدخل بياناتك للبدء في تقديم الدعم.</p>
 
@@ -55,34 +67,44 @@
               <div class="two-col-fields">
                 <div class="field-group">
                   <label class="field-label" for="firstName">الاسم الأول</label>
-                  <input class="field" id="firstName" name="firstName" type="text" placeholder="أحمد" autocomplete="given-name" required />
+                  <input class="field" id="firstName" name="firstName" type="text" placeholder="أحمد"
+                    autocomplete="given-name" required />
                   <div class="error-msg" id="firstNameError">اكتب الاسم الأول.</div>
                 </div>
                 <div class="field-group">
                   <label class="field-label" for="lastName">اسم العائلة</label>
-                  <input class="field" id="lastName" name="lastName" type="text" placeholder="حسن" autocomplete="family-name" required />
+                  <input class="field" id="lastName" name="lastName" type="text" placeholder="حسن"
+                    autocomplete="family-name" required />
                   <div class="error-msg" id="lastNameError">اكتب اسم العائلة.</div>
                 </div>
               </div>
 
               <div class="field-group">
                 <label class="field-label" for="email">البريد الإلكتروني</label>
-                <input class="field" id="email" name="email" type="email" placeholder="name@example.com" autocomplete="email" required />
+                <input class="field" id="email" name="email" type="email" placeholder="name@example.com"
+                  autocomplete="email" required />
                 <div class="error-msg" id="emailError">أدخل بريدًا إلكترونيًا صحيحًا.</div>
               </div>
               <div class="field-group">
                 <label class="field-label" for="phone">رقم الهاتف</label>
-                <input class="field" id="phone" name="phone" type="tel" placeholder="+20 1XXXXXXXXX" autocomplete="tel" required />
+                <input class="field" id="phone" name="phone" type="tel" placeholder="+20 1XXXXXXXXX" autocomplete="tel"
+                  required />
                 <div class="error-msg" id="phoneError">أدخل رقم هاتف صحيحًا.</div>
               </div>
               <div class="field-group">
                 <label class="field-label" for="password">كلمة المرور</label>
-                <div class="input-wrap"><input class="field has-icon" id="password" name="password" type="password" placeholder="8 أحرف على الأقل" autocomplete="new-password" required minlength="8" /><button type="button" class="toggle-pass" data-toggle-password="password" aria-label="إظهار كلمة المرور"><svg data-feather="eye"></svg></button></div>
+                <div class="input-wrap"><input class="field has-icon" id="password" name="password" type="password"
+                    placeholder="8 أحرف على الأقل" autocomplete="new-password" required minlength="8" /><button
+                    type="button" class="toggle-pass" data-toggle-password="password"
+                    aria-label="إظهار كلمة المرور"><svg data-feather="eye"></svg></button></div>
                 <div class="error-msg" id="passwordError">كلمة المرور يجب ألا تقل عن 8 أحرف.</div>
               </div>
               <div class="field-group">
                 <label class="field-label" for="confirmPassword">تأكيد كلمة المرور</label>
-                <div class="input-wrap"><input class="field has-icon" id="confirmPassword" name="confirmPassword" type="password" placeholder="أعد كتابة كلمة المرور" autocomplete="new-password" required /><button type="button" class="toggle-pass" data-toggle-password="confirmPassword" aria-label="إظهار كلمة المرور"><svg data-feather="eye"></svg></button></div>
+                <div class="input-wrap"><input class="field has-icon" id="confirmPassword" name="confirmPassword"
+                    type="password" placeholder="أعد كتابة كلمة المرور" autocomplete="new-password" required /><button
+                    type="button" class="toggle-pass" data-toggle-password="confirmPassword"
+                    aria-label="إظهار كلمة المرور"><svg data-feather="eye"></svg></button></div>
                 <div class="error-msg" id="confirmPasswordError">كلمتا المرور غير متطابقتين.</div>
               </div>
 
@@ -96,13 +118,15 @@
                 </div>
                 <div class="field-group hidden" id="organizationField">
                   <label class="field-label" for="organizationName">اسم المؤسسة</label>
-                  <input class="field" id="organizationName" name="organizationName" type="text" placeholder="اسم المؤسسة" autocomplete="organization" />
+                  <input class="field" id="organizationName" name="organizationName" type="text"
+                    placeholder="اسم المؤسسة" autocomplete="organization" />
                   <div class="error-msg" id="organizationNameError">اكتب اسم المؤسسة.</div>
                 </div>
               </div>
 
               <div class="form-server-error error-msg" id="formError"></div>
-              <button type="submit" class="btn btn-primary" id="submitBtn"><span class="btn-text">إنشاء الحساب</span><span class="spinner"></span></button>
+              <button type="submit" class="btn btn-primary" id="submitBtn"><span class="btn-text">إنشاء
+                  الحساب</span><span class="spinner"></span></button>
             </form>
           </section>
           <p class="signup-line">لديك حساب بالفعل؟ <a href="/login">تسجيل الدخول</a></p>
@@ -110,7 +134,9 @@
       </main>
     </div>
     <script src="/JS/signup.js"></script>
+    <script src="/JS/preferences.js"></script>
   </body>
+
 </html>
 
 <script>feather.replace();</script>
