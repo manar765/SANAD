@@ -1,0 +1,95 @@
+/* ========================================================================== 
+   SANAD Design Tokens
+   Shared visual primitives for the Arabic RTL interface.
+   ========================================================================== */
+:root {
+    /* brand palette */
+    --color-brand-900: #0F5B46;
+    --color-brand-700: #1F7A5C;
+    --color-brand-400: #6BAA75;
+    --color-brand-100: #E7F3EE;
+    --color-brand-50: #F3FAF7;
+
+    /* semantic aliases */
+    --green-dark: var(--color-brand-900);
+    --green: var(--color-brand-700);
+    --green-soft: var(--color-brand-400);
+    --mint: var(--color-brand-100);
+    --mint-soft: var(--color-brand-50);
+
+    /* neutral palette */
+    --color-neutral-50: #F8F7F3;
+    --color-neutral-0: #FFFFFF;
+    --color-neutral-900: #1F2937;
+    --color-neutral-500: #6B7280;
+    --color-neutral-200: #E6ECE8;
+    --color-neutral-100: #EEF2EF;
+    --cream: var(--color-neutral-50);
+    --surface: var(--color-neutral-0);
+    --text-dark: var(--color-neutral-900);
+    --text-muted: var(--color-neutral-500);
+    --border: var(--color-neutral-200);
+    --border-soft: var(--color-neutral-100);
+
+    /* accent palette */
+    --orange: #F5A623;
+    --orange-tint: #FDF0DC;
+    --coral: #E76F51;
+    --coral-tint: #FCEBE6;
+    --red: #D92D20;
+    --red-tint: #FDECEA;
+    --blue: #5B8DEF;
+    --blue-tint: #E9F0FC;
+    --purple: #8B7CC8;
+    --purple-tint: #F0EDF9;
+
+    /* footer */
+    --footer-bg: var(--color-brand-900);
+    --footer-text: #C7DCD3;
+    --footer-muted: #8FB5A6;
+
+    /* typography */
+    --font-family-ar: "IBM Plex Sans Arabic", "Cairo", system-ui, -apple-system, sans-serif;
+    --font-size-xs: 0.75rem;
+    --font-size-sm: 0.875rem;
+    --font-size-md: 1rem;
+    --font-size-lg: 1.25rem;
+    --font-size-xl: 1.5rem;
+    --line-height-body: 1.7;
+    --line-height-heading: 1.35;
+
+    /* spacing */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 20px;
+    --space-6: 24px;
+    --space-8: 32px;
+    --space-10: 40px;
+    --space-12: 48px;
+
+    /* radius */
+    --radius-sm: 12px;
+    --radius: 18px;
+    --radius-lg: 24px;
+    --radius-xl: 28px;
+    --radius-pill: 999px;
+
+    /* elevation */
+    --shadow-sm: 0 2px 12px rgba(15, 91, 70, 0.06);
+    --shadow: 0 10px 30px rgba(15, 91, 70, 0.1);
+    --shadow-lg: 0 24px 60px rgba(15, 91, 70, 0.16);
+
+    /* layout */
+    --container: 1300px;
+    --nav-height: 78px;
+    --sidebar-width: 250px;
+    --sidebar-width-collapsed: 76px;
+
+    /* motion */
+    --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+    --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+    --transition: all 0.3s var(--ease-standard);
+    --transition-fast: all 0.18s var(--ease-standard);
+}

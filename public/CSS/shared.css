@@ -24,60 +24,7 @@
     16. Responsive
    ========================================================================== */
 
-/* ==========================================================================
-   01. CSS variables
-   ========================================================================== */
-:root {
-    /* brand greens */
-    --green-dark: #0F5B46;
-    --green: #1F7A5C;
-    --green-soft: #6BAA75;
-    --mint: #E7F3EE;
-    --mint-soft: #F3FAF7;
-
-    /* neutrals */
-    --cream: #F8F7F3;
-    --surface: #FFFFFF;
-    --text-dark: #1F2937;
-    --text-muted: #6B7280;
-    --border: #E6ECE8;
-    --border-soft: #EEF2EF;
-
-    /* accents — used sparingly on icons, badges, charts & small details */
-    --orange: #F5A623;
-    --orange-tint: #FDF0DC;
-    --coral: #E76F51;
-    --coral-tint: #FCEBE6;
-    --red: #D92D20;
-    --red-tint: #FDECEA;
-    --blue: #5B8DEF;
-    --blue-tint: #E9F0FC;
-    --purple: #8B7CC8;
-    --purple-tint: #F0EDF9;
-
-    /* footer */
-    --footer-bg: #0F5B46;
-    --footer-text: #C7DCD3;
-    --footer-muted: #8FB5A6;
-
-    /* radius */
-    --radius-sm: 12px;
-    --radius: 18px;
-    --radius-lg: 24px;
-    --radius-xl: 28px;
-
-    /* shadows */
-    --shadow-sm: 0 2px 12px rgba(15, 91, 70, 0.06);
-    --shadow: 0 10px 30px rgba(15, 91, 70, 0.1);
-    --shadow-lg: 0 24px 60px rgba(15, 91, 70, 0.16);
-
-    /* layout */
-    --container: 1300px;
-    --nav-height: 78px;
-
-    /* motion */
-    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
+/* Design tokens are centralized in tokens.css and imported by style.css. */
 
 @media (prefers-reduced-motion: reduce) {
     html {

@@ -1,4 +1,5 @@
 /* SANAD stylesheet entrypoint: keep imports in the original cascade order. */
+@import url("./tokens.css");
 @import url("./shared.css");
 @import url("./navbar.css");
 @import url("./home.css");
