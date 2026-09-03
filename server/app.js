@@ -445,8 +445,18 @@ function normalizeDonationText(value, maxLength) {
   return String(value || "").trim().replace(/\s+/g, " ").slice(0, maxLength);
 }
 
+function isValidIsoDate(value) {
+  return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(value));
+}
+
+function isValidIsoDateTime(value) {
+  return typeof value === "string" && !Number.isNaN(Date.parse(value));
+}
+
 function donationInput(body) {
   const quantity = Number.parseInt(body?.quantity, 10);
+  const receivedAt = body?.receivedAt || body?.received_at;
+  const expirationDate = body?.expirationDate || body?.expiration_date;
   return {
     title: normalizeDonationText(body?.title, 120),
     description: normalizeDonationText(body?.description, 2000),
@@ -456,6 +466,9 @@ function donationInput(body) {
     condition: normalizeDonationText(body?.condition || body?.itemCondition || "حالة قياسية", 80),
     warehouse: normalizeDonationText(body?.warehouse || "المخزن العام", 160),
     location: normalizeDonationText(body?.location, 80),
+    notes: normalizeDonationText(body?.notes, 2000),
+    receivedAt: receivedAt && isValidIsoDateTime(receivedAt) ? new Date(receivedAt).toISOString() : null,
+    expirationDate: expirationDate && isValidIsoDate(expirationDate) ? expirationDate : null,
   };
 }
 
@@ -573,9 +586,10 @@ app.patch("/api/admin/distributions/:id/status", requireAdmin, requireCsrf, asyn
 app.get("/api/donations", requireAuth, async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT d.id, d.title, d.description AS "desc", d.category, d.quantity AS qty,
+      `SELECT d.id, d.reference_code AS "referenceCode", d.title, d.description AS "desc", d.category, d.quantity AS qty,
               d.unit, d.item_condition AS condition, d.warehouse, d.location,
-              d.status, d.created_at AS "createdAt", d.donor_id AS "donorId",
+              d.status, d.notes, d.received_at AS "receivedAt", d.expiration_date AS "expirationDate",
+              d.created_at AS "createdAt", d.donor_id AS "donorId",
               COALESCE(NULLIF(u.full_name, ''), NULLIF(u.name, ''), u.email) AS donor
        FROM donation_requests d
        JOIN users u ON u.id = d.donor_id
@@ -586,9 +600,12 @@ app.get("/api/donations", requireAuth, async (req, res) => {
     return res.json({
       donations: result.rows.map(donation => ({
         ...donation,
+        referenceCode: donation.referenceCode || `DON-${String(donation.id).padStart(4, "0")}`,
         status: DONATION_STATUS_LABELS[donation.status] || donation.status,
         qty: `${donation.qty} ${donation.unit}`,
         date: new Date(donation.createdAt).toLocaleDateString("ar-EG"),
+        receivedDate: donation.receivedAt ? new Date(donation.receivedAt).toLocaleDateString("ar-EG") : null,
+        expirationDate: donation.expirationDate || null,
       })),
     });
   } catch {
@@ -607,14 +624,23 @@ app.post("/api/donations", requireAuth, requireCsrf, async (req, res) => {
   try {
     const result = await pool.query(
       `INSERT INTO donation_requests
-        (donor_id, title, description, category, quantity, unit, item_condition, warehouse, location)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-       RETURNING id, title, description AS "desc", category, quantity AS qty, unit,
-                 item_condition AS condition, warehouse, location, status, created_at AS "createdAt"`,
-      [req.user.id, input.title, input.description, input.category, input.quantity, input.unit, input.condition, input.warehouse, input.location],
+        (donor_id, title, description, category, quantity, unit, item_condition, warehouse, location, notes, received_at, expiration_date)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+       RETURNING id, reference_code AS "referenceCode", title, description AS "desc", category, quantity AS qty, unit,
+                 item_condition AS condition, warehouse, location, notes, received_at AS "receivedAt",
+                 expiration_date AS "expirationDate", status, created_at AS "createdAt"`,
+      [req.user.id, input.title, input.description, input.category, input.quantity, input.unit, input.condition, input.warehouse, input.location, input.notes, input.receivedAt, input.expirationDate],
     );
-    await recordAuditEvent(req, { userId: req.user.id, action: "donation_submitted", metadata: { donationId: result.rows[0].id } });
-    return res.status(201).json({ donation: { ...result.rows[0], status: DONATION_STATUS_LABELS.pending } });
+    const row = result.rows[0];
+    const referenceCode = row.referenceCode || `DON-${String(row.id).padStart(4, "0")}`;
+    await recordAuditEvent(req, { userId: req.user.id, action: "donation_submitted", metadata: { donationId: row.id, referenceCode } });
+    return res.status(201).json({
+      donation: {
+        ...row,
+        referenceCode,
+        status: DONATION_STATUS_LABELS.pending,
+      },
+    });
   } catch {
     return res.status(503).json({ message: "Donation submission is temporarily unavailable." });
   }
@@ -623,15 +649,21 @@ app.post("/api/donations", requireAuth, requireCsrf, async (req, res) => {
 app.get("/api/admin/donations", requireAdmin, async (_req, res) => {
   try {
     const result = await pool.query(
-      `SELECT d.id, d.title, d.description AS desc, d.category, d.quantity AS qty,
+      `SELECT d.id, d.reference_code AS "referenceCode", d.title, d.description AS desc, d.category, d.quantity AS qty,
               d.unit, d.item_condition AS condition, d.warehouse, d.location,
-              d.status AS "approvalStatus", d.created_at AS "createdAt",
+              d.status AS "approvalStatus", d.notes, d.received_at AS "receivedAt", d.expiration_date AS "expirationDate",
+              d.created_at AS "createdAt",
               COALESCE(NULLIF(u.full_name, ''), NULLIF(u.name, ''), u.email) AS donor
        FROM donation_requests d
        JOIN users u ON u.id = d.donor_id
        ORDER BY d.created_at DESC`,
     );
-    return res.json({ donations: result.rows });
+    return res.json({
+      donations: result.rows.map(donation => ({
+        ...donation,
+        referenceCode: donation.referenceCode || `DON-${String(donation.id).padStart(4, "0")}`,
+      })),
+    });
   } catch {
     return res.status(503).json({ message: "Donation requests are temporarily unavailable." });
   }

@@ -28,13 +28,21 @@ export async function addInventoryItem(body, userId) {
         description: text(body?.description, 2000), unit: text(body?.unit, 40), quantityTotal: nonNegativeInt(body?.quantityTotal),
         lowStockThreshold: nonNegativeInt(body?.lowStockThreshold ?? 1), status: text(body?.status || "available", 30),
         warehouse: text(body?.warehouse || "المخزن العام", 160), location: text(body?.location, 160), condition: text(body?.condition || "standard", 80),
+        expirationDate: body?.expirationDate ? text(body.expirationDate, 10) : null, notes: text(body?.notes, 2000),
     };
     if (!input.name || input.name.length < 2 || !input.category || input.category.length < 2 || !input.unit || !input.location || input.quantityTotal === null || !INVENTORY_STATUSES.has(input.status)) throw new Error("INVALID_INVENTORY");
     return createInventoryItem(input, userId);
 }
 
 export async function editInventoryItem(id, body) {
-    const input = { name: text(body?.name, 160) || null, category: text(body?.category, 80) || null, description: text(body?.description, 2000), lowStockThreshold: body?.lowStockThreshold === undefined ? null : nonNegativeInt(body.lowStockThreshold), status: body?.status === undefined ? null : text(body.status, 30), warehouse: text(body?.warehouse, 160) || null, location: text(body?.location, 160) || null };
+    const input = {
+        name: text(body?.name, 160) || null, category: text(body?.category, 80) || null, description: text(body?.description, 2000),
+        lowStockThreshold: body?.lowStockThreshold === undefined ? null : nonNegativeInt(body.lowStockThreshold),
+        status: body?.status === undefined ? null : text(body.status, 30),
+        warehouse: text(body?.warehouse, 160) || null, location: text(body?.location, 160) || null,
+        expirationDate: body?.expirationDate === undefined ? undefined : (body?.expirationDate ? text(body.expirationDate, 10) : null),
+        notes: body?.notes === undefined ? undefined : text(body.notes, 2000),
+    };
     if (input.status && !INVENTORY_STATUSES.has(input.status)) throw new Error("INVALID_INVENTORY_STATUS");
     if (body?.lowStockThreshold !== undefined && input.lowStockThreshold === null) throw new Error("INVALID_INVENTORY");
     return updateInventoryItem(id, input);

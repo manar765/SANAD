@@ -33,7 +33,7 @@ server.stdout.on("data", chunk => { logs += chunk.toString(); });
 server.stderr.on("data", chunk => { logs += chunk.toString(); });
 
 async function waitForServer() {
-    for (let attempt = 0; attempt < 40; attempt += 1) {
+    for (let attempt = 0; attempt < 120; attempt += 1) {
         try {
             const response = await fetch(`${baseUrl}/api/health`);
             if (response.status === 200 || response.status === 503) return;

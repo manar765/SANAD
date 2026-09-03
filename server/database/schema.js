@@ -141,6 +141,10 @@ export async function migrate() {
         warehouse TEXT NOT NULL DEFAULT 'المخزن العام' CHECK (char_length(warehouse) BETWEEN 2 AND 160),
         location TEXT NOT NULL CHECK (char_length(location) BETWEEN 2 AND 80),
         status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected', 'in_progress', 'distributed')),
+        reference_code TEXT UNIQUE,
+        received_at TIMESTAMPTZ,
+        expiration_date DATE,
+        notes TEXT NOT NULL DEFAULT '' CHECK (char_length(notes) <= 2000),
         reviewed_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
         reviewed_at TIMESTAMPTZ,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -164,6 +168,8 @@ export async function migrate() {
         warehouse TEXT NOT NULL DEFAULT 'المخزن العام' CHECK (char_length(trim(warehouse)) BETWEEN 2 AND 160),
         location TEXT NOT NULL CHECK (char_length(trim(location)) BETWEEN 2 AND 160),
         condition TEXT NOT NULL DEFAULT 'standard' CHECK (char_length(trim(condition)) BETWEEN 2 AND 80),
+        expiration_date DATE,
+        notes TEXT NOT NULL DEFAULT '' CHECK (char_length(notes) <= 2000),
         created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -218,6 +224,47 @@ export async function migrate() {
 
     await client.query(`ALTER TABLE user_sessions ADD COLUMN IF NOT EXISTS remember_me BOOLEAN NOT NULL DEFAULT FALSE`);
     await client.query(`ALTER TABLE user_mfa ALTER COLUMN enabled_at DROP NOT NULL`);
+
+    // Migration for donation_requests
+    await client.query(`ALTER TABLE donation_requests ADD COLUMN IF NOT EXISTS reference_code TEXT`);
+    await client.query(`ALTER TABLE donation_requests ADD COLUMN IF NOT EXISTS received_at TIMESTAMPTZ`);
+    await client.query(`ALTER TABLE donation_requests ADD COLUMN IF NOT EXISTS expiration_date DATE`);
+    await client.query(`ALTER TABLE donation_requests ADD COLUMN IF NOT EXISTS notes TEXT NOT NULL DEFAULT ''`);
+    await client.query(`UPDATE donation_requests SET reference_code = 'DON-' || LPAD(id::text, 4, '0') WHERE reference_code IS NULL`);
+
+    await client.query(`
+      CREATE OR REPLACE FUNCTION set_donation_reference_code()
+      RETURNS TRIGGER AS $$
+      BEGIN
+        IF NEW.reference_code IS NULL OR trim(NEW.reference_code) = '' THEN
+          NEW.reference_code := 'DON-' || LPAD(NEW.id::text, 4, '0');
+        END IF;
+        RETURN NEW;
+      END;
+      $$ LANGUAGE plpgsql;
+    `);
+
+    await client.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM pg_trigger WHERE tgname = 'trigger_set_donation_reference_code'
+        ) THEN
+          CREATE TRIGGER trigger_set_donation_reference_code
+          BEFORE INSERT ON donation_requests
+          FOR EACH ROW
+          EXECUTE FUNCTION set_donation_reference_code();
+        END IF;
+      END $$;
+    `);
+
+    // Migration for inventory_items
+    await client.query(`ALTER TABLE inventory_items ADD COLUMN IF NOT EXISTS expiration_date DATE`);
+    await client.query(`ALTER TABLE inventory_items ADD COLUMN IF NOT EXISTS notes TEXT NOT NULL DEFAULT ''`);
+
+    await client.query(`CREATE UNIQUE INDEX IF NOT EXISTS donation_requests_reference_code_idx ON donation_requests (reference_code)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS donation_requests_expiration_idx ON donation_requests (expiration_date) WHERE expiration_date IS NOT NULL`);
+    await client.query(`CREATE INDEX IF NOT EXISTS inventory_items_expiration_idx ON inventory_items (expiration_date) WHERE expiration_date IS NOT NULL`);
     await client.query(`CREATE INDEX IF NOT EXISTS inventory_items_status_updated_at_idx ON inventory_items (status, updated_at DESC)`);
     await client.query(`CREATE INDEX IF NOT EXISTS inventory_items_category_idx ON inventory_items (category)`);
     await client.query(`CREATE INDEX IF NOT EXISTS inventory_items_source_donation_idx ON inventory_items (source_donation_id)`);

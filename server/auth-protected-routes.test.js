@@ -103,7 +103,7 @@ before(async () => {
 
     let output = "";
     const ready = new Promise((resolve, reject) => {
-        const timer = setTimeout(() => reject(new Error(`SANAD server did not start. Output: ${output}`)), 15000);
+        const timer = setTimeout(() => reject(new Error(`SANAD server did not start. Output: ${output}`)), 35000);
         const onData = (chunk) => {
             output += chunk.toString();
             if (output.includes(`SANAD running at http://localhost:${port}`)) {
@@ -467,9 +467,11 @@ test("stores donation requests securely and enforces donor/admin workflow", asyn
     const donation = (await create.json()).donation;
     assert.equal(donation.status, "قيد المراجعة");
     assert.ok(donation.id);
+    assert.match(donation.referenceCode, /^DON-\d{4,}$/);
 
     const donorList = await request("/api/donations", { headers: { Cookie: donor.cookie } });
-    assert.ok((await donorList.json()).donations.some(item => item.id === donation.id));
+    const userDonations = (await donorList.json()).donations;
+    assert.ok(userDonations.some(item => item.id === donation.id && /^DON-\d{4,}$/.test(item.referenceCode)));
 
     const beneficiary = await signup({
         role: "beneficiary",

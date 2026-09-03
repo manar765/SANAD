@@ -5,7 +5,8 @@ const inventorySelect = `
          i.description, i.unit, i.quantity_total AS "quantityTotal",
          i.quantity_available AS "quantityAvailable", i.quantity_reserved AS "quantityReserved",
          i.low_stock_threshold AS "lowStockThreshold", i.status, i.warehouse, i.location,
-         i.condition, i.created_by AS "createdBy", i.created_at AS "createdAt", i.updated_at AS "updatedAt"
+         i.condition, i.expiration_date AS "expirationDate", i.notes,
+         i.created_by AS "createdBy", i.created_at AS "createdAt", i.updated_at AS "updatedAt"
   FROM inventory_items i
 `;
 
@@ -22,11 +23,12 @@ export async function createInventoryItem(input, userId) {
     const result = await pool.query(
         `INSERT INTO inventory_items
       (source_donation_id, name, category, description, unit, quantity_total, quantity_available,
-       quantity_reserved, low_stock_threshold, status, warehouse, location, condition, created_by)
-     VALUES ($1, $2, $3, $4, $5, $6, $6, 0, $7, $8, $9, $10, $11, $12)
+       quantity_reserved, low_stock_threshold, status, warehouse, location, condition, expiration_date, notes, created_by)
+     VALUES ($1, $2, $3, $4, $5, $6, $6, 0, $7, $8, $9, $10, $11, $12, $13, $14)
      RETURNING id`,
         [input.sourceDonationId || null, input.name, input.category, input.description, input.unit,
-        input.quantityTotal, input.lowStockThreshold, input.status, input.warehouse, input.location, input.condition, userId || null],
+        input.quantityTotal, input.lowStockThreshold, input.status, input.warehouse, input.location, input.condition,
+        input.expirationDate || null, input.notes || "", userId || null],
     );
     const rows = await pool.query(`${inventorySelect} WHERE i.id = $1`, [result.rows[0].id]);
     return rows.rows[0];
@@ -38,10 +40,11 @@ export async function updateInventoryItem(id, input) {
        name = COALESCE($2, name), category = COALESCE($3, category), description = COALESCE($4, description),
        low_stock_threshold = COALESCE($5, low_stock_threshold), status = COALESCE($6, status),
        warehouse = COALESCE($7, warehouse), location = COALESCE($8, location),
+       expiration_date = COALESCE($9, expiration_date), notes = COALESCE($10, notes),
        updated_at = NOW()
      WHERE id = $1 RETURNING id`,
         [id, input.name ?? null, input.category ?? null, input.description ?? null, input.lowStockThreshold ?? null,
-            input.status ?? null, input.warehouse ?? null, input.location ?? null],
+            input.status ?? null, input.warehouse ?? null, input.location ?? null, input.expirationDate ?? null, input.notes ?? null],
     );
     if (!result.rows[0]) return null;
     const rows = await pool.query(`${inventorySelect} WHERE i.id = $1`, [id]);
