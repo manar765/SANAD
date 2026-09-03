@@ -57,7 +57,7 @@
         }
 
         tr.innerHTML =
-            '<td class="admin-id">' + escapeHtml(request.id) + '</td>' +
+            '<td class="admin-id">' + escapeHtml(request.referenceCode || request.id) + '</td>' +
             '<td><strong>' + escapeHtml(request.title) + '</strong></td>' +
             '<td>' + escapeHtml(request.donor) + '</td>' +
             '<td>' + escapeHtml(request.category) + '</td>' +

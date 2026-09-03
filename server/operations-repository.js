@@ -203,3 +203,62 @@ export async function updateDistributionStatus(id, status) {
         throw error;
     } finally { client.release(); }
 }
+
+export async function syncDonationToInventory(client, donationId, status, reviewerId) {
+    const donationRes = await client.query(
+        `SELECT id, title, description, category, quantity, unit, item_condition, warehouse, location, expiration_date, notes
+         FROM donation_requests WHERE id = $1 FOR UPDATE`,
+        [donationId],
+    );
+    const donation = donationRes.rows[0];
+    if (!donation) return null;
+
+    const existingRes = await client.query(
+        `SELECT id, quantity_total, quantity_available, quantity_reserved, low_stock_threshold, status
+         FROM inventory_items WHERE source_donation_id = $1 FOR UPDATE`,
+        [donationId],
+    );
+    const existing = existingRes.rows[0];
+
+    if (status === "approved") {
+        if (existing) {
+            await client.query(
+                `UPDATE inventory_items
+                 SET name = $2, category = $3, description = $4, unit = $5,
+                     warehouse = $6, location = $7, condition = $8,
+                     expiration_date = $9, notes = $10,
+                     status = CASE WHEN quantity_available = 0 THEN 'out_of_stock' WHEN quantity_available <= low_stock_threshold THEN 'low_stock' ELSE 'available' END,
+                     updated_at = NOW()
+                 WHERE id = $1`,
+                [existing.id, donation.title, donation.category, donation.description, donation.unit,
+                 donation.warehouse, donation.location, donation.item_condition, donation.expiration_date, donation.notes],
+            );
+            return existing.id;
+        }
+
+        const insertRes = await client.query(
+            `INSERT INTO inventory_items
+              (source_donation_id, name, category, description, unit, quantity_total, quantity_available,
+               quantity_reserved, low_stock_threshold, status, warehouse, location, condition, expiration_date, notes, created_by)
+             VALUES ($1, $2, $3, $4, $5, $6, $6, 0, 1, 'available', $7, $8, $9, $10, $11, $12)
+             RETURNING id`,
+            [donation.id, donation.title, donation.category, donation.description, donation.unit, donation.quantity,
+             donation.warehouse, donation.location, donation.item_condition, donation.expiration_date, donation.notes, reviewerId || null],
+        );
+        return insertRes.rows[0].id;
+    }
+
+    if (status === "rejected" && existing) {
+        if (existing.quantity_reserved > 0 || existing.quantity_available < existing.quantity_total) {
+            throw new Error("CANNOT_REVERT_DISTRIBUTED_DONATION");
+        }
+        await client.query(
+            `UPDATE inventory_items SET status = 'archived', quantity_available = 0, updated_at = NOW() WHERE id = $1`,
+            [existing.id],
+        );
+        return existing.id;
+    }
+
+    return existing ? existing.id : null;
+}
+

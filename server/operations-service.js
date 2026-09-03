@@ -1,3 +1,4 @@
+import pool from "./database/index.js";
 import {
     createBeneficiaryNeed,
     createDistribution,
@@ -6,6 +7,7 @@ import {
     listBeneficiaryNeeds,
     listDistributions,
     listInventory,
+    syncDonationToInventory,
     updateBeneficiaryNeed,
     updateDistributionStatus,
     updateInventoryItem,
@@ -86,4 +88,34 @@ export async function changeDistributionStatus(id, status) {
     return updateDistributionStatus(id, status);
 }
 
+export async function approveOrRejectDonation(donationId, status, reviewerId) {
+    const client = await pool.connect();
+    try {
+        await client.query("BEGIN");
+        const updateRes = await client.query(
+            `UPDATE donation_requests
+             SET status = $1, reviewed_by = $2, reviewed_at = NOW(), updated_at = NOW()
+             WHERE id = $3
+             RETURNING id, status, reference_code AS "referenceCode"`,
+            [status, reviewerId || null, donationId],
+        );
+        if (!updateRes.rows[0]) {
+            await client.query("ROLLBACK");
+            return null;
+        }
+        const inventoryItemId = await syncDonationToInventory(client, donationId, status, reviewerId);
+        await client.query("COMMIT");
+        return {
+            donation: updateRes.rows[0],
+            inventoryItemId,
+        };
+    } catch (error) {
+        await client.query("ROLLBACK").catch(() => {});
+        throw error;
+    } finally {
+        client.release();
+    }
+}
+
 export { getBeneficiaryProfileId };
+

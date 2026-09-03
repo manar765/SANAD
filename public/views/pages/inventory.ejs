@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<% /* EJS page template */ %>
+<html lang="ar" dir="rtl">
+
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>سند | SANAD — المخزون</title>
+        <meta name="description"
+            content="المخزون — تابع الأصناف العينية المتاحة في سند، وابحث وفلتر حسب الفئة والحالة والمخزن." />
+
+        <!-- favicon -->
+        <link rel="icon" type="image/png" href="/assets/images/LogoSANAD.png" />
+
+        <!-- fonts -->
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+        <!-- font awesome -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+
+        <!-- styles -->
+        <link rel="stylesheet" href="/CSS/style.css" />
+    </head>
+
+    <body class="inventory-page">
+        <a class="skip-link" href="#main-content">تخطي إلى المحتوى الرئيسي</a>
+
+        <!-- scroll progress indicator -->
+        <div class="progress-bar" id="progressBar" aria-hidden="true"></div>
+
+        <!-- ============================================================
+         NAVBAR
+    ============================================================ -->
+        <%- include('../partials/navbar', { activePath: '/inventory' }) %>
+
+        <main id="main-content" class="inventory-main">
+            <div class="inventory-container">
+
+                <!-- ============================================================
+                 HEADER
+            ============================================================ -->
+                <div class="inventory-header">
+                    <div class="inventory-header-text">
+                        <span class="eyebrow"><i class="fa-solid fa-boxes-stacked" aria-hidden="true"></i> إدارة
+                            المخزون</span>
+                        <h1>المخزون</h1>
+                        <p>تابع الأصناف العينية المتاحة في المخزون، وابحث وفلتر حسب الفئة والحالة والمخزن.</p>
+                    </div>
+                    <div class="inventory-header-actions">
+                        <button type="button" class="btn btn-outline" id="inventoryRefreshBtn">
+                            <i class="fa-solid fa-rotate" aria-hidden="true"></i> تحديث
+                        </button>
+                        <button type="button" class="btn btn-primary admin-only" id="addInventoryBtn" hidden>
+                            <i class="fa-solid fa-plus" aria-hidden="true"></i> إضافة صنف
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ============================================================
+                 KPI SUMMARY CARDS
+            ============================================================ -->
+                <div class="inventory-kpis">
+                    <div class="inventory-kpi-card">
+                        <span class="inventory-kpi-icon kpi-icon-teal"><i class="fa-solid fa-boxes-stacked"
+                                aria-hidden="true"></i></span>
+                        <div class="inventory-kpi-content">
+                            <strong id="kpiTotalUnits">0</strong>
+                            <span>إجمالي الوحدات</span>
+                        </div>
+                    </div>
+
+                    <div class="inventory-kpi-card">
+                        <span class="inventory-kpi-icon kpi-icon-blue"><i class="fa-solid fa-circle-check"
+                                aria-hidden="true"></i></span>
+                        <div class="inventory-kpi-content">
+                            <strong id="kpiAvailableUnits">0</strong>
+                            <span>المتاح للتوزيع</span>
+                        </div>
+                    </div>
+
+                    <div class="inventory-kpi-card">
+                        <span class="inventory-kpi-icon kpi-icon-amber"><i class="fa-solid fa-truck-fast"
+                                aria-hidden="true"></i></span>
+                        <div class="inventory-kpi-content">
+                            <strong id="kpiReservedUnits">0</strong>
+                            <span>قيد التوزيع والمحجوز</span>
+                        </div>
+                    </div>
+
+                    <div class="inventory-kpi-card">
+                        <span class="inventory-kpi-icon kpi-icon-red"><i class="fa-solid fa-triangle-exclamation"
+                                aria-hidden="true"></i></span>
+                        <div class="inventory-kpi-content">
+                            <strong id="kpiLowStockCount">0</strong>
+                            <span>تنبيهات انخفاض المخزون</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============================================================
+                 SEARCH & FILTER
+            ============================================================ -->
+                <div class="inventory-controls">
+                    <div class="inventory-search-group">
+                        <label for="inventorySearch">بحث</label>
+                        <input type="search" id="inventorySearch" placeholder="ابحث بالاسم أو المخزن أو الكود..."
+                            aria-label="ابحث في المخزون" />
+                    </div>
+
+                    <div class="inventory-filter-group">
+                        <label for="inventoryCategoryFilter">الفئة</label>
+                        <select id="inventoryCategoryFilter" aria-label="تصفية حسب الفئة">
+                            <option value="">الكل</option>
+                            <option value="ملابس">ملابس</option>
+                            <option value="مواد غذائية">مواد غذائية</option>
+                            <option value="أجهزة">أجهزة</option>
+                            <option value="مستلزمات طبية">مستلزمات طبية</option>
+                            <option value="أثاث">أثاث</option>
+                            <option value="أخرى">أخرى</option>
+                        </select>
+                    </div>
+
+                    <div class="inventory-filter-group">
+                        <label for="inventoryStatusFilter">الحالة</label>
+                        <select id="inventoryStatusFilter" aria-label="تصفية حسب الحالة">
+                            <option value="">الكل</option>
+                            <option value="available">متاح</option>
+                            <option value="low_stock">مخزون منخفض</option>
+                            <option value="out_of_stock">نفد المخزون</option>
+                            <option value="in_distribution">قيد التوزيع</option>
+                            <option value="surplus">فائض</option>
+                            <option value="archived">مؤرشف</option>
+                        </select>
+                    </div>
+
+                    <button type="button" class="btn btn-outline inventory-reset-btn" id="inventoryResetBtn">
+                        <i class="fa-solid fa-rotate-left" aria-hidden="true"></i> إعادة تعيين
+                    </button>
+                </div>
+
+                <!-- ============================================================
+                 LOADING / ERROR STATES
+            ============================================================ -->
+                <div class="ui-state ui-loading" id="inventoryLoading" role="status" aria-live="polite"
+                    aria-busy="true">
+                    <i class="fa-solid fa-spinner" aria-hidden="true"></i>
+                    <span data-state-message>جارٍ تحميل المخزون…</span>
+                </div>
+                <div class="ui-state ui-error" id="inventoryError" role="alert" hidden>
+                    <div class="ui-error-content">
+                        <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>
+                        <span data-state-message>تعذر تحميل بيانات المخزون.</span>
+                    </div>
+                    <button type="button" class="btn btn-outline ui-error-retry" data-state-retry>إعادة
+                        المحاولة</button>
+                </div>
+
+                <!-- ============================================================
+                 INVENTORY TABLE
+            ============================================================ -->
+                <div class="inventory-card">
+                    <div class="inventory-card-header">
+                        <h2 class="inventory-card-title">
+                            <i class="fa-solid fa-warehouse" aria-hidden="true"></i> أصناف المخزون
+                            <span class="inventory-count-badge" id="inventoryCount">0</span>
+                        </h2>
+                    </div>
+
+                    <div class="inventory-table-wrap">
+                        <table class="inventory-table">
+                            <thead>
+                                <tr>
+                                    <th>الصنف</th>
+                                    <th>الفئة</th>
+                                    <th>المخزن / الموقع</th>
+                                    <th>الحالة</th>
+                                    <th>الكمية</th>
+                                    <th>انتهاء الصلاحية</th>
+                                    <th class="admin-only" hidden>إجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody id="inventoryTableBody">
+                                <!-- rows rendered by inventory.js -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="don-empty" id="inventoryEmpty" hidden>
+                        <i class="fa-solid fa-box-open"></i>
+                        <h3>لا توجد أصناف مطابقة</h3>
+                        <p>جرّب تعديل البحث أو إعادة تعيين الفلاتر.</p>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+
+        <!-- ============================================================
+         ADD / EDIT ITEM MODAL
+    ============================================================ -->
+        <div class="inv-modal-overlay" id="inventoryModalOverlay" aria-hidden="true">
+            <div class="inv-modal-card" role="dialog" aria-modal="true" aria-labelledby="inventoryModalTitle">
+                <div class="inv-modal-header">
+                    <h2 id="inventoryModalTitle">إضافة صنف جديد</h2>
+                    <button type="button" class="inv-modal-close" id="inventoryModalCloseBtn" aria-label="إغلاق">
+                        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                    </button>
+                </div>
+
+                <form class="inv-modal-body" id="inventoryForm">
+                    <input type="hidden" id="invItemId" value="" />
+                    <div class="inv-form-grid">
+                        <div class="inv-form-group inv-form-col-2">
+                            <label for="invName">اسم الصنف</label>
+                            <input id="invName" required maxlength="160" autocomplete="off" />
+                        </div>
+
+                        <div class="inv-form-group">
+                            <label for="invCategory">الفئة</label>
+                            <select id="invCategory" required>
+                                <option>ملابس</option>
+                                <option>مواد غذائية</option>
+                                <option>أجهزة</option>
+                                <option>مستلزمات طبية</option>
+                                <option>أثاث</option>
+                                <option>أخرى</option>
+                            </select>
+                        </div>
+
+                        <div class="inv-form-group">
+                            <label for="invUnit">وحدة القياس</label>
+                            <input id="invUnit" required maxlength="40" placeholder="قطعة" />
+                        </div>
+
+                        <div class="inv-form-group">
+                            <label for="invQuantityTotal">الكمية الإجمالية</label>
+                            <input id="invQuantityTotal" type="number" min="0" required />
+                        </div>
+
+                        <div class="inv-form-group">
+                            <label for="invLowStockThreshold">حد تنبيه المخزون المنخفض</label>
+                            <input id="invLowStockThreshold" type="number" min="0" value="1" />
+                        </div>
+
+                        <div class="inv-form-group">
+                            <label for="invWarehouse">المخزن</label>
+                            <input id="invWarehouse" maxlength="160" placeholder="المخزن العام" />
+                        </div>
+
+                        <div class="inv-form-group">
+                            <label for="invLocation">الموقع</label>
+                            <input id="invLocation" required maxlength="160" />
+                        </div>
+
+                        <div class="inv-form-group">
+                            <label for="invCondition">الحالة الفعلية</label>
+                            <input id="invCondition" maxlength="80" placeholder="جيدة" />
+                        </div>
+
+                        <div class="inv-form-group">
+                            <label for="invStatus">حالة المخزون</label>
+                            <select id="invStatus">
+                                <option value="available">متاح</option>
+                                <option value="low_stock">مخزون منخفض</option>
+                                <option value="out_of_stock">نفد المخزون</option>
+                                <option value="in_distribution">قيد التوزيع</option>
+                                <option value="surplus">فائض</option>
+                                <option value="archived">مؤرشف</option>
+                            </select>
+                        </div>
+
+                        <div class="inv-form-group">
+                            <label for="invExpirationDate">تاريخ انتهاء الصلاحية (اختياري)</label>
+                            <input id="invExpirationDate" type="date" />
+                        </div>
+
+                        <div class="inv-form-group inv-form-col-2">
+                            <label for="invDescription">الوصف</label>
+                            <textarea id="invDescription" rows="3" maxlength="2000"></textarea>
+                        </div>
+
+                        <div class="inv-form-group inv-form-col-2">
+                            <label for="invNotes">ملاحظات</label>
+                            <textarea id="invNotes" rows="2" maxlength="2000"></textarea>
+                        </div>
+                    </div>
+                </form>
+
+                <div class="inv-modal-footer">
+                    <button type="button" class="btn btn-outline" id="inventoryModalCancelBtn">إلغاء</button>
+                    <button type="submit" form="inventoryForm" class="btn btn-primary"
+                        id="inventoryModalSaveBtn">حفظ</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================================
+         FOOTER
+    ============================================================ -->
+        <%- include('../partials/footer') %>
+
+        <!-- toast notification -->
+        <div class="toast" id="toast" role="status" aria-live="polite">
+            <i class="fa-solid fa-circle-info"></i>
+            <span></span>
+        </div>
+
+        <!-- back to top -->
+        <button class="back-to-top" id="backToTop" aria-label="العودة إلى الأعلى">
+            <i class="fa-solid fa-arrow-up"></i>
+        </button>
+
+        <!-- scripts -->
+        <script src="/JS/main.js"></script>
+        <script src="/JS/ui-states.js"></script>
+        <script src="/JS/inventory.js"></script>
+        <script src="/JS/logout.js"></script>
+
+        <script src="/JS/preferences.js"></script>
+    </body>
+
+</html>

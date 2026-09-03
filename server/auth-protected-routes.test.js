@@ -505,7 +505,18 @@ test("stores donation requests securely and enforces donor/admin workflow", asyn
         body: JSON.stringify({ status: "approved" }),
     });
     assert.equal(approve.status, 200);
-    assert.equal((await approve.json()).donation.status, "متاح");
+    const approvePayload = await approve.json();
+    assert.equal(approvePayload.donation.status, "متاح");
+    assert.ok(approvePayload.donation.inventoryItemId);
+
+    const inventoryRes = await request("/api/inventory", { headers: { Cookie: adminCookie } });
+    assert.equal(inventoryRes.status, 200);
+    const inventoryItems = (await inventoryRes.json()).items;
+    const linkedInventory = inventoryItems.find(item => String(item.sourceDonationId) === String(donation.id));
+    assert.ok(linkedInventory);
+    assert.equal(linkedInventory.quantityTotal, 20);
+    assert.equal(linkedInventory.quantityAvailable, 20);
+    assert.equal(linkedInventory.status, "available");
 
     const visibleAfterApproval = await request("/api/donations", { headers: { Cookie: beneficiary.cookie } });
     assert.ok((await visibleAfterApproval.json()).donations.some(item => item.id === donation.id));

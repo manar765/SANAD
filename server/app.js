@@ -21,6 +21,7 @@ import {
   addDistribution,
   addInventoryItem,
   addNeed,
+  approveOrRejectDonation,
   changeDistributionStatus,
   editInventoryItem,
   editNeed,
@@ -342,7 +343,7 @@ const pageRoutes = Object.freeze({
   "/dashboard": "dashboard",
   "/donations": "donations",
   "/admin-requests": "AdminRequests",
-  "/inventory": "coming-soon",
+  "/inventory": "inventory",
   "/beneficiaries": "coming-soon",
   "/distributions": "coming-soon",
 });
@@ -490,9 +491,10 @@ const operationError = (error, res) => {
     INVALID_DISTRIBUTION_STATUS: "Please provide a valid distribution status.",
     INVALID_DISTRIBUTION_TRANSITION: "This distribution can no longer change status.",
     INSUFFICIENT_INVENTORY: "The requested quantity is not available in inventory.",
+    CANNOT_REVERT_DISTRIBUTED_DONATION: "لا يمكن إلغاء أو تعديل تبرع تم توزيع أجزاء منه في المخزون بالفعل.",
   };
   const message = messages[error.message];
-  if (message) return res.status(error.message === "INSUFFICIENT_INVENTORY" ? 409 : 400).json({ message });
+  if (message) return res.status(["INSUFFICIENT_INVENTORY", "CANNOT_REVERT_DISTRIBUTED_DONATION"].includes(error.message) ? 409 : 400).json({ message });
   console.error("Operations API failed:", error);
   return res.status(503).json({ message: "The requested operation is temporarily unavailable." });
 };
@@ -676,18 +678,23 @@ app.patch("/api/admin/donations/:id/status", requireAdmin, requireCsrf, async (r
     return res.status(400).json({ message: "Please provide a valid donation status." });
   }
   try {
-    const result = await pool.query(
-      `UPDATE donation_requests
-       SET status = $1, reviewed_by = $2, reviewed_at = NOW(), updated_at = NOW()
-       WHERE id = $3
-       RETURNING id, status`,
-      [status, req.user.id || null, donationId],
-    );
-    if (!result.rows[0]) return res.status(404).json({ message: "Donation request not found." });
-    await recordAuditEvent(req, { userId: req.user.id, action: "donation_status_changed", metadata: { donationId, status } });
-    return res.json({ donation: { id: donationId, status: DONATION_STATUS_LABELS[status] } });
-  } catch {
-    return res.status(503).json({ message: "Donation status could not be updated." });
+    const outcome = await approveOrRejectDonation(donationId, status, req.user.id);
+    if (!outcome || !outcome.donation) return res.status(404).json({ message: "Donation request not found." });
+    await recordAuditEvent(req, {
+      userId: req.user.id,
+      action: "donation_status_changed",
+      metadata: { donationId, status, inventoryItemId: outcome.inventoryItemId },
+    });
+    return res.json({
+      donation: {
+        id: donationId,
+        referenceCode: outcome.donation.referenceCode || `DON-${String(donationId).padStart(4, "0")}`,
+        status: DONATION_STATUS_LABELS[status],
+        inventoryItemId: outcome.inventoryItemId || null,
+      },
+    });
+  } catch (error) {
+    return operationError(error, res);
   }
 });
 
