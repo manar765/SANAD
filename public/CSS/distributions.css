@@ -1,0 +1,788 @@
+/* ==========================================================================
+   SANAD — Distributions Module Styles
+   Arabic-First RTL, Professional SaaS Theme
+   ========================================================================== */
+
+.dist-page {
+    padding: 2.5rem 0 5rem;
+    background: #f8fafc;
+    min-height: calc(100vh - 72px);
+}
+
+.dist-container {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+}
+
+/* --- Hero & Stats Banner --- */
+.dist-hero {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.dist-hero-title-group h1 {
+    font-size: 1.85rem;
+    font-weight: 700;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 0 0 0.4rem;
+}
+
+.dist-hero-title-group p {
+    color: #64748b;
+    font-size: 0.95rem;
+    margin: 0;
+}
+
+.dist-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.25rem;
+    margin-bottom: 2rem;
+}
+
+.dist-stat-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 1rem;
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.dist-stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
+}
+
+.dist-stat-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 0.85rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    flex-shrink: 0;
+}
+
+.dist-stat-icon.teal {
+    background: #e6fffa;
+    color: #0d9488;
+}
+
+.dist-stat-icon.blue {
+    background: #eff6ff;
+    color: #2563eb;
+}
+
+.dist-stat-icon.green {
+    background: #f0fdf4;
+    color: #16a34a;
+}
+
+.dist-stat-icon.amber {
+    background: #fefce8;
+    color: #d97706;
+}
+
+.dist-stat-info small {
+    display: block;
+    color: #64748b;
+    font-size: 0.825rem;
+    font-weight: 500;
+    margin-bottom: 0.2rem;
+}
+
+.dist-stat-info strong {
+    font-size: 1.55rem;
+    font-weight: 800;
+    color: #0f172a;
+    line-height: 1.2;
+}
+
+/* --- Controls Toolbar --- */
+.dist-toolbar {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 1rem;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1.75rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.dist-toolbar-filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.85rem;
+    flex: 1;
+}
+
+.dist-search-input-wrapper {
+    position: relative;
+    min-width: 260px;
+    flex: 1;
+    max-width: 400px;
+}
+
+.dist-search-input-wrapper i {
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    pointer-events: none;
+}
+
+.dist-search-input-wrapper input {
+    width: 100%;
+    padding: 0.65rem 2.5rem 0.65rem 1rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 0.65rem;
+    font-size: 0.9rem;
+    background: #f8fafc;
+    transition: all 0.2s ease;
+}
+
+.dist-search-input-wrapper input:focus {
+    background: #ffffff;
+    border-color: #0d9488;
+    box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15);
+    outline: none;
+}
+
+.dist-select-filter {
+    padding: 0.65rem 1rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 0.65rem;
+    font-size: 0.9rem;
+    background: #ffffff;
+    color: #334155;
+    cursor: pointer;
+    transition: border-color 0.2s ease;
+}
+
+.dist-select-filter:focus {
+    border-color: #0d9488;
+    outline: none;
+}
+
+/* --- Data Table Container --- */
+.dist-table-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 1rem;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.dist-table-wrapper {
+    overflow-x: auto;
+}
+
+.dist-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: right;
+    font-size: 0.9rem;
+}
+
+.dist-table th {
+    background: #f8fafc;
+    padding: 1rem 1.25rem;
+    color: #475569;
+    font-weight: 600;
+    border-bottom: 1px solid #e2e8f0;
+    white-space: nowrap;
+}
+
+.dist-table td {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid #f1f5f9;
+    color: #1e293b;
+    vertical-align: middle;
+}
+
+.dist-table tbody tr:hover {
+    background: #f8fafc;
+}
+
+.dist-code-badge {
+    font-family: monospace;
+    font-weight: 700;
+    color: #0d9488;
+    background: #f0fdfa;
+    padding: 0.25rem 0.6rem;
+    border-radius: 0.4rem;
+    border: 1px solid #ccfbf1;
+    display: inline-block;
+    letter-spacing: 0.5px;
+}
+
+.dist-beneficiary-cell strong {
+    display: block;
+    color: #0f172a;
+    font-size: 0.95rem;
+}
+
+.dist-beneficiary-cell small {
+    color: #64748b;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.dist-items-preview {
+    max-width: 280px;
+    font-size: 0.85rem;
+    color: #334155;
+    line-height: 1.4;
+}
+
+.dist-items-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-top: 0.25rem;
+}
+
+.dist-item-tag {
+    background: #f1f5f9;
+    color: #475569;
+    padding: 0.15rem 0.5rem;
+    border-radius: 0.35rem;
+    font-size: 0.775rem;
+    font-weight: 500;
+}
+
+/* Status Badges */
+.dist-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.3rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.dist-badge.completed {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.dist-badge.planned {
+    background: #fef3c7;
+    color: #b45309;
+}
+
+.dist-badge.in_progress {
+    background: #e0f2fe;
+    color: #0369a1;
+}
+
+.dist-badge.cancelled {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.dist-actions-cell {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-icon-dist {
+    width: 34px;
+    height: 34px;
+    border-radius: 0.5rem;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #475569;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-icon-dist:hover {
+    background: #0d9488;
+    color: #ffffff;
+    border-color: #0d9488;
+}
+
+.btn-icon-dist.print:hover {
+    background: #2563eb;
+    border-color: #2563eb;
+}
+
+/* Empty & Loading states */
+.dist-empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: #64748b;
+}
+
+.dist-empty-state i {
+    font-size: 3rem;
+    color: #cbd5e1;
+    margin-bottom: 1rem;
+}
+
+.dist-empty-state h3 {
+    color: #1e293b;
+    margin: 0 0 0.5rem;
+}
+
+/* --- Wizard Modal (Create Distribution) --- */
+.dist-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1050;
+    padding: 1.5rem;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.25s ease;
+}
+
+.dist-modal-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.dist-modal-card {
+    background: #ffffff;
+    border-radius: 1.25rem;
+    width: 100%;
+    max-width: 780px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+    transform: scale(0.97);
+    transition: transform 0.25s ease;
+}
+
+.dist-modal-overlay.active .dist-modal-card {
+    transform: scale(1);
+}
+
+.dist-modal-header {
+    padding: 1.25rem 1.75rem;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #f8fafc;
+}
+
+.dist-modal-header h3 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    margin: 0;
+}
+
+.dist-modal-close {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 1.25rem;
+    cursor: pointer;
+    padding: 0.4rem;
+    border-radius: 0.4rem;
+    transition: color 0.15s ease;
+}
+
+.dist-modal-close:hover {
+    color: #0f172a;
+}
+
+.dist-modal-body {
+    padding: 1.75rem;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.dist-form-section {
+    margin-bottom: 1.75rem;
+}
+
+.dist-form-section-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #0d9488;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.85rem;
+    border-bottom: 1px solid #f1f5f9;
+    padding-bottom: 0.5rem;
+}
+
+.dist-beneficiary-preview-box {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.75rem;
+    padding: 1rem;
+    margin-top: 0.75rem;
+    display: none;
+}
+
+.dist-beneficiary-preview-box.active {
+    display: block;
+}
+
+.dist-preview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0.75rem;
+    font-size: 0.85rem;
+}
+
+.dist-preview-item small {
+    color: #64748b;
+    display: block;
+}
+
+.dist-preview-item strong {
+    color: #0f172a;
+    font-weight: 600;
+}
+
+/* Needs and Recommendations Highlight inside wizard */
+.dist-rec-chips-wrapper {
+    background: #f0fdfa;
+    border: 1px solid #ccfbf1;
+    border-radius: 0.75rem;
+    padding: 0.85rem 1rem;
+    margin-top: 0.75rem;
+    font-size: 0.85rem;
+}
+
+.dist-rec-chips-title {
+    color: #0f766e;
+    font-weight: 700;
+    margin-bottom: 0.4rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+/* Dynamic Item Rows */
+.dist-items-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 0.5rem;
+}
+
+.dist-items-table th {
+    font-size: 0.8rem;
+    color: #64748b;
+    padding: 0.5rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.dist-items-table td {
+    padding: 0.6rem 0.35rem;
+}
+
+.dist-item-select {
+    width: 100%;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    background: #ffffff;
+}
+
+.dist-qty-input {
+    width: 90px;
+    padding: 0.6rem 0.5rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    text-align: center;
+}
+
+.btn-remove-item {
+    background: #fee2e2;
+    color: #ef4444;
+    border: none;
+    border-radius: 0.4rem;
+    width: 32px;
+    height: 32px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-remove-item:hover {
+    background: #ef4444;
+    color: #ffffff;
+}
+
+.btn-add-item-row {
+    margin-top: 0.75rem;
+    font-size: 0.85rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: #0d9488;
+    background: #f0fdfa;
+    border: 1px dashed #0d9488;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-add-item-row:hover {
+    background: #0d9488;
+    color: #ffffff;
+}
+
+.dist-modal-footer {
+    padding: 1.25rem 1.75rem;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.85rem;
+    background: #f8fafc;
+}
+
+/* ==========================================================================
+   Printable Distribution Voucher (سند تسليم مساعدة عينية)
+   ========================================================================== */
+
+.voucher-modal-card {
+    max-width: 680px;
+}
+
+.dist-voucher {
+    background: #ffffff;
+    border: 2px solid #0f172a;
+    border-radius: 0.75rem;
+    padding: 2.25rem;
+    color: #0f172a;
+    font-family: inherit;
+    position: relative;
+}
+
+.voucher-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+.voucher-logo-area {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+}
+
+.voucher-logo-area img {
+    height: 48px;
+    width: auto;
+}
+
+.voucher-logo-text strong {
+    display: block;
+    font-size: 1.35rem;
+    font-weight: 800;
+    color: #0d9488;
+}
+
+.voucher-logo-text small {
+    color: #64748b;
+    font-size: 0.8rem;
+}
+
+.voucher-meta {
+    text-align: left;
+}
+
+.voucher-ref-code {
+    font-family: monospace;
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: #0f172a;
+    background: #f1f5f9;
+    padding: 0.25rem 0.65rem;
+    border-radius: 0.4rem;
+    display: inline-block;
+    margin-bottom: 0.25rem;
+}
+
+.voucher-meta small {
+    display: block;
+    color: #64748b;
+    font-size: 0.8rem;
+}
+
+.voucher-title {
+    text-align: center;
+    font-size: 1.35rem;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0 0 1.5rem;
+    letter-spacing: -0.5px;
+}
+
+.voucher-info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.85rem 1.5rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.5rem;
+    font-size: 0.875rem;
+}
+
+.voucher-info-row small {
+    color: #64748b;
+    margin-left: 0.5rem;
+}
+
+.voucher-info-row strong {
+    color: #0f172a;
+}
+
+.voucher-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1.5rem;
+    font-size: 0.875rem;
+}
+
+.voucher-table th {
+    background: #0f172a;
+    color: #ffffff;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid #0f172a;
+    font-weight: 600;
+}
+
+.voucher-table td {
+    padding: 0.65rem 0.75rem;
+    border: 1px solid #cbd5e1;
+    text-align: right;
+}
+
+.voucher-notes-box {
+    background: #fdfdfd;
+    border: 1px dashed #cbd5e1;
+    border-radius: 0.5rem;
+    padding: 0.75rem 1rem;
+    font-size: 0.825rem;
+    color: #475569;
+    margin-bottom: 2rem;
+}
+
+.voucher-signatures {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    padding-top: 1rem;
+}
+
+.voucher-sign-box {
+    border-top: 1px dashed #94a3b8;
+    padding-top: 0.75rem;
+    text-align: center;
+    font-size: 0.85rem;
+    color: #334155;
+}
+
+.voucher-sign-box p {
+    margin: 0 0 2.5rem;
+    font-weight: 600;
+}
+
+.voucher-sign-box small {
+    color: #94a3b8;
+    display: block;
+}
+
+/* Print Rules */
+@media print {
+    body * {
+        visibility: hidden;
+    }
+
+    #voucherModal,
+    #voucherModal * {
+        visibility: visible;
+    }
+
+    #voucherModal {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        background: transparent;
+        padding: 0;
+        margin: 0;
+    }
+
+    .dist-modal-card {
+        box-shadow: none !important;
+        border: none !important;
+        max-width: 100% !important;
+        width: 100% !important;
+    }
+
+    .dist-modal-header,
+    .dist-modal-footer,
+    .btn-print-voucher,
+    .dist-modal-close {
+        display: none !important;
+    }
+
+    .dist-voucher {
+        border: 2px solid #000 !important;
+        padding: 2rem !important;
+        page-break-inside: avoid;
+    }
+
+    .voucher-table th {
+        background: #000 !important;
+        color: #fff !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+}

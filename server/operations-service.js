@@ -17,8 +17,10 @@ import {
     syncDonationToInventory,
     updateBeneficiaryNeed,
     updateBeneficiaryProfile,
-    updateDistributionStatus,
     updateInventoryItem,
+    getDistributionById,
+    cancelDistribution,
+    getDistributionStats,
 } from "./operations-repository.js";
 import {
     evaluateBeneficiaryRules,
@@ -85,22 +87,6 @@ export async function editNeed(id, body, beneficiaryId = null) {
     if (body?.quantityRequested !== undefined && input.quantityRequested === null) throw new Error("INVALID_NEED");
     if (body?.quantityFulfilled !== undefined && input.quantityFulfilled === null) throw new Error("INVALID_NEED");
     return updateBeneficiaryNeed(id, input, beneficiaryId);
-}
-
-export async function getDistributions(filters) { return listDistributions({ beneficiaryId: filters?.beneficiaryId || null, status: filters?.status || null }); }
-
-export async function addDistribution(body, userId) {
-    const beneficiaryId = positiveInt(body?.beneficiaryId);
-    const items = Array.isArray(body?.items) ? body.items.map(item => ({ inventoryItemId: positiveInt(item?.inventoryItemId), quantity: positiveInt(item?.quantity) })) : [];
-    if (!beneficiaryId || !items.length || items.some(item => !item.inventoryItemId || !item.quantity)) throw new Error("INVALID_DISTRIBUTION");
-    const unique = new Set(items.map(item => item.inventoryItemId));
-    if (unique.size !== items.length) throw new Error("DUPLICATE_DISTRIBUTION_ITEM");
-    return createDistribution({ beneficiaryId, items, scheduledAt: body?.scheduledAt || null, location: text(body?.location, 160) || null, notes: text(body?.notes, 2000) }, userId);
-}
-
-export async function changeDistributionStatus(id, status) {
-    if (!DISTRIBUTION_STATUSES.has(status) || status === "draft") throw new Error("INVALID_DISTRIBUTION_STATUS");
-    return updateDistributionStatus(id, status);
 }
 
 export async function approveOrRejectDonation(donationId, status, reviewerId) {
@@ -285,6 +271,93 @@ export async function searchVerification(query, limit = 20) {
     return searchBeneficiariesForVerification(query, limit);
 }
 
-export { getBeneficiaryProfileId };
+export async function listDistributionsService(params = {}) {
+    return listDistributions(params);
+}
+
+export async function getDistributionDetailService(id) {
+    return getDistributionById(id);
+}
+
+export async function getDistributionStatsService() {
+    return getDistributionStats();
+}
+
+export async function createDistributionService(input, actorId) {
+    if (!input || typeof input !== "object") {
+        const err = new Error("بيانات عملية التوزيع غير صالحة.");
+        err.statusCode = 400;
+        throw err;
+    }
+
+    const beneficiaryId = Number(input.beneficiaryId);
+    if (!Number.isInteger(beneficiaryId) || beneficiaryId <= 0) {
+        const err = new Error("يجب تحديد المستفيد المستلم للمساعدة.");
+        err.statusCode = 400;
+        throw err;
+    }
+
+    if (!Array.isArray(input.items) || input.items.length === 0) {
+        const err = new Error("يجب تحديد صنف واحد على الأقل للتسليم.");
+        err.statusCode = 400;
+        throw err;
+    }
+
+    const cleanedItems = [];
+    for (const item of input.items) {
+        const inventoryItemId = Number(item.inventoryItemId);
+        const quantity = Number(item.quantity);
+        if (!Number.isInteger(inventoryItemId) || inventoryItemId <= 0) {
+            const err = new Error("معرّف الصنف المخزني غير صالح.");
+            err.statusCode = 400;
+            throw err;
+        }
+        if (!Number.isInteger(quantity) || quantity <= 0) {
+            const err = new Error("يجب أن تكون الكمية المحددة لكل صنف عدداً صحيحاً أكبر من صفر.");
+            err.statusCode = 400;
+            throw err;
+        }
+        cleanedItems.push({
+            inventoryItemId,
+            quantity,
+            needId: item.needId ? Number(item.needId) : null,
+        });
+    }
+
+    const validStatuses = ["completed", "planned", "in_progress"];
+    const status = input.status && validStatuses.includes(input.status) ? input.status : "completed";
+
+    return createDistribution(
+        {
+            beneficiaryId,
+            items: cleanedItems,
+            status,
+            location: input.location ? String(input.location).slice(0, 160) : null,
+            notes: input.notes ? String(input.notes).slice(0, 2000) : "",
+            scheduledAt: input.scheduledAt || null,
+            distributedAt: input.distributedAt || null,
+        },
+        actorId,
+    );
+}
+
+export async function cancelDistributionService(id, actorId, reason) {
+    const numericId = Number(id);
+    if (!Number.isInteger(numericId) || numericId <= 0) {
+        const err = new Error("معرّف عملية التوزيع غير صالح.");
+        err.statusCode = 400;
+        throw err;
+    }
+    return cancelDistribution(numericId, actorId, reason);
+}
+
+export {
+    getBeneficiaryProfileId,
+    listDistributionsService as getDistributions,
+    createDistributionService as addDistribution,
+    cancelDistributionService as changeDistributionStatus,
+    getDistributionDetailService as getDistribution,
+};
+
 
 

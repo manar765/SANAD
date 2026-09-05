@@ -28,6 +28,7 @@
                     <a href="/inventory" class="nav-link" data-role="admin">المخزون</a>
                     <a href="/beneficiaries" class="nav-link" data-role="admin">المستفيدون</a>
                     <a href="/verification" class="nav-link" data-role="admin">التحقق والتوصيات</a>
+                    <a href="/distributions" class="nav-link" data-role="admin">التوزيعات</a>
                     <a href="#contact" class="nav-link">تواصل معنا</a>
                     <% } else { %>
                         <a href="/" class="nav-link">الرئيسية</a>
@@ -42,6 +43,8 @@
                             data-role="admin">المستفيدون</a>
                         <a href="/verification" class="nav-link <%= activePath === '/verification' ? 'active' : '' %>"
                             data-role="admin">التحقق والتوصيات</a>
+                        <a href="/distributions" class="nav-link <%= activePath === '/distributions' ? 'active' : '' %>"
+                            data-role="admin">التوزيعات</a>
                         <a href="/admin-requests"
                             class="nav-link <%= activePath === '/admin-requests' ? 'active' : '' %>"
                             data-role="admin">الإدارة</a>

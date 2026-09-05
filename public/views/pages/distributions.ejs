@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>سند — سجل التوزيعات وتسليم المساعدات</title>
+    <link rel="icon" type="image/png" href="/assets/images/LogoSANAD.png">
+    <link rel="stylesheet" href="/CSS/style.css">
+    <link rel="stylesheet" href="/CSS/tokens.css">
+    <link rel="stylesheet" href="/CSS/shared.css">
+    <link rel="stylesheet" href="/CSS/components.css">
+    <link rel="stylesheet" href="/CSS/distributions.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+    <a class="skip-link" href="#main-content">تخطي إلى المحتوى الرئيسي</a>
+    <%- include('../partials/navbar', { activePath: '/distributions' }) %>
+
+        <main id="main-content" class="dist-page">
+            <div class="dist-container">
+                <!-- Hero Header -->
+                <section class="dist-hero">
+                    <div class="dist-hero-title-group">
+                        <h1><i class="fa-solid fa-truck-fast text-teal" aria-hidden="true"></i> سجل التوزيعات وتسليم
+                            المساعدات</h1>
+                        <p>إدارة وتوثيق عمليات تسليم المساعدات العينية للمستفيدين، حسم المخزون فورياً، وإصدار سندات
+                            الاستلام الرسمية.</p>
+                    </div>
+                    <div class="dist-hero-actions">
+                        <button type="button" class="btn btn-primary" id="openCreateDistModalBtn">
+                            <i class="fa-solid fa-plus" aria-hidden="true"></i> تسجيل عملية توزيع جديدة
+                        </button>
+                    </div>
+                </section>
+
+                <!-- Stats Grid -->
+                <section class="dist-stats-grid" aria-label="إحصائيات التوزيع">
+                    <article class="dist-stat-card">
+                        <div class="dist-stat-icon teal"><i class="fa-solid fa-boxes-packing"></i></div>
+                        <div class="dist-stat-info">
+                            <small>إجمالي العمليات</small>
+                            <strong id="statTotalDistributions">0</strong>
+                        </div>
+                    </article>
+                    <article class="dist-stat-card">
+                        <div class="dist-stat-icon green"><i class="fa-solid fa-circle-check"></i></div>
+                        <div class="dist-stat-info">
+                            <small>تم التسليم بنجاح</small>
+                            <strong id="statCompletedDistributions">0</strong>
+                        </div>
+                    </article>
+                    <article class="dist-stat-card">
+                        <div class="dist-stat-icon blue"><i class="fa-solid fa-hand-holding-heart"></i></div>
+                        <div class="dist-stat-info">
+                            <small>أصناف سلمت للمستفيدين</small>
+                            <strong id="statItemsDelivered">0</strong>
+                        </div>
+                    </article>
+                    <article class="dist-stat-card">
+                        <div class="dist-stat-icon amber"><i class="fa-solid fa-calendar-day"></i></div>
+                        <div class="dist-stat-info">
+                            <small>توزيعات اليوم</small>
+                            <strong id="statTodayDistributions">0</strong>
+                        </div>
+                    </article>
+                </section>
+
+                <!-- Controls Toolbar -->
+                <section class="dist-toolbar" aria-label="أدوات البحث والتصفية">
+                    <div class="dist-toolbar-filters">
+                        <div class="dist-search-input-wrapper">
+                            <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                            <input type="search" id="distSearchInput"
+                                placeholder="بحث برمز التوزيع، اسم المستفيد، أو الهاتف..."
+                                aria-label="بحث في التوزيعات">
+                        </div>
+
+                        <select id="distStatusFilter" class="dist-select-filter" aria-label="تصفية حسب الحالة">
+                            <option value="">جميع الحالات</option>
+                            <option value="completed">مكتمل (تم التسليم)</option>
+                            <option value="planned">مجدول</option>
+                            <option value="in_progress">قيد التنفيذ</option>
+                            <option value="cancelled">ملغى</option>
+                        </select>
+                    </div>
+
+                    <div class="dist-toolbar-refresh">
+                        <button type="button" class="btn btn-outline" id="distRefreshBtn" title="تحديث القائمة">
+                            <i class="fa-solid fa-rotate" aria-hidden="true"></i> تحديث
+                        </button>
+                    </div>
+                </section>
+
+                <!-- Data Table Card -->
+                <section class="dist-table-card">
+                    <div class="dist-table-wrapper">
+                        <table class="dist-table" id="distTable">
+                            <thead>
+                                <tr>
+                                    <th>رمز التوزيع</th>
+                                    <th>المستفيد</th>
+                                    <th>الأصناف والكميات</th>
+                                    <th>تاريخ التسليم</th>
+                                    <th>الحالة</th>
+                                    <th>الموقع / المخزن</th>
+                                    <th>الإجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody id="distTableBody">
+                                <!-- Populated dynamically by distributions.js -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div class="dist-empty-state" id="distEmptyState" hidden>
+                        <i class="fa-solid fa-truck-ramp-box" aria-hidden="true"></i>
+                        <h3>لا توجد عمليات توزيع مطابقة</h3>
+                        <p>لم يتم تسجيل أي عمليات توزيع تطابق خيارات البحث الحالية، أو لم تسجل توزيعات بعد.</p>
+                    </div>
+
+                    <!-- Loading State -->
+                    <div class="dist-empty-state" id="distLoadingState" hidden>
+                        <i class="fa-solid fa-spinner fa-spin text-teal" aria-hidden="true"></i>
+                        <h3>جارٍ تحميل سجل التوزيعات…</h3>
+                    </div>
+                </section>
+            </div>
+        </main>
+
+        <!-- =========================================================================
+         MODAL 1: Create Distribution Wizard (تسجيل عملية توزيع جديدة)
+         ========================================================================= -->
+        <div class="dist-modal-overlay" id="createDistModal" role="dialog" aria-modal="true"
+            aria-labelledby="createDistTitle" hidden>
+            <div class="dist-modal-card">
+                <div class="dist-modal-header">
+                    <h3 id="createDistTitle"><i class="fa-solid fa-truck-ramp-box text-teal"></i> تسجيل عملية توزيع
+                        وتسليم مساعدة</h3>
+                    <button type="button" class="dist-modal-close" id="closeCreateDistModalBtn"
+                        aria-label="إغلاق">&times;</button>
+                </div>
+
+                <form id="createDistForm" novalidate>
+                    <div class="dist-modal-body">
+                        <!-- Section 1: Beneficiary Selector -->
+                        <div class="dist-form-section">
+                            <div class="dist-form-section-title">
+                                <i class="fa-solid fa-user-check"></i> 1. تحديد المستفيد
+                            </div>
+                            <label for="distBeneficiarySelect"
+                                style="display:block; font-size:0.875rem; font-weight:600; margin-bottom:0.4rem;">
+                                اختر المستفيد المستلم:
+                            </label>
+                            <select id="distBeneficiarySelect" class="dist-item-select" required>
+                                <option value="">— اختر مستفيداً من القائمة —</option>
+                            </select>
+
+                            <!-- Beneficiary quick preview card -->
+                            <div class="dist-beneficiary-preview-box" id="distBeneficiaryPreview">
+                                <div class="dist-preview-grid">
+                                    <div class="dist-preview-item">
+                                        <small>رقم الهوية / الهاتف</small>
+                                        <strong id="prevBenPhone">—</strong>
+                                    </div>
+                                    <div class="dist-preview-item">
+                                        <small>عدد أفراد الأسرة</small>
+                                        <strong id="prevBenFamily">—</strong>
+                                    </div>
+                                    <div class="dist-preview-item">
+                                        <small>حالة التحقق</small>
+                                        <strong id="prevBenStatus">—</strong>
+                                    </div>
+                                </div>
+
+                                <!-- Needs & Recommendations Hint inside preview -->
+                                <div class="dist-rec-chips-wrapper" id="prevBenNeedsWrapper">
+                                    <div class="dist-rec-chips-title">
+                                        <i class="fa-solid fa-lightbulb"></i> الاحتياجات والتوصية الاسترشادية المتوفرة
+                                        بالمخزن:
+                                    </div>
+                                    <div id="prevBenNeedsChips">جارٍ جلب الاحتياجات…</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Section 2: Items & Quantities to Hand Over -->
+                        <div class="dist-form-section">
+                            <div class="dist-form-section-title">
+                                <i class="fa-solid fa-boxes-stacked"></i> 2. الأصناف الموزعة والكميات (تُحسم تلقائياً من
+                                المخزون)
+                            </div>
+
+                            <table class="dist-items-table" id="distModalItemsTable">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 50%;">الصنف من المخزون المتاح</th>
+                                        <th style="width: 25%;">الكمية المسلمة</th>
+                                        <th style="width: 20%;">الاحتياج المقترن (اختياري)</th>
+                                        <th style="width: 5%;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="distModalItemsBody">
+                                    <!-- Dynamic item rows added via JS -->
+                                </tbody>
+                            </table>
+
+                            <button type="button" class="btn-add-item-row" id="addDistItemRowBtn">
+                                <i class="fa-solid fa-plus-circle"></i> إضافة صنف آخر
+                            </button>
+                        </div>
+
+                        <!-- Section 3: Distribution Execution & Location -->
+                        <div class="dist-form-section">
+                            <div class="dist-form-section-title">
+                                <i class="fa-solid fa-clipboard-check"></i> 3. تفاصيل التسليم والملاحظات
+                            </div>
+
+                            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1rem; margin-bottom:1rem;">
+                                <div>
+                                    <label for="distStatusSelect"
+                                        style="display:block; font-size:0.875rem; font-weight:600; margin-bottom:0.4rem;">
+                                        حالة التنفيذ:
+                                    </label>
+                                    <select id="distStatusSelect" class="dist-item-select">
+                                        <option value="completed" selected>تسليم فوري ومباشر (مكتمل)</option>
+                                        <option value="planned">جدولة للتسليم لاحقاً (مجدول)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="distLocationInput"
+                                        style="display:block; font-size:0.875rem; font-weight:600; margin-bottom:0.4rem;">
+                                        مكان أو نقطة التسليم:
+                                    </label>
+                                    <input type="text" id="distLocationInput" class="dist-item-select"
+                                        placeholder="المقر الرئيسي / المستودع العام">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label for="distNotesInput"
+                                    style="display:block; font-size:0.875rem; font-weight:600; margin-bottom:0.4rem;">
+                                    ملاحظات التسليم:
+                                </label>
+                                <textarea id="distNotesInput" class="dist-item-select" rows="2"
+                                    placeholder="أي تفاصيل خاصة بتسليم المساعدة أو الحالة الصحية..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="dist-modal-footer">
+                        <button type="button" class="btn btn-outline" id="cancelCreateDistModalBtn">إلغاء</button>
+                        <button type="submit" class="btn btn-primary" id="submitCreateDistBtn">
+                            <i class="fa-solid fa-check-double"></i> تأكيد وحسم المخزون فورياً
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- =========================================================================
+         MODAL 2: Printable Official Distribution Voucher (سند تسليم مساعدة عينية)
+         ========================================================================= -->
+        <div class="dist-modal-overlay" id="voucherModal" role="dialog" aria-modal="true"
+            aria-labelledby="voucherModalTitle" hidden>
+            <div class="dist-modal-card voucher-modal-card">
+                <div class="dist-modal-header">
+                    <h3 id="voucherModalTitle"><i class="fa-solid fa-receipt text-teal"></i> سند تسليم مساعدة عينية رسمي
+                    </h3>
+                    <button type="button" class="dist-modal-close" id="closeVoucherModalBtn"
+                        aria-label="إغلاق">&times;</button>
+                </div>
+
+                <div class="dist-modal-body">
+                    <!-- Printable Container -->
+                    <div class="dist-voucher" id="voucherPrintArea">
+                        <div class="voucher-header">
+                            <div class="voucher-logo-area">
+                                <img src="/assets/images/LogoSANAD.png" alt="شعار منصة سند">
+                                <div class="voucher-logo-text">
+                                    <strong>منصة سَنَد (SANAD)</strong>
+                                    <small>منظومة إدارة وتوزيع المساعدات العينية</small>
+                                </div>
+                            </div>
+                            <div class="voucher-meta">
+                                <span class="voucher-ref-code" id="vouchRefCode">DIST-0000</span>
+                                <small>التاريخ: <span id="vouchDate">—</span></small>
+                            </div>
+                        </div>
+
+                        <h2 class="voucher-title">سَنَد تسليم مساعدة عينية</h2>
+
+                        <!-- Beneficiary Details Table -->
+                        <div class="voucher-info-grid">
+                            <div class="voucher-info-row">
+                                <small>اسم المستفيد:</small>
+                                <strong id="vouchBenName">—</strong>
+                            </div>
+                            <div class="voucher-info-row">
+                                <small>الرقم القومي / المعرّف:</small>
+                                <strong id="vouchBenId">—</strong>
+                            </div>
+                            <div class="voucher-info-row">
+                                <small>رقم الهاتف:</small>
+                                <strong id="vouchBenPhone">—</strong>
+                            </div>
+                            <div class="voucher-info-row">
+                                <small>العنوان / المحافظة:</small>
+                                <strong id="vouchBenAddress">—</strong>
+                            </div>
+                        </div>
+
+                        <!-- Items Received Table -->
+                        <table class="voucher-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>الصنف المستلم</th>
+                                    <th>الفئة</th>
+                                    <th>الكمية</th>
+                                    <th>الوحدة</th>
+                                </tr>
+                            </thead>
+                            <tbody id="vouchItemsBody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+
+                        <!-- Notes -->
+                        <div class="voucher-notes-box" id="vouchNotesBox">
+                            <strong>ملاحظات التسليم:</strong>
+                            <span id="vouchNotesText">لا توجد ملاحظات إضافية.</span>
+                        </div>
+
+                        <!-- Signatures -->
+                        <div class="voucher-signatures">
+                            <div class="voucher-sign-box">
+                                <p>توقيع المستلم / المفوض بالاستلام</p>
+                                <small>الاسم: .......................................</small>
+                            </div>
+                            <div class="voucher-sign-box">
+                                <p>توقيع الموظف / منسق التوزيع</p>
+                                <small>الاسم: <span id="vouchStaffName">الموظف المسؤول</span></small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dist-modal-footer">
+                    <button type="button" class="btn btn-outline" id="dismissVoucherModalBtn">إغلاق</button>
+                    <button type="button" class="btn btn-primary btn-print-voucher" id="printVoucherBtn">
+                        <i class="fa-solid fa-print"></i> طباعة السند (A4)
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scripts -->
+        <script src="/JS/logout.js"></script>
+        <script src="/JS/preferences.js"></script>
+        <script src="/JS/admin-sidebar.js"></script>
+        <script src="/JS/distributions.js"></script>
+</body>
+
+</html>

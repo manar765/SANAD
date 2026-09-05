@@ -24,6 +24,7 @@
 
     // Dossier Elements
     const dosRefreshBtn = $("#dosRefreshBtn");
+    const dosStartDistBtn = $("#dosStartDistBtn");
     const dosRecentSupportWarning = $("#dosRecentSupportWarning");
     const dosRecentSupportMsg = $("#dosRecentSupportMsg");
     const dosName = $("#dosName");
@@ -227,6 +228,7 @@
 
         dosPhone.innerHTML = `<i class="fa-solid fa-phone"></i> ${escapeHtml(b.phone || "—")}`;
         dosNationalId.innerHTML = `<i class="fa-solid fa-id-card"></i> ${escapeHtml(b.nationalId || "غير مسجل")}`;
+        if (dosStartDistBtn) dosStartDistBtn.href = `/distributions?beneficiaryId=${b.id}&action=new`;
 
         dosLocation.textContent = [b.governorate, b.district].filter(Boolean).join(" — ") || b.location || "—";
 

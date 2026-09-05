@@ -33,7 +33,9 @@ import {
   getBeneficiaryProfileId,
   getBeneficiaryRecommendation,
   getBeneficiaryVerification,
+  getDistribution,
   getDistributions,
+  getDistributionStatsService,
   getInventory,
   getNeeds,
   searchVerification,
@@ -355,7 +357,7 @@ const pageRoutes = Object.freeze({
   "/admin-requests": "AdminRequests",
   "/inventory": "inventory",
   "/beneficiaries": "beneficiaries",
-  "/distributions": "coming-soon",
+  "/distributions": "distributions",
   "/verification": "verification",
 });
 
@@ -492,7 +494,7 @@ function isValidDonationInput(input) {
 
 const operationError = (error, res) => {
   const messages = {
-    INVALID_INVENTORY: "Please provide valid inventory details.",
+    INVALID_INVENTORY: "يرجى تقديم تفاصيل صحيحة للمخزون.",
     INVALID_INVENTORY_STATUS: "Please provide a valid inventory status.",
     INVALID_NEED: "Please provide valid beneficiary-need details.",
     INVALID_NEED_PRIORITY: "Please provide a valid need priority.",
@@ -507,6 +509,12 @@ const operationError = (error, res) => {
     INVALID_VERIFICATION_STATUS: "Please provide a valid verification status.",
     BENEFICIARY_NOT_FOUND: "Beneficiary profile not found.",
   };
+  if (error.code === "INSUFFICIENT_STOCK") {
+    return res.status(409).json({ message: error.message, details: error.details });
+  }
+  if (error.statusCode) {
+    return res.status(error.statusCode).json({ message: error.message, details: error.details });
+  }
   if (error.message === "BENEFICIARY_NOT_FOUND") return res.status(404).json({ message: messages.BENEFICIARY_NOT_FOUND });
   const message = messages[error.message];
   if (message) return res.status(["INSUFFICIENT_INVENTORY", "CANNOT_REVERT_DISTRIBUTED_DONATION"].includes(error.message) ? 409 : 400).json({ message });
@@ -701,21 +709,61 @@ app.patch("/api/beneficiary/needs/:id", requireAuth, requireCsrf, async (req, re
   } catch (error) { return operationError(error, res); }
 });
 
+app.get("/api/distributions/stats", requireAdmin, async (req, res) => {
+  try {
+    const stats = await getDistributionStatsService();
+    return res.json({ stats });
+  } catch (error) {
+    return operationError(error, res);
+  }
+});
+
 app.get("/api/distributions", requireAuth, async (req, res) => {
   try {
-    if (req.user.role === "admin") return res.json({ distributions: await getDistributions(req.query) });
+    if (req.user.role === "admin") {
+      const result = await getDistributions(req.query);
+      return res.json(result);
+    }
     if (req.user.role !== "beneficiary") return res.status(403).json({ message: "Only beneficiaries can access distributions." });
     const beneficiaryId = await getBeneficiaryProfileId(req.user.id);
     if (!beneficiaryId) return res.status(404).json({ message: "Beneficiary profile not found." });
-    return res.json({ distributions: await getDistributions({ ...req.query, beneficiaryId }) });
+    const result = await getDistributions({ ...req.query, beneficiaryId });
+    return res.json(result);
   } catch (error) { return operationError(error, res); }
 });
 
-app.post("/api/admin/distributions", requireAdmin, requireCsrf, async (req, res) => {
+app.get("/api/distributions/:id", requireAuth, async (req, res) => {
+  try {
+    const distribution = await getDistribution(req.params.id);
+    if (!distribution) return res.status(404).json({ message: "Distribution not found." });
+    if (req.user.role !== "admin") {
+      const beneficiaryId = await getBeneficiaryProfileId(req.user.id);
+      if (!beneficiaryId || beneficiaryId !== distribution.beneficiaryId) {
+        return res.status(403).json({ message: "You are not authorized to view this distribution." });
+      }
+    }
+    return res.json({ distribution });
+  } catch (error) { return operationError(error, res); }
+});
+
+app.post(["/api/distributions", "/api/admin/distributions"], requireAdmin, requireCsrf, async (req, res) => {
   try {
     const distribution = await addDistribution(req.body, req.user.id);
-    await recordAuditEvent(req, { userId: req.user.id, action: "distribution_created", metadata: { distributionId: distribution.id } });
+    await recordAuditEvent(req, {
+      userId: req.user.id,
+      action: "distribution_created",
+      metadata: { distributionId: distribution.id, referenceCode: distribution.referenceCode },
+    });
     return res.status(201).json({ distribution });
+  } catch (error) { return operationError(error, res); }
+});
+
+app.post("/api/distributions/:id/cancel", requireAdmin, requireCsrf, async (req, res) => {
+  const id = Number.parseInt(req.params.id, 10);
+  if (!Number.isInteger(id)) return res.status(400).json({ message: "Invalid distribution ID." });
+  try {
+    const distribution = await changeDistributionStatus(id, req.user.id, req.body?.reason || "");
+    return res.json({ distribution, message: "تم إلغاء التوزيع بنجاح." });
   } catch (error) { return operationError(error, res); }
 });
 
@@ -723,7 +771,7 @@ app.patch("/api/admin/distributions/:id/status", requireAdmin, requireCsrf, asyn
   const id = Number.parseInt(req.params.id, 10);
   if (!Number.isInteger(id)) return res.status(400).json({ message: "Invalid distribution." });
   try {
-    const updated = await changeDistributionStatus(id, String(req.body?.status || ""));
+    const updated = await changeDistributionStatus(id, req.user.id, String(req.body?.status || ""));
     if (updated === null) return res.status(404).json({ message: "Distribution not found." });
     await recordAuditEvent(req, { userId: req.user.id, action: "distribution_status_changed", metadata: { distributionId: id, status: req.body?.status } });
     return res.json({ message: "Distribution status updated." });

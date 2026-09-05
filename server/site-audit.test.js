@@ -98,6 +98,6 @@ try {
     const cleanupPool = new Pool({ connectionString: process.env.DATABASE_URL });
     await cleanupPool.query("DELETE FROM users WHERE email LIKE 'site.audit.%@example.com'").catch(() => { });
     await cleanupPool.end().catch(() => { });
-    server.kill("SIGTERM");
-    await once(server, "exit").catch(() => { });
+    server.kill();
+    await Promise.race([once(server, "exit"), new Promise(r => setTimeout(r, 2000))]).catch(() => { });
 }

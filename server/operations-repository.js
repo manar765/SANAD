@@ -104,106 +104,6 @@ export async function updateBeneficiaryNeed(id, input, beneficiaryId = null) {
     return rows.rows[0];
 }
 
-export async function listDistributions({ beneficiaryId, status } = {}) {
-    const values = [];
-    const where = [];
-    if (beneficiaryId) { values.push(beneficiaryId); where.push(`d.beneficiary_id = $${values.length}`); }
-    if (status) { values.push(status); where.push(`d.status = $${values.length}`); }
-    const result = await pool.query(
-        `SELECT d.id, d.beneficiary_id AS "beneficiaryId", d.created_by AS "createdBy", d.status,
-            d.scheduled_at AS "scheduledAt", d.distributed_at AS "distributedAt", d.location, d.notes,
-            d.created_at AS "createdAt", d.updated_at AS "updatedAt",
-            COALESCE(NULLIF(u.full_name, ''), NULLIF(u.name, ''), u.email) AS "beneficiaryName",
-            COALESCE(json_agg(json_build_object('inventoryItemId', di.inventory_item_id, 'quantity', di.quantity))
-              FILTER (WHERE di.inventory_item_id IS NOT NULL), '[]') AS items
-     FROM distributions d
-     JOIN beneficiary_profiles bp ON bp.id = d.beneficiary_id
-     JOIN users u ON u.id = bp.user_id
-     LEFT JOIN distribution_items di ON di.distribution_id = d.id
-     ${where.length ? `WHERE ${where.join(" AND ")}` : ""}
-     GROUP BY d.id, u.full_name, u.name, u.email
-     ORDER BY d.created_at DESC`,
-        values,
-    );
-    return result.rows;
-}
-
-export async function createDistribution(input, createdBy) {
-    const client = await pool.connect();
-    try {
-        await client.query("BEGIN");
-        const distribution = await client.query(
-            `INSERT INTO distributions (beneficiary_id, created_by, status, scheduled_at, location, notes)
-       VALUES ($1, $2, 'planned', $3, $4, $5) RETURNING id`,
-            [input.beneficiaryId, createdBy || null, input.scheduledAt || null, input.location || null, input.notes || ""],
-        );
-        for (const item of input.items) {
-            const inventory = await client.query(
-                "SELECT id, quantity_available, quantity_reserved, quantity_total, low_stock_threshold FROM inventory_items WHERE id = $1 FOR UPDATE",
-                [item.inventoryItemId],
-            );
-            const row = inventory.rows[0];
-            if (!row || row.quantity_available < item.quantity) throw new Error("INSUFFICIENT_INVENTORY");
-            const available = row.quantity_available - item.quantity;
-            const reserved = row.quantity_reserved + item.quantity;
-            const status = available === 0 ? "out_of_stock" : available <= row.low_stock_threshold ? "low_stock" : "in_distribution";
-            await client.query(
-                "UPDATE inventory_items SET quantity_available = $2, quantity_reserved = $3, status = $4, updated_at = NOW() WHERE id = $1",
-                [row.id, available, reserved, status],
-            );
-            await client.query("INSERT INTO distribution_items (distribution_id, inventory_item_id, quantity) VALUES ($1, $2, $3)", [distribution.rows[0].id, row.id, item.quantity]);
-        }
-        await client.query("COMMIT");
-        const rows = await listDistributions({ status: "planned" });
-        return rows.find(row => String(row.id) === String(distribution.rows[0].id));
-    } catch (error) {
-        await client.query("ROLLBACK").catch(() => { });
-        throw error;
-    } finally { client.release(); }
-}
-
-export async function updateDistributionStatus(id, status) {
-    const client = await pool.connect();
-    try {
-        await client.query("BEGIN");
-        const current = await client.query("SELECT status FROM distributions WHERE id = $1 FOR UPDATE", [id]);
-        if (!current.rows[0]) { await client.query("ROLLBACK"); return null; }
-        if (current.rows[0].status === status) { await client.query("COMMIT"); return true; }
-        if (["completed", "cancelled"].includes(current.rows[0].status)) {
-            await client.query("ROLLBACK");
-            throw new Error("INVALID_DISTRIBUTION_TRANSITION");
-        }
-        const items = await client.query("SELECT inventory_item_id, quantity FROM distribution_items WHERE distribution_id = $1", [id]);
-        if (status === "cancelled") {
-            for (const item of items.rows) {
-                await client.query(
-                    `UPDATE inventory_items SET quantity_available = quantity_available + $2,
-             quantity_reserved = quantity_reserved - $2,
-             status = CASE WHEN quantity_available + $2 = 0 THEN 'out_of_stock' WHEN quantity_available + $2 <= low_stock_threshold THEN 'low_stock' ELSE 'available' END,
-             updated_at = NOW() WHERE id = $1`,
-                    [item.inventory_item_id, item.quantity],
-                );
-            }
-        } else if (status === "completed") {
-            for (const item of items.rows) {
-                await client.query(
-                    `UPDATE inventory_items SET quantity_reserved = quantity_reserved - $2,
-             quantity_total = quantity_total - $2,
-             status = CASE WHEN quantity_available = 0 THEN 'out_of_stock' WHEN quantity_available <= low_stock_threshold THEN 'low_stock' ELSE 'available' END,
-             updated_at = NOW() WHERE id = $1`,
-                    [item.inventory_item_id, item.quantity],
-                );
-            }
-        }
-        await client.query("UPDATE distributions SET status = $2, distributed_at = CASE WHEN $2 = 'completed' THEN NOW() ELSE distributed_at END, updated_at = NOW() WHERE id = $1", [id, status]);
-        await client.query("COMMIT");
-        return true;
-    } catch (error) {
-        await client.query("ROLLBACK").catch(() => { });
-        throw error;
-    } finally { client.release(); }
-}
-
 export async function syncDonationToInventory(client, donationId, status, reviewerId) {
     const donationRes = await client.query(
         `SELECT id, title, description, category, quantity, unit, item_condition, warehouse, location, expiration_date, notes
@@ -704,5 +604,418 @@ export async function searchBeneficiariesForVerification(query = "", limit = 20)
     const result = await pool.query(sql, params);
     return result.rows;
 }
+
+export async function listDistributions({ status, beneficiaryId, search, limit = 50, offset = 0 } = {}) {
+    const values = [];
+    const where = [];
+
+    if (status) {
+        values.push(status);
+        where.push(`d.status = $${values.length}`);
+    }
+
+    if (beneficiaryId) {
+        values.push(Number(beneficiaryId));
+        where.push(`d.beneficiary_id = $${values.length}`);
+    }
+
+    if (search) {
+        const pattern = `%${search.trim()}%`;
+        values.push(pattern);
+        where.push(`(
+            d.reference_code ILIKE $${values.length} OR
+            bp.reference_code ILIKE $${values.length} OR
+            bp.phone ILIKE $${values.length} OR
+            bp.national_id ILIKE $${values.length} OR
+            bu.full_name ILIKE $${values.length} OR
+            bu.name ILIKE $${values.length} OR
+            bu.email ILIKE $${values.length}
+        )`);
+    }
+
+    const whereClause = where.length ? `WHERE ${where.join(" AND ")}` : "";
+
+    const countSql = `
+        SELECT COUNT(DISTINCT d.id) AS total
+        FROM distributions d
+        JOIN beneficiary_profiles bp ON bp.id = d.beneficiary_id
+        JOIN users bu ON bu.id = bp.user_id
+        ${whereClause}
+    `;
+
+    const countResult = await pool.query(countSql, values);
+    const total = Number(countResult.rows[0]?.total || 0);
+
+    const safeLimit = Math.min(Math.max(1, Number(limit) || 50), 100);
+    const safeOffset = Math.max(0, Number(offset) || 0);
+
+    values.push(safeLimit);
+    const limitParam = `$${values.length}`;
+    values.push(safeOffset);
+    const offsetParam = `$${values.length}`;
+
+    const sql = `
+        SELECT
+            d.id,
+            d.reference_code AS "referenceCode",
+            d.beneficiary_id AS "beneficiaryId",
+            d.status,
+            d.scheduled_at AS "scheduledAt",
+            d.distributed_at AS "distributedAt",
+            d.location,
+            d.notes,
+            d.created_at AS "createdAt",
+            d.updated_at AS "updatedAt",
+            COALESCE(NULLIF(bu.full_name, ''), NULLIF(bu.name, ''), bu.email) AS "beneficiaryName",
+            bp.reference_code AS "beneficiaryReferenceCode",
+            bp.national_id AS "beneficiaryNationalId",
+            COALESCE(bp.phone, bu.phone) AS "beneficiaryPhone",
+            COALESCE(NULLIF(cu.full_name, ''), NULLIF(cu.name, ''), cu.email) AS "createdByName",
+            COALESCE(json_agg(json_build_object(
+                'inventoryItemId', di.inventory_item_id,
+                'itemName', ii.name,
+                'category', ii.category,
+                'quantity', di.quantity,
+                'unit', ii.unit,
+                'warehouse', ii.warehouse,
+                'needId', di.need_id,
+                'needTitle', bn.title
+            )) FILTER (WHERE di.inventory_item_id IS NOT NULL), '[]') AS items
+        FROM distributions d
+        JOIN beneficiary_profiles bp ON bp.id = d.beneficiary_id
+        JOIN users bu ON bu.id = bp.user_id
+        LEFT JOIN users cu ON cu.id = d.created_by
+        LEFT JOIN distribution_items di ON di.distribution_id = d.id
+        LEFT JOIN inventory_items ii ON ii.id = di.inventory_item_id
+        LEFT JOIN beneficiary_needs bn ON bn.id = di.need_id
+        ${whereClause}
+        GROUP BY d.id, bu.full_name, bu.name, bu.email, bp.reference_code, bp.national_id, bp.phone, bu.phone, cu.full_name, cu.name, cu.email
+        ORDER BY d.created_at DESC
+        LIMIT ${limitParam} OFFSET ${offsetParam}
+    `;
+
+    const result = await pool.query(sql, values);
+    return {
+        distributions: result.rows,
+        total,
+        limit: safeLimit,
+        offset: safeOffset,
+    };
+}
+
+export async function getDistributionById(id) {
+    const isIdNumeric = Number.isInteger(Number(id));
+    const result = await pool.query(
+        `SELECT
+            d.id,
+            d.reference_code AS "referenceCode",
+            d.beneficiary_id AS "beneficiaryId",
+            d.status,
+            d.scheduled_at AS "scheduledAt",
+            d.distributed_at AS "distributedAt",
+            d.location,
+            d.notes,
+            d.created_at AS "createdAt",
+            d.updated_at AS "updatedAt",
+            COALESCE(NULLIF(bu.full_name, ''), NULLIF(bu.name, ''), bu.email) AS "beneficiaryName",
+            bp.reference_code AS "beneficiaryReferenceCode",
+            bp.national_id AS "beneficiaryNationalId",
+            COALESCE(bp.phone, bu.phone) AS "beneficiaryPhone",
+            bp.address AS "beneficiaryAddress",
+            bp.family_size AS "familySize",
+            bp.district AS "beneficiaryDistrict",
+            bp.governorate AS "beneficiaryGovernorate",
+            COALESCE(NULLIF(cu.full_name, ''), NULLIF(cu.name, ''), cu.email) AS "createdByName",
+            COALESCE(json_agg(json_build_object(
+                'inventoryItemId', di.inventory_item_id,
+                'itemName', ii.name,
+                'category', ii.category,
+                'quantity', di.quantity,
+                'unit', ii.unit,
+                'warehouse', ii.warehouse,
+                'needId', di.need_id,
+                'needTitle', bn.title
+            )) FILTER (WHERE di.inventory_item_id IS NOT NULL), '[]') AS items
+        FROM distributions d
+        JOIN beneficiary_profiles bp ON bp.id = d.beneficiary_id
+        JOIN users bu ON bu.id = bp.user_id
+        LEFT JOIN users cu ON cu.id = d.created_by
+        LEFT JOIN distribution_items di ON di.distribution_id = d.id
+        LEFT JOIN inventory_items ii ON ii.id = di.inventory_item_id
+        LEFT JOIN beneficiary_needs bn ON bn.id = di.need_id
+        WHERE ${isIdNumeric ? "d.id = $1 OR d.reference_code = $2" : "d.reference_code = $1"}
+        GROUP BY d.id, bu.full_name, bu.name, bu.email, bp.reference_code, bp.national_id, bp.phone, bu.phone,
+                 bp.address, bp.family_size, bp.district, bp.governorate, cu.full_name, cu.name, cu.email`,
+        isIdNumeric ? [Number(id), String(id)] : [String(id)],
+    );
+
+    return result.rows[0] || null;
+}
+
+export async function createDistribution(input, userId) {
+    const client = await pool.connect();
+    try {
+        await client.query("BEGIN");
+
+        const beneficiaryRes = await client.query(
+            `SELECT bp.id, COALESCE(NULLIF(u.full_name, ''), NULLIF(u.name, ''), u.email) AS name
+             FROM beneficiary_profiles bp
+             JOIN users u ON u.id = bp.user_id
+             WHERE bp.id = $1`,
+            [input.beneficiaryId],
+        );
+        const beneficiary = beneficiaryRes.rows[0];
+        if (!beneficiary) {
+            const err = new Error("BENEFICIARY_NOT_FOUND");
+            err.code = "BENEFICIARY_NOT_FOUND";
+            throw err;
+        }
+
+        const items = Array.isArray(input.items) ? input.items : [];
+        if (items.length === 0) {
+            const err = new Error("NO_ITEMS_SPECIFIED");
+            err.code = "NO_ITEMS_SPECIFIED";
+            throw err;
+        }
+
+        const status = input.status || "completed";
+        const isCompleted = status === "completed";
+
+        // For each item, check available stock and lock row
+        for (const item of items) {
+            const qty = Number(item.quantity);
+            if (!Number.isInteger(qty) || qty <= 0) {
+                const err = new Error("INVALID_ITEM_QUANTITY");
+                err.code = "INVALID_ITEM_QUANTITY";
+                throw err;
+            }
+
+            const invRes = await client.query(
+                `SELECT id, name, category, unit, quantity_available, low_stock_threshold
+                 FROM inventory_items
+                 WHERE id = $1
+                 FOR UPDATE`,
+                [item.inventoryItemId],
+            );
+            const invRow = invRes.rows[0];
+            if (!invRow) {
+                const err = new Error(`INVENTORY_ITEM_NOT_FOUND:${item.inventoryItemId}`);
+                err.code = "INVENTORY_ITEM_NOT_FOUND";
+                throw err;
+            }
+
+            if (isCompleted && qty > invRow.quantity_available) {
+                const err = new Error(`الكمية المطلوبة (${qty}) للصنف "${invRow.name}" تتجاوز المخزون المتاح حالياً (${invRow.quantity_available} ${invRow.unit}).`);
+                err.code = "INSUFFICIENT_STOCK";
+                err.details = {
+                    itemId: invRow.id,
+                    itemName: invRow.name,
+                    requestedQuantity: qty,
+                    availableQuantity: invRow.quantity_available,
+                    unit: invRow.unit,
+                };
+                throw err;
+            }
+        }
+
+        const scheduledAt = input.scheduledAt ? new Date(input.scheduledAt) : null;
+        const distributedAt = isCompleted ? (input.distributedAt ? new Date(input.distributedAt) : new Date()) : null;
+        const location = input.location ? String(input.location).trim() : null;
+        const notes = input.notes ? String(input.notes).trim() : "";
+
+        // Insert into distributions
+        const distInsertRes = await client.query(
+            `INSERT INTO distributions (beneficiary_id, created_by, status, scheduled_at, distributed_at, location, notes)
+             VALUES ($1, $2, $3, $4, $5, $6, $7)
+             RETURNING id, reference_code`,
+            [beneficiary.id, userId || null, status, scheduledAt, distributedAt, location, notes],
+        );
+        const distId = distInsertRes.rows[0].id;
+        const referenceCode = distInsertRes.rows[0].reference_code;
+
+        // Process items and inventory
+        for (const item of items) {
+            const qty = Number(item.quantity);
+            const needId = item.needId ? Number(item.needId) : null;
+
+            await client.query(
+                `INSERT INTO distribution_items (distribution_id, inventory_item_id, quantity, need_id)
+                 VALUES ($1, $2, $3, $4)`,
+                [distId, item.inventoryItemId, qty, needId],
+            );
+
+            if (isCompleted) {
+                // Decrement inventory
+                await client.query(
+                    `UPDATE inventory_items
+                     SET quantity_available = quantity_available - $1,
+                         status = CASE
+                             WHEN (quantity_available - $1) = 0 THEN 'out_of_stock'
+                             WHEN (quantity_available - $1) <= low_stock_threshold THEN 'low_stock'
+                             ELSE status
+                         END,
+                         updated_at = NOW()
+                     WHERE id = $2`,
+                    [qty, item.inventoryItemId],
+                );
+
+                // Update beneficiary need if specified
+                if (needId) {
+                    await client.query(
+                        `UPDATE beneficiary_needs
+                         SET quantity_fulfilled = LEAST(quantity_requested, quantity_fulfilled + $1),
+                             status = CASE
+                                 WHEN (quantity_fulfilled + $1) >= quantity_requested THEN 'fulfilled'
+                                 ELSE 'partially_fulfilled'
+                             END,
+                             updated_at = NOW()
+                         WHERE id = $2 AND beneficiary_id = $3`,
+                        [qty, needId, beneficiary.id],
+                    );
+                }
+            }
+        }
+
+        // Audit log
+        await client.query(
+            `INSERT INTO audit_logs (user_id, action, success, metadata)
+             VALUES ($1, 'distribution.create', true, $2::jsonb)`,
+            [
+                userId || null,
+                JSON.stringify({
+                    distributionId: distId,
+                    referenceCode,
+                    beneficiaryId: beneficiary.id,
+                    status,
+                    itemsCount: items.length,
+                }),
+            ],
+        );
+
+        await client.query("COMMIT");
+
+        return getDistributionById(distId);
+    } catch (error) {
+        await client.query("ROLLBACK").catch(() => { });
+        throw error;
+    } finally {
+        client.release();
+    }
+}
+
+export async function cancelDistribution(id, userId, reason = "") {
+    const client = await pool.connect();
+    try {
+        await client.query("BEGIN");
+
+        const distRes = await client.query(
+            `SELECT id, status, beneficiary_id AS "beneficiaryId", reference_code AS "referenceCode"
+             FROM distributions
+             WHERE id = $1
+             FOR UPDATE`,
+            [id],
+        );
+        const dist = distRes.rows[0];
+        if (!dist) {
+            const err = new Error("DISTRIBUTION_NOT_FOUND");
+            err.code = "DISTRIBUTION_NOT_FOUND";
+            throw err;
+        }
+
+        if (dist.status === "cancelled") {
+            await client.query("ROLLBACK");
+            return getDistributionById(id);
+        }
+
+        // If it was completed, restore inventory items
+        if (dist.status === "completed") {
+            const itemsRes = await client.query(
+                `SELECT inventory_item_id, quantity, need_id
+                 FROM distribution_items
+                 WHERE distribution_id = $1`,
+                [id],
+            );
+
+            for (const it of itemsRes.rows) {
+                await client.query(
+                    `UPDATE inventory_items
+                     SET quantity_available = quantity_available + $1,
+                         status = CASE
+                             WHEN (quantity_available + $1) > low_stock_threshold THEN 'available'
+                             WHEN (quantity_available + $1) > 0 THEN 'low_stock'
+                             ELSE status
+                         END,
+                         updated_at = NOW()
+                     WHERE id = $2`,
+                    [it.quantity, it.inventory_item_id],
+                );
+
+                if (it.need_id) {
+                    await client.query(
+                        `UPDATE beneficiary_needs
+                         SET quantity_fulfilled = GREATEST(0, quantity_fulfilled - $1),
+                             status = CASE
+                                 WHEN (quantity_fulfilled - $1) <= 0 THEN 'open'
+                                 ELSE 'partially_fulfilled'
+                             END,
+                             updated_at = NOW()
+                         WHERE id = $2`,
+                        [it.quantity, it.need_id],
+                    );
+                }
+            }
+        }
+
+        await client.query(
+            `UPDATE distributions
+             SET status = 'cancelled',
+                 distributed_at = NULL,
+                 notes = CASE WHEN notes = '' THEN $2 ELSE notes || E'\n' || $2 END,
+                 updated_at = NOW()
+             WHERE id = $1`,
+            [id, `تم إلغاء التوزيع بواسطة المستخدم #${userId || '—'}${reason ? `: ${reason}` : ''}`],
+        );
+
+        await client.query(
+            `INSERT INTO audit_logs (user_id, action, success, metadata)
+             VALUES ($1, 'distribution.cancel', true, $2::jsonb)`,
+            [userId || null, JSON.stringify({ distributionId: id, reason })],
+        );
+
+        await client.query("COMMIT");
+        return getDistributionById(id);
+    } catch (error) {
+        await client.query("ROLLBACK").catch(() => { });
+        throw error;
+    } finally {
+        client.release();
+    }
+}
+
+export async function getDistributionStats() {
+    const res = await pool.query(`
+        SELECT
+            COUNT(DISTINCT d.id) AS total,
+            COUNT(DISTINCT d.id) FILTER (WHERE d.status = 'completed') AS completed,
+            COUNT(DISTINCT d.id) FILTER (WHERE d.status = 'planned') AS planned,
+            COUNT(DISTINCT d.id) FILTER (WHERE d.status = 'in_progress') AS "inProgress",
+            COUNT(DISTINCT d.id) FILTER (WHERE d.status = 'cancelled') AS cancelled,
+            COUNT(DISTINCT d.id) FILTER (WHERE DATE(d.created_at) = CURRENT_DATE) AS "todayCount",
+            COALESCE(SUM(di.quantity) FILTER (WHERE d.status = 'completed'), 0) AS "totalItemsDelivered"
+        FROM distributions d
+        LEFT JOIN distribution_items di ON di.distribution_id = d.id
+    `);
+    const row = res.rows[0] || {};
+    return {
+        total: Number(row.total || 0),
+        completed: Number(row.completed || 0),
+        planned: Number(row.planned || 0),
+        inProgress: Number(row.inProgress || 0),
+        cancelled: Number(row.cancelled || 0),
+        todayCount: Number(row.todayCount || 0),
+        totalItemsDelivered: Number(row.totalItemsDelivered || 0),
+    };
+}
+
 
 

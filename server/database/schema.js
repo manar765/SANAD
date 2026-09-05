@@ -260,6 +260,38 @@ export async function migrate() {
       await client.query(`ALTER TABLE donation_requests ADD COLUMN IF NOT EXISTS notes TEXT NOT NULL DEFAULT ''`);
       await client.query(`UPDATE donation_requests SET reference_code = 'DON-' || LPAD(id::text, 4, '0') WHERE reference_code IS NULL`);
 
+      // Migration for distributions
+      await client.query(`ALTER TABLE distributions ADD COLUMN IF NOT EXISTS reference_code TEXT`);
+      await client.query(`UPDATE distributions SET reference_code = 'DIST-' || LPAD(id::text, 4, '0') WHERE reference_code IS NULL`);
+      await client.query(`ALTER TABLE distribution_items ADD COLUMN IF NOT EXISTS need_id BIGINT REFERENCES beneficiary_needs(id) ON DELETE SET NULL`);
+
+      await client.query(`
+      CREATE OR REPLACE FUNCTION set_distribution_reference_code()
+      RETURNS TRIGGER AS $$
+      BEGIN
+        IF NEW.reference_code IS NULL OR trim(NEW.reference_code) = '' THEN
+          NEW.reference_code := 'DIST-' || LPAD(NEW.id::text, 4, '0');
+        END IF;
+        RETURN NEW;
+      END;
+      $$ LANGUAGE plpgsql;
+    `);
+
+      await client.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM pg_trigger WHERE tgname = 'trigger_set_distribution_reference_code'
+        ) THEN
+          CREATE TRIGGER trigger_set_distribution_reference_code
+          BEFORE INSERT ON distributions
+          FOR EACH ROW
+          EXECUTE FUNCTION set_distribution_reference_code();
+        END IF;
+      END;
+      $$;
+    `);
+
       await client.query(`
       CREATE OR REPLACE FUNCTION set_donation_reference_code()
       RETURNS TRIGGER AS $$
@@ -349,6 +381,7 @@ export async function migrate() {
       await client.query(`CREATE INDEX IF NOT EXISTS beneficiary_needs_category_idx ON beneficiary_needs (category)`);
       await client.query(`CREATE INDEX IF NOT EXISTS distributions_status_scheduled_idx ON distributions (status, scheduled_at DESC)`);
       await client.query(`CREATE INDEX IF NOT EXISTS distributions_beneficiary_idx ON distributions (beneficiary_id, created_at DESC)`);
+      await client.query(`CREATE UNIQUE INDEX IF NOT EXISTS distributions_reference_code_idx ON distributions (reference_code)`);
       await client.query(`CREATE INDEX IF NOT EXISTS beneficiary_recommendations_beneficiary_created_idx ON beneficiary_recommendations (beneficiary_id, created_at DESC)`);
       await client.query(`CREATE INDEX IF NOT EXISTS beneficiary_recommendations_priority_idx ON beneficiary_recommendations (priority_level, created_at DESC)`);
       await client.query(`CREATE INDEX IF NOT EXISTS distribution_items_inventory_idx ON distribution_items (inventory_item_id)`);
