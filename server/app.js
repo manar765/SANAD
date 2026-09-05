@@ -27,12 +27,16 @@ import {
   editBeneficiary,
   editInventoryItem,
   editNeed,
+  evaluateAndSaveRecommendation,
   getBeneficiaries,
   getBeneficiary,
   getBeneficiaryProfileId,
+  getBeneficiaryRecommendation,
+  getBeneficiaryVerification,
   getDistributions,
   getInventory,
   getNeeds,
+  searchVerification,
 } from "./operations-service.js";
 import {
   authenticateUser,
@@ -352,6 +356,7 @@ const pageRoutes = Object.freeze({
   "/inventory": "inventory",
   "/beneficiaries": "beneficiaries",
   "/distributions": "coming-soon",
+  "/verification": "verification",
 });
 
 const app = express();
@@ -500,7 +505,9 @@ const operationError = (error, res) => {
     CANNOT_REVERT_DISTRIBUTED_DONATION: "لا يمكن إلغاء أو تعديل تبرع تم توزيع أجزاء منه في المخزون بالفعل.",
     INVALID_BENEFICIARY_NAME: "Please provide a valid beneficiary name.",
     INVALID_VERIFICATION_STATUS: "Please provide a valid verification status.",
+    BENEFICIARY_NOT_FOUND: "Beneficiary profile not found.",
   };
+  if (error.message === "BENEFICIARY_NOT_FOUND") return res.status(404).json({ message: messages.BENEFICIARY_NOT_FOUND });
   const message = messages[error.message];
   if (message) return res.status(["INSUFFICIENT_INVENTORY", "CANNOT_REVERT_DISTRIBUTED_DONATION"].includes(error.message) ? 409 : 400).json({ message });
   console.error("Operations API failed:", error);
@@ -605,6 +612,57 @@ app.patch("/api/beneficiaries/:id/verification", requireAdmin, requireCsrf, asyn
   }
 });
 
+app.get("/api/beneficiaries/:id/recommendation", requireAdmin, async (req, res) => {
+  const id = Number.parseInt(req.params.id, 10);
+  if (!Number.isInteger(id)) return res.status(400).json({ message: "Invalid beneficiary ID." });
+  try {
+    const recommendation = await getBeneficiaryRecommendation(id, req.user.id, false);
+    if (!recommendation) return res.status(404).json({ message: "Beneficiary profile not found." });
+    return res.json({ recommendation });
+  } catch (error) {
+    return operationError(error, res);
+  }
+});
+
+app.post("/api/beneficiaries/:id/recommendation/refresh", requireAdmin, requireCsrf, async (req, res) => {
+  const id = Number.parseInt(req.params.id, 10);
+  if (!Number.isInteger(id)) return res.status(400).json({ message: "Invalid beneficiary ID." });
+  try {
+    const recommendation = await evaluateAndSaveRecommendation(id, req.user.id);
+    await recordAuditEvent(req, {
+      userId: req.user.id,
+      action: "beneficiary_recommendation_refreshed",
+      metadata: { beneficiaryId: id, priorityLevel: recommendation.priority_level },
+    });
+    return res.json({ recommendation });
+  } catch (error) {
+    return operationError(error, res);
+  }
+});
+
+app.get("/api/verification/search", requireAdmin, async (req, res) => {
+  try {
+    const query = String(req.query?.q || "").trim();
+    const limit = Math.min(Math.max(Number.parseInt(req.query?.limit, 10) || 20, 1), 50);
+    const results = await searchVerification(query, limit);
+    return res.json({ results });
+  } catch (error) {
+    return operationError(error, res);
+  }
+});
+
+app.get("/api/verification/:id", requireAdmin, async (req, res) => {
+  const id = Number.parseInt(req.params.id, 10);
+  if (!Number.isInteger(id)) return res.status(400).json({ message: "Invalid beneficiary ID." });
+  try {
+    const verification = await getBeneficiaryVerification(id, req.user.id);
+    if (!verification) return res.status(404).json({ message: "Beneficiary profile not found." });
+    return res.json({ verification });
+  } catch (error) {
+    return operationError(error, res);
+  }
+});
+
 app.get("/api/beneficiary/needs", requireAuth, async (req, res) => {
   try {
     if (req.user.role === "admin") return res.json({ needs: await getNeeds(req.query) });
@@ -616,9 +674,13 @@ app.get("/api/beneficiary/needs", requireAuth, async (req, res) => {
 });
 
 app.post("/api/beneficiary/needs", requireAuth, requireCsrf, async (req, res) => {
-  if (req.user.role !== "beneficiary") return res.status(403).json({ message: "Only beneficiaries can create needs." });
+  if (req.user.role !== "beneficiary" && req.user.role !== "admin") {
+    return res.status(403).json({ message: "Only beneficiaries or administrators can create needs." });
+  }
   try {
-    const beneficiaryId = await getBeneficiaryProfileId(req.user.id);
+    const beneficiaryId = req.user.role === "admin"
+      ? (Number(req.body?.beneficiaryId) || null)
+      : await getBeneficiaryProfileId(req.user.id);
     if (!beneficiaryId) return res.status(404).json({ message: "Beneficiary profile not found." });
     const need = await addNeed(req.body, beneficiaryId);
     await recordAuditEvent(req, { userId: req.user.id, action: "beneficiary_need_created", metadata: { needId: need.id } });
@@ -1371,11 +1433,12 @@ const protectedPages = new Set([
   "/inventory",
   "/beneficiaries",
   "/distributions",
+  "/verification",
 ]);
 
 for (const [route, page] of Object.entries(pageRoutes)) {
   const guard =
-    route === "/admin-requests"
+    (route === "/admin-requests" || route === "/verification")
       ? requireAdmin
       : protectedPages.has(route)
         ? requireAuth

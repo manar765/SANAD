@@ -585,3 +585,124 @@ export async function updateBeneficiaryProfile(id, input, updatedBy) {
     }
 }
 
+export async function saveBeneficiaryRecommendation({
+    beneficiaryId,
+    priorityLevel,
+    reasons = [],
+    suggestedItems = [],
+    ruleInputs = {},
+    generatedBy = null
+}) {
+    const result = await pool.query(
+        `INSERT INTO beneficiary_recommendations
+          (beneficiary_id, priority_level, reasons, suggested_items, rule_inputs, generated_by)
+         VALUES ($1, $2, $3::jsonb, $4::jsonb, $5::jsonb, $6)
+         RETURNING id, beneficiary_id AS "beneficiaryId", priority_level AS "priorityLevel",
+                   reasons, suggested_items AS "suggestedItems", rule_inputs AS "ruleInputs",
+                   generated_by AS "generatedBy", created_at AS "createdAt"`,
+        [
+            beneficiaryId,
+            priorityLevel,
+            JSON.stringify(reasons),
+            JSON.stringify(suggestedItems),
+            JSON.stringify(ruleInputs),
+            generatedBy || null
+        ]
+    );
+    return result.rows[0];
+}
+
+export async function getLatestBeneficiaryRecommendation(beneficiaryId) {
+    const result = await pool.query(
+        `SELECT r.id, r.beneficiary_id AS "beneficiaryId", r.priority_level AS "priorityLevel",
+                r.reasons, r.suggested_items AS "suggestedItems", r.rule_inputs AS "ruleInputs",
+                r.generated_by AS "generatedBy", r.created_at AS "createdAt",
+                u.full_name AS "generatedByName"
+         FROM beneficiary_recommendations r
+         LEFT JOIN users u ON u.id = r.generated_by
+         WHERE r.beneficiary_id = $1
+         ORDER BY r.created_at DESC
+         LIMIT 1`,
+        [beneficiaryId]
+    );
+    return result.rows[0] || null;
+}
+
+export async function getBeneficiaryRecommendationHistory(beneficiaryId, limit = 10) {
+    const result = await pool.query(
+        `SELECT r.id, r.beneficiary_id AS "beneficiaryId", r.priority_level AS "priorityLevel",
+                r.reasons, r.suggested_items AS "suggestedItems", r.rule_inputs AS "ruleInputs",
+                r.generated_by AS "generatedBy", r.created_at AS "createdAt",
+                u.full_name AS "generatedByName"
+         FROM beneficiary_recommendations r
+         LEFT JOIN users u ON u.id = r.generated_by
+         WHERE r.beneficiary_id = $1
+         ORDER BY r.created_at DESC
+         LIMIT $2`,
+        [beneficiaryId, limit]
+    );
+    return result.rows;
+}
+
+export async function searchBeneficiariesForVerification(query = "", limit = 20) {
+    const term = (query || "").trim();
+    const isTermPresent = term.length > 0;
+    const filter = isTermPresent ? `%${term}%` : null;
+
+    const sql = `
+        SELECT bp.id,
+               bp.reference_code AS "referenceCode",
+               bp.national_id AS "nationalId",
+               bp.phone,
+               bp.governorate,
+               bp.district,
+               bp.family_size AS "familySize",
+               bp.children_count AS "childrenCount",
+               bp.monthly_income AS "monthlyIncome",
+               bp.employment_status AS "employmentStatus",
+               bp.health_conditions AS "healthConditions",
+               bp.verification_status AS "verificationStatus",
+               bp.created_at AS "createdAt",
+               bp.updated_at AS "updatedAt",
+               COALESCE(NULLIF(u.full_name, ''), NULLIF(u.name, ''), u.email) AS name,
+               u.email,
+               COUNT(DISTINCT bn.id) FILTER (WHERE bn.status IN ('open', 'partially_fulfilled')) AS "openNeedsCount",
+               rec.priority_level AS "latestPriority",
+               rec.created_at AS "latestRecommendationAt"
+        FROM beneficiary_profiles bp
+        JOIN users u ON u.id = bp.user_id
+        LEFT JOIN beneficiary_needs bn ON bn.beneficiary_id = bp.id
+        LEFT JOIN LATERAL (
+            SELECT priority_level, created_at
+            FROM beneficiary_recommendations
+            WHERE beneficiary_id = bp.id
+            ORDER BY created_at DESC
+            LIMIT 1
+        ) rec ON true
+        ${isTermPresent ? `
+        WHERE bp.reference_code ILIKE $1
+           OR bp.phone ILIKE $1
+           OR bp.national_id ILIKE $1
+           OR u.full_name ILIKE $1
+           OR u.name ILIKE $1
+           OR u.email ILIKE $1
+           OR bp.governorate ILIKE $1
+        ` : ""}
+        GROUP BY bp.id, u.full_name, u.name, u.email, rec.priority_level, rec.created_at
+        ORDER BY
+            CASE WHEN rec.priority_level = 'urgent' THEN 1
+                 WHEN rec.priority_level = 'high' THEN 2
+                 WHEN rec.priority_level = 'medium' THEN 3
+                 WHEN rec.priority_level = 'low' THEN 4
+                 ELSE 5
+            END,
+            bp.updated_at DESC
+        LIMIT $${isTermPresent ? 2 : 1}
+    `;
+
+    const params = isTermPresent ? [filter, limit] : [limit];
+    const result = await pool.query(sql, params);
+    return result.rows;
+}
+
+

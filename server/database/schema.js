@@ -237,6 +237,19 @@ export async function migrate() {
       );
     `);
 
+      await client.query(`
+      CREATE TABLE IF NOT EXISTS beneficiary_recommendations (
+        id BIGSERIAL PRIMARY KEY,
+        beneficiary_id INTEGER NOT NULL REFERENCES beneficiary_profiles(id) ON DELETE CASCADE,
+        priority_level TEXT NOT NULL CHECK (priority_level IN ('urgent', 'high', 'medium', 'low')),
+        reasons JSONB NOT NULL DEFAULT '[]'::jsonb,
+        suggested_items JSONB NOT NULL DEFAULT '[]'::jsonb,
+        rule_inputs JSONB NOT NULL DEFAULT '{}'::jsonb,
+        generated_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+    `);
+
       await client.query(`ALTER TABLE user_sessions ADD COLUMN IF NOT EXISTS remember_me BOOLEAN NOT NULL DEFAULT FALSE`);
       await client.query(`ALTER TABLE user_mfa ALTER COLUMN enabled_at DROP NOT NULL`);
 
@@ -336,6 +349,8 @@ export async function migrate() {
       await client.query(`CREATE INDEX IF NOT EXISTS beneficiary_needs_category_idx ON beneficiary_needs (category)`);
       await client.query(`CREATE INDEX IF NOT EXISTS distributions_status_scheduled_idx ON distributions (status, scheduled_at DESC)`);
       await client.query(`CREATE INDEX IF NOT EXISTS distributions_beneficiary_idx ON distributions (beneficiary_id, created_at DESC)`);
+      await client.query(`CREATE INDEX IF NOT EXISTS beneficiary_recommendations_beneficiary_created_idx ON beneficiary_recommendations (beneficiary_id, created_at DESC)`);
+      await client.query(`CREATE INDEX IF NOT EXISTS beneficiary_recommendations_priority_idx ON beneficiary_recommendations (priority_level, created_at DESC)`);
       await client.query(`CREATE INDEX IF NOT EXISTS distribution_items_inventory_idx ON distribution_items (inventory_item_id)`);
       await client.query(`CREATE INDEX IF NOT EXISTS user_mfa_updated_at_idx ON user_mfa (updated_at)`);
       await client.query(`CREATE INDEX IF NOT EXISTS mfa_challenges_user_expires_idx ON mfa_challenges (user_id, expires_at)`);

@@ -21,6 +21,7 @@ const pageRoutes = [
     "/inventory",
     "/beneficiaries",
     "/distributions",
+    "/verification",
 ];
 
 const server = spawn(process.execPath, ["server/app.js"], {

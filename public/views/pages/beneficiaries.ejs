@@ -238,6 +238,10 @@
                             <i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i> سجل الدعم (<span
                                 id="drawerHistoryCount">0</span>)
                         </button>
+                        <button type="button" class="ben-tab-btn admin-only" data-tab="tab-recommendation" role="tab"
+                            aria-selected="false">
+                            <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> التوصية والتحقق
+                        </button>
                     </div>
 
                     <div class="ben-drawer-body">
@@ -359,6 +363,91 @@
                                 <i class="fa-solid fa-box-open"></i>
                                 <h4>لا يوجد سجل توزيعات سابق</h4>
                                 <p>لم يتم تسليم مساعدات عينية لهذا المستفيد حتى الآن.</p>
+                            </div>
+                        </div>
+
+                        <!-- Tab 4: Rule-Based Recommendation & Verification -->
+                        <div class="ben-tab-pane" id="tab-recommendation" role="tabpanel">
+                            <!-- Advisory Disclaimer Banner -->
+                            <div class="rec-advisory-banner">
+                                <div class="rec-advisory-content">
+                                    <i class="fa-solid fa-shield-halved rec-advisory-icon" aria-hidden="true"></i>
+                                    <div class="rec-advisory-text">
+                                        <strong>إشعار استرشادي لنظام دعم القرار:</strong>
+                                        <span>هذه التوصية استرشادية لمساندة القرار البشري، والقرار النهائي يعود للموظف
+                                            المختص.</span>
+                                    </div>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline rec-refresh-btn" id="recRefreshBtn"
+                                    title="إعادة تشغيل محرك القواعد واحتساب التوصية">
+                                    <i class="fa-solid fa-rotate" aria-hidden="true"></i> تحديث التوصية
+                                </button>
+                            </div>
+
+                            <!-- 30-Day Recent Support Warning Banner -->
+                            <div class="rec-warning-banner" id="recRecentSupportWarning" hidden>
+                                <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+                                <div class="rec-warning-body">
+                                    <strong>تنبيه دعم حديث (خلال آخر 30 يوماً):</strong>
+                                    <p id="recRecentSupportMsg"></p>
+                                </div>
+                            </div>
+
+                            <!-- Recommendation Summary Card -->
+                            <div class="rec-card">
+                                <div class="rec-header-row">
+                                    <div>
+                                        <span class="rec-label-muted">مستوى الأولوية المحسوب</span>
+                                        <div class="rec-priority-wrapper" id="recPriorityBadge">
+                                            <span class="rec-badge-loading">جارٍ التقييم...</span>
+                                        </div>
+                                    </div>
+                                    <div class="rec-meta-box">
+                                        <span class="rec-date-text" id="recTimestamp">تاريخ التقييم: —</span>
+                                        <span class="rec-score-text" id="recScore">النقاط: —</span>
+                                    </div>
+                                </div>
+
+                                <div class="rec-reasons-block">
+                                    <h4 class="rec-block-title">
+                                        <i class="fa-solid fa-list-check text-teal"></i> مبررات الأولوية ومعايير
+                                        الاستحقاق:
+                                    </h4>
+                                    <ul class="rec-reasons-list" id="recReasonsList">
+                                        <li>جارٍ تحميل التوصية...</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <!-- Inventory Matching Table -->
+                            <div class="rec-card">
+                                <h4 class="rec-block-title">
+                                    <i class="fa-solid fa-boxes-stacked text-teal"></i> مطابقة المخزون المتاح مع
+                                    الاحتياجات المفتوحة:
+                                </h4>
+                                <div class="beneficiaries-table-wrap">
+                                    <table class="beneficiaries-table" id="recInventoryTable">
+                                        <thead>
+                                            <tr>
+                                                <th>الاحتياج المطلوب</th>
+                                                <th>الفئة</th>
+                                                <th>الكمية المطلوبة</th>
+                                                <th>الصنف المقترح في المخزون</th>
+                                                <th>المتاح بالمخزون</th>
+                                                <th>حالة التوفر</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="recInventoryTbody">
+                                            <!-- rendered dynamically -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="don-empty" id="recInventoryEmpty" hidden>
+                                    <i class="fa-solid fa-box-open"></i>
+                                    <h4>لا توجد مقترحات مخزون حالياً</h4>
+                                    <p>المستفيد ليس لديه احتياجات مفتوحة حالياً أو لا توجد أصناف مطابقة متوفرة بالمخزون.
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     </div>

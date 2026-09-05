@@ -5,7 +5,7 @@
             if (user?.role === "admin") {
                 document.documentElement.classList.add("role-admin");
             }
-        } catch {}
+        } catch { }
     })();
 </script>
 <header class="navbar" id="navbar">
@@ -20,26 +20,33 @@
 
         <nav class="nav-menu" id="navMenu" aria-label="التنقل الرئيسي">
             <div class="nav-links">
-                <% if (activePath === '/') { %>
-                <a href="#home" class="nav-link active">الرئيسية</a>
-                <a href="/dashboard" class="nav-link" data-role="admin">لوحة البيانات</a>
-                <a href="#about" class="nav-link">عن سند</a>
-                <a href="/donations" class="nav-link">التبرعات</a>
-                <a href="/inventory" class="nav-link" data-role="admin">المخزون</a>
-                <a href="/beneficiaries" class="nav-link" data-role="admin">المستفيدون</a>
-                <a href="#contact" class="nav-link">تواصل معنا</a>
-                <% } else { %>
-                <a href="/" class="nav-link">الرئيسية</a>
-                <a href="/dashboard" class="nav-link <%= activePath === '/dashboard' ? 'active' : '' %>" data-role="admin">لوحة
-                    البيانات</a>
-                <a href="/donations" class="nav-link <%= activePath === '/donations' ? 'active' : '' %>">التبرعات</a>
-                <a href="/inventory" class="nav-link <%= activePath === '/inventory' ? 'active' : '' %>" data-role="admin">المخزون</a>
-                <a href="/beneficiaries"
-                    class="nav-link <%= activePath === '/beneficiaries' ? 'active' : '' %>" data-role="admin">المستفيدون</a>
-                <a href="/admin-requests"
-                    class="nav-link <%= activePath === '/admin-requests' ? 'active' : '' %>" data-role="admin">الإدارة</a>
-                <a href="/#contact" class="nav-link">تواصل معنا</a>
-                <% } %>
+                <% if (activePath==='/' ) { %>
+                    <a href="#home" class="nav-link active">الرئيسية</a>
+                    <a href="/dashboard" class="nav-link" data-role="admin">لوحة البيانات</a>
+                    <a href="#about" class="nav-link">عن سند</a>
+                    <a href="/donations" class="nav-link">التبرعات</a>
+                    <a href="/inventory" class="nav-link" data-role="admin">المخزون</a>
+                    <a href="/beneficiaries" class="nav-link" data-role="admin">المستفيدون</a>
+                    <a href="/verification" class="nav-link" data-role="admin">التحقق والتوصيات</a>
+                    <a href="#contact" class="nav-link">تواصل معنا</a>
+                    <% } else { %>
+                        <a href="/" class="nav-link">الرئيسية</a>
+                        <a href="/dashboard" class="nav-link <%= activePath === '/dashboard' ? 'active' : '' %>"
+                            data-role="admin">لوحة
+                            البيانات</a>
+                        <a href="/donations"
+                            class="nav-link <%= activePath === '/donations' ? 'active' : '' %>">التبرعات</a>
+                        <a href="/inventory" class="nav-link <%= activePath === '/inventory' ? 'active' : '' %>"
+                            data-role="admin">المخزون</a>
+                        <a href="/beneficiaries" class="nav-link <%= activePath === '/beneficiaries' ? 'active' : '' %>"
+                            data-role="admin">المستفيدون</a>
+                        <a href="/verification" class="nav-link <%= activePath === '/verification' ? 'active' : '' %>"
+                            data-role="admin">التحقق والتوصيات</a>
+                        <a href="/admin-requests"
+                            class="nav-link <%= activePath === '/admin-requests' ? 'active' : '' %>"
+                            data-role="admin">الإدارة</a>
+                        <a href="/#contact" class="nav-link">تواصل معنا</a>
+                        <% } %>
             </div>
 
             <div class="nav-actions">

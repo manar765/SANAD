@@ -6,16 +6,26 @@ import {
     createInventoryItem,
     getBeneficiaryDetail,
     getBeneficiaryProfileId,
+    getBeneficiaryRecommendationHistory,
+    getLatestBeneficiaryRecommendation,
     listBeneficiaries,
     listBeneficiaryNeeds,
     listDistributions,
     listInventory,
+    saveBeneficiaryRecommendation,
+    searchBeneficiariesForVerification,
     syncDonationToInventory,
     updateBeneficiaryNeed,
     updateBeneficiaryProfile,
     updateDistributionStatus,
     updateInventoryItem,
 } from "./operations-repository.js";
+import {
+    evaluateBeneficiaryRules,
+    matchInventoryToNeeds,
+    ADVISORY_DISCLAIMER_AR,
+    PRIORITY_LABELS_AR
+} from "./rules/recommendation-engine.js";
 
 const INVENTORY_STATUSES = new Set(["available", "low_stock", "out_of_stock", "in_distribution", "surplus", "archived"]);
 const NEED_PRIORITIES = new Set(["low", "medium", "high", "urgent"]);
@@ -187,5 +197,94 @@ export async function editBeneficiary(id, body, updatedBy) {
     return updateBeneficiaryProfile(id, input, updatedBy);
 }
 
+export async function evaluateAndSaveRecommendation(beneficiaryId, actorId) {
+    const detail = await getBeneficiaryDetail(beneficiaryId);
+    if (!detail) throw new Error("BENEFICIARY_NOT_FOUND");
+
+    const inventoryItems = await listInventory();
+    const evaluation = evaluateBeneficiaryRules({
+        beneficiary: detail,
+        needs: detail.needs,
+        distributionHistory: detail.distributions,
+        inventoryItems,
+    });
+
+    const saved = await saveBeneficiaryRecommendation({
+        beneficiaryId: detail.id,
+        priorityLevel: evaluation.priority_level,
+        reasons: evaluation.reasons,
+        suggestedItems: evaluation.suggested_items,
+        ruleInputs: evaluation.rule_inputs,
+        generatedBy: actorId || null,
+    });
+
+    return {
+        ...evaluation,
+        id: saved.id,
+        created_at: saved.createdAt,
+        generated_by: saved.generatedBy,
+    };
+}
+
+export async function getBeneficiaryRecommendation(beneficiaryId, actorId, forceRefresh = false) {
+    const detail = await getBeneficiaryDetail(beneficiaryId);
+    if (!detail) throw new Error("BENEFICIARY_NOT_FOUND");
+
+    if (!forceRefresh) {
+        const latest = await getLatestBeneficiaryRecommendation(detail.id);
+        if (latest) {
+            const inventoryItems = await listInventory();
+            const openNeeds = (detail.needs || []).filter(n => n.status === "open" || n.status === "partially_fulfilled");
+            const freshSuggestions = matchInventoryToNeeds(openNeeds, inventoryItems);
+
+            const daysAgo = latest.ruleInputs?.days_since_last_distribution;
+            const hasRecent = daysAgo !== null && daysAgo !== undefined && Number(daysAgo) < 30;
+
+            return {
+                id: latest.id,
+                priority_level: latest.priorityLevel,
+                priority_label_ar: PRIORITY_LABELS_AR[latest.priorityLevel] || latest.priorityLevel,
+                reasons: latest.reasons,
+                suggested_items: freshSuggestions.length ? freshSuggestions : (latest.suggestedItems || []),
+                rule_inputs: latest.ruleInputs,
+                created_at: latest.createdAt,
+                generated_by: latest.generatedBy,
+                generated_by_name: latest.generatedByName,
+                recent_support_warning: {
+                    hasRecentSupport: hasRecent,
+                    daysAgo: daysAgo ?? null,
+                    lastDistributedAt: latest.ruleInputs?.last_distribution_date ?? null,
+                    message: hasRecent
+                        ? `تنبيه: استفاد المستفيد من مساعدة خلال آخر 30 يوماً (منذ ${daysAgo} يوماً). التوصية للمراجعة والاستثناء وفق تقدير الموظف ولا تمنع الصرف.`
+                        : null,
+                },
+                advisory_disclaimer: ADVISORY_DISCLAIMER_AR,
+            };
+        }
+    }
+
+    return evaluateAndSaveRecommendation(detail.id, actorId);
+}
+
+export async function getBeneficiaryVerification(beneficiaryId, actorId) {
+    const detail = await getBeneficiaryDetail(beneficiaryId);
+    if (!detail) return null;
+
+    const recommendation = await getBeneficiaryRecommendation(detail.id, actorId, false);
+    const history = await getBeneficiaryRecommendationHistory(detail.id, 5);
+
+    return {
+        beneficiary: detail,
+        recommendation,
+        history,
+        advisory: ADVISORY_DISCLAIMER_AR,
+    };
+}
+
+export async function searchVerification(query, limit = 20) {
+    return searchBeneficiariesForVerification(query, limit);
+}
+
 export { getBeneficiaryProfileId };
+
 

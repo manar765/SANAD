@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<% /* EJS page template */ %>
+    <html lang="ar" dir="rtl">
+
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>سند | SANAD — التحقق والتوصيات</title>
+        <meta name="description"
+            content="نظام التحقق والتوصيات الذكية — تدقيق أهلية الحالات وكشف الدعم المتكرر ومطابقة المخزون بالاحتياجات." />
+
+        <!-- favicon -->
+        <link rel="icon" type="image/png" href="/assets/images/LogoSANAD.png" />
+
+        <!-- fonts -->
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+        <!-- font awesome -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+
+        <!-- styles -->
+        <link rel="stylesheet" href="/CSS/style.css" />
+        <link rel="stylesheet" href="/CSS/beneficiaries.css" />
+    </head>
+
+    <body class="beneficiaries-page verification-page">
+        <a class="skip-link" href="#main-content">تخطي إلى المحتوى الرئيسي</a>
+
+        <div class="progress-bar" id="progressBar" aria-hidden="true"></div>
+
+        <!-- ============================================================
+         NAVBAR
+    ============================================================ -->
+        <%- include('../partials/navbar', { activePath: '/verification' }) %>
+
+            <main id="main-content" class="beneficiaries-main">
+                <div class="beneficiaries-container">
+
+                    <!-- ============================================================
+                 HEADER
+            ============================================================ -->
+                    <div class="beneficiaries-header">
+                        <div class="beneficiaries-header-text">
+                            <span class="eyebrow"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i> نظام دعم
+                                القرار والتحقق</span>
+                            <h1 class="page-title">التحقق والتوصيات الذكية للحالات</h1>
+                            <p class="page-subtitle">
+                                فحص أهلية المستفيدين استرشادياً، كشف الدعم المتكرر خلال آخر 30 يوماً، وتوليد مبررات
+                                الاستحقاق ومطابقة المخزون.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- ============================================================
+                 SEARCH & LOOKUP SECTION
+            ============================================================ -->
+                    <div class="beneficiaries-filter-card">
+                        <form class="beneficiaries-filter-grid" id="verificationSearchForm" onsubmit="return false;">
+                            <div class="filter-group filter-search-group" style="flex: 2;">
+                                <label for="verificationSearchInput">البحث السريع عن حالة مستفيد</label>
+                                <div class="search-input-wrap">
+                                    <i class="fa-solid fa-magnifying-glass search-icon" aria-hidden="true"></i>
+                                    <input type="search" id="verificationSearchInput" class="form-input"
+                                        placeholder="ابحث برمز المستفيد (BEN-XXXX) أو رقم الهاتف أو الرقم القومي أو الاسم..."
+                                        autocomplete="off" />
+                                </div>
+                            </div>
+
+                            <div class="filter-group filter-actions-group" style="align-self: flex-end;">
+                                <button type="submit" class="btn btn-primary" id="verificationSearchBtn">
+                                    <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i> بحث
+                                </button>
+                                <button type="button" class="btn btn-outline" id="verificationResetBtn">
+                                    <i class="fa-solid fa-rotate-left" aria-hidden="true"></i> إعادة تعيين
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- ============================================================
+                 VERIFICATION WORKSPACE (SPLIT LAYOUT)
+            ============================================================ -->
+                    <div class="verification-workspace">
+                        <!-- Case List Sidebar -->
+                        <div class="verification-cases-sidebar">
+                            <div class="verification-cases-header">
+                                <h3><i class="fa-solid fa-users-viewfinder text-teal"></i> نتائج الحالات (<span
+                                        id="casesCount">0</span>)</h3>
+                            </div>
+
+                            <div class="ui-state ui-loading" id="casesLoading" role="status" aria-live="polite" hidden>
+                                <i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i>
+                                <span>جارٍ تحميل الحالات…</span>
+                            </div>
+
+                            <div class="verification-cases-list" id="casesList">
+                                <!-- Populated by verification.js -->
+                            </div>
+
+                            <div class="don-empty" id="casesEmpty" hidden>
+                                <i class="fa-solid fa-user-slash"></i>
+                                <h4>لا توجد حالات مطابقة</h4>
+                                <p>جرّب البحث بكلمة أو رقم مختلف.</p>
+                            </div>
+                        </div>
+
+                        <!-- Detailed Verification Dossier -->
+                        <div class="verification-dossier-panel">
+                            <!-- Placeholder when no case is selected -->
+                            <div class="verification-placeholder" id="dossierPlaceholder">
+                                <i class="fa-solid fa-hand-holding-hand" aria-hidden="true"></i>
+                                <h3>اختر حالة للتحقق وفحص التوصية</h3>
+                                <p>حدد مستفيداً من القائمة الجانبية أو ابحث برمز المستفيد للاطلاع على ملف الحالة ومطابقة
+                                    المخزون والتوصية الاسترشادية.</p>
+                            </div>
+
+                            <!-- Active Dossier Content -->
+                            <div class="verification-dossier" id="dossierContent" hidden>
+                                <!-- Top Advisory Disclaimer Banner -->
+                                <div class="rec-advisory-banner">
+                                    <div class="rec-advisory-content">
+                                        <i class="fa-solid fa-shield-halved rec-advisory-icon" aria-hidden="true"></i>
+                                        <div class="rec-advisory-text">
+                                            <strong>إشعار استرشادي لدعم القرار:</strong>
+                                            <span>هذه التوصية استرشادية لمساندة القرار البشري، والقرار النهائي يعود
+                                                للموظف المختص.</span>
+                                        </div>
+                                    </div>
+                                    <div class="rec-advisory-actions">
+                                        <button type="button" class="btn btn-sm btn-outline" id="dosRefreshBtn"
+                                            title="إعادة تقييم القواعد وتحديث التوصية">
+                                            <i class="fa-solid fa-rotate" aria-hidden="true"></i> تحديث التوصية
+                                        </button>
+                                        <a href="/beneficiaries" class="btn btn-sm btn-outline" id="dosOpenDrawerLink"
+                                            target="_blank" title="فتح سجل المستفيدين الكامل">
+                                            <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i>
+                                            فتح السجل الكامل
+                                        </a>
+                                    </div>
+                                </div>
+
+                                <!-- 30-Day Recent Support Detector Alert -->
+                                <div class="rec-warning-banner" id="dosRecentSupportWarning" hidden>
+                                    <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+                                    <div class="rec-warning-body">
+                                        <strong>تنبيه دعم حديث (خلال آخر 30 يوماً):</strong>
+                                        <p id="dosRecentSupportMsg"></p>
+                                    </div>
+                                </div>
+
+                                <!-- Case Identification Card -->
+                                <div class="rec-card">
+                                    <div class="dos-id-header">
+                                        <div>
+                                            <h2 class="dos-name" id="dosName">—</h2>
+                                            <div class="dos-meta-tags">
+                                                <span class="ben-code-badge" id="dosCodeBadge">BEN-0000</span>
+                                                <span id="dosVerificationBadge"></span>
+                                                <span class="dos-tag" id="dosPhone"><i class="fa-solid fa-phone"></i>
+                                                    —</span>
+                                                <span class="dos-tag" id="dosNationalId"><i
+                                                        class="fa-solid fa-id-card"></i> —</span>
+                                            </div>
+                                        </div>
+                                        <div class="dos-priority-box">
+                                            <span class="rec-label-muted">أولوية الحالة المحسوبة</span>
+                                            <div id="dosPriorityBadge">
+                                                <span class="rec-badge-loading">جارٍ الاحتساب...</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="ben-info-grid" style="margin-top: 1.25rem;">
+                                        <div class="ben-info-item">
+                                            <span class="ben-info-label">المحافظة والمنطقة</span>
+                                            <span class="ben-info-val" id="dosLocation">—</span>
+                                        </div>
+                                        <div class="ben-info-item">
+                                            <span class="ben-info-label">حجم الأسرة والأطفال</span>
+                                            <span class="ben-info-val" id="dosFamily">—</span>
+                                        </div>
+                                        <div class="ben-info-item">
+                                            <span class="ben-info-label">حالة العمل والدخل الشهري</span>
+                                            <span class="ben-info-val" id="dosIncomeWork">—</span>
+                                        </div>
+                                        <div class="ben-info-item">
+                                            <span class="ben-info-label">نوع السكن</span>
+                                            <span class="ben-info-val" id="dosHousing">—</span>
+                                        </div>
+                                        <div class="ben-info-item" style="grid-column: 1 / -1;">
+                                            <span class="ben-info-label">الظروف الصحية والاحتياجات الخاصة</span>
+                                            <span class="ben-info-val" id="dosHealth">—</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Recommendation Explanation & Justifications -->
+                                <div class="rec-card">
+                                    <h3 class="rec-block-title">
+                                        <i class="fa-solid fa-list-check text-teal"></i> مبررات الأولوية ومعايير
+                                        الاستحقاق المحسوبة:
+                                    </h3>
+                                    <ul class="rec-reasons-list" id="dosReasonsList">
+                                        <li>جارٍ التحميل...</li>
+                                    </ul>
+                                </div>
+
+                                <!-- Inventory Matching Section -->
+                                <div class="rec-card">
+                                    <h3 class="rec-block-title">
+                                        <i class="fa-solid fa-boxes-stacked text-teal"></i> مطابقة المخزون المتاح مع
+                                        الاحتياجات المفتوحة للحالة:
+                                    </h3>
+                                    <div class="beneficiaries-table-wrap">
+                                        <table class="beneficiaries-table" id="dosInventoryTable">
+                                            <thead>
+                                                <tr>
+                                                    <th>الاحتياج المطلوب</th>
+                                                    <th>الفئة</th>
+                                                    <th>الكمية المطلوبة</th>
+                                                    <th>الصنف المقترح في المخزون</th>
+                                                    <th>المتاح بالمخزون</th>
+                                                    <th>حالة التوفر</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="dosInventoryTbody">
+                                                <!-- populated dynamically -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div class="don-empty" id="dosInventoryEmpty" hidden>
+                                        <i class="fa-solid fa-box-open"></i>
+                                        <h4>لا توجد مقترحات مخزون حالياً</h4>
+                                        <p>المستفيد ليس لديه احتياجات مفتوحة حالياً أو لا توجد أصناف مطابقة متوفرة
+                                            بالمخزون.</p>
+                                    </div>
+                                </div>
+
+                                <!-- Human Decision / Verification Action Bar -->
+                                <div class="rec-card ben-verify-bar" style="margin-top: 1.5rem;">
+                                    <h3><i class="fa-solid fa-user-check"></i> اتخاذ قرار التدقيق والتحقق الميداني</h3>
+                                    <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;">
+                                        تحديث حالة توثيق الحالة وفق تقرير التحقق والمستندات المرفوعة:
+                                    </p>
+                                    <div class="ben-verify-actions">
+                                        <button type="button" class="btn btn-sm btn-primary" id="dosApproveBtn">
+                                            <i class="fa-solid fa-check"></i> اعتماد وتوثيق الحالة
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline" id="dosReviewBtn">
+                                            <i class="fa-solid fa-clipboard-question"></i> طلب فحص ميداني إضافي
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-danger" id="dosRejectBtn"
+                                            style="background-color: #fee2e2; color: #dc2626; border-color: #fca5a5;">
+                                            <i class="fa-solid fa-ban"></i> رفض الحالة
+                                        </button>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </main>
+
+            <!-- ============================================================
+         FOOTER
+    ============================================================ -->
+            <%- include('../partials/footer') %>
+
+                <!-- toast notification -->
+                <div class="toast" id="toast" role="status" aria-live="polite">
+                    <i class="fa-solid fa-circle-info"></i>
+                    <span></span>
+                </div>
+
+                <!-- back to top -->
+                <button class="back-to-top" id="backToTop" aria-label="العودة إلى الأعلى">
+                    <i class="fa-solid fa-arrow-up"></i>
+                </button>
+
+                <!-- scripts -->
+                <script src="/JS/main.js"></script>
+                <script src="/JS/ui-states.js"></script>
+                <script src="/JS/verification.js"></script>
+                <script src="/JS/logout.js"></script>
+                <script src="/JS/preferences.js"></script>
+    </body>
+
+    </html>

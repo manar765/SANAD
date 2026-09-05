@@ -45,6 +45,17 @@
     const verifyReviewBtn = $("#verifyReviewBtn");
     const verifyRejectBtn = $("#verifyRejectBtn");
 
+    // Recommendation Tab Elements
+    const recRefreshBtn = $("#recRefreshBtn");
+    const recRecentSupportWarning = $("#recRecentSupportWarning");
+    const recRecentSupportMsg = $("#recRecentSupportMsg");
+    const recPriorityBadge = $("#recPriorityBadge");
+    const recTimestamp = $("#recTimestamp");
+    const recScore = $("#recScore");
+    const recReasonsList = $("#recReasonsList");
+    const recInventoryTbody = $("#recInventoryTbody");
+    const recInventoryEmpty = $("#recInventoryEmpty");
+
     // Modal Elements
     const modalOverlay = $("#beneficiaryModalOverlay");
     const modalTitle = $("#benModalTitle");
@@ -152,13 +163,16 @@
             `<td>${needsText}</td>` +
             `<td><div class="ben-actions">` +
             `<button type="button" class="btn btn-sm btn-outline ben-view-btn" data-id="${item.id}" title="عرض وتفاصيل الملف"><i class="fa-solid fa-eye" aria-hidden="true"></i> عرض الملف</button>` +
+            (isAdmin ? `<button type="button" class="btn btn-sm btn-outline ben-rec-btn" data-id="${item.id}" title="التحقق والتوصية"><i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> التوصية</button>` : "") +
             (isAdmin ? `<button type="button" class="btn btn-sm btn-outline ben-edit-btn" data-id="${item.id}" title="تعديل البيانات"><i class="fa-solid fa-pen" aria-hidden="true"></i></button>` : "") +
             `</div></td>`;
 
         const viewBtn = tr.querySelector(".ben-view-btn");
-        if (viewBtn) viewBtn.addEventListener("click", () => openDrawer(item.id));
+        if (viewBtn) viewBtn.addEventListener("click", () => openDrawer(item.id, "tab-profile"));
 
         if (isAdmin) {
+            const recBtn = tr.querySelector(".ben-rec-btn");
+            if (recBtn) recBtn.addEventListener("click", () => openDrawer(item.id, "tab-recommendation"));
             const editBtn = tr.querySelector(".ben-edit-btn");
             if (editBtn) editBtn.addEventListener("click", () => openModal(item));
         }
@@ -226,11 +240,14 @@
         drawerPanes.forEach(pane => {
             pane.classList.toggle("active", pane.id === tabId);
         });
+        if (tabId === "tab-recommendation" && currentBeneficiary) {
+            loadRecommendation(currentBeneficiary.id);
+        }
     }
 
-    async function openDrawer(id) {
+    async function openDrawer(id, initialTab = "tab-profile") {
         if (!drawerOverlay) return;
-        switchTab("tab-profile");
+        switchTab(initialTab);
         drawerOverlay.classList.add("active");
         drawerOverlay.setAttribute("aria-hidden", "false");
 
@@ -325,6 +342,10 @@
                 });
             }
 
+            if (initialTab === "tab-recommendation") {
+                await loadRecommendation(b.id);
+            }
+
         } catch (error) {
             showToast(error.message || "تعذر تحميل تفاصيل الملف.");
         }
@@ -335,6 +356,120 @@
         drawerOverlay.classList.remove("active");
         drawerOverlay.setAttribute("aria-hidden", "true");
         currentBeneficiary = null;
+    }
+
+    /* ---------------------------------------------------------
+       Recommendation & Verification (Phase 5)
+    --------------------------------------------------------- */
+    async function loadRecommendation(beneficiaryId, forceRefresh = false) {
+        if (!recPriorityBadge) return;
+        recPriorityBadge.innerHTML = `<span class="rec-badge-loading"><i class="fa-solid fa-spinner fa-spin"></i> جارٍ تقييم القواعد...</span>`;
+        if (recReasonsList) recReasonsList.innerHTML = `<li>جارٍ التحقق من معايير الاستحقاق...</li>`;
+        if (recRecentSupportWarning) recRecentSupportWarning.hidden = true;
+
+        try {
+            let res;
+            if (forceRefresh) {
+                const token = await getCsrf();
+                res = await fetch(`/api/beneficiaries/${encodeURIComponent(beneficiaryId)}/recommendation/refresh`, {
+                    method: "POST",
+                    credentials: "same-origin",
+                    headers: { "Content-Type": "application/json", "X-CSRF-Token": token }
+                });
+            } else {
+                res = await fetch(`/api/beneficiaries/${encodeURIComponent(beneficiaryId)}/recommendation`, {
+                    credentials: "same-origin"
+                });
+            }
+
+            const payload = await res.json();
+            if (!res.ok) throw new Error(payload.message || "تعذر احتساب التوصية.");
+
+            const rec = payload.recommendation;
+            renderRecommendation(rec);
+            if (forceRefresh) showToast("تم تحديث التوصية ومطابقة المخزون بنجاح.");
+        } catch (err) {
+            if (recPriorityBadge) recPriorityBadge.innerHTML = `<span class="rec-priority-badge rec-pri-low">تعذر التقييم</span>`;
+            if (recReasonsList) recReasonsList.innerHTML = `<li style="color: #dc2626;">${escapeHtml(err.message || "خطأ أثناء تقييم التوصية")}</li>`;
+        }
+    }
+
+    function renderRecommendation(rec) {
+        if (!rec) return;
+
+        const priorityLabels = {
+            urgent: "عاجلة جداً",
+            high: "عالية",
+            medium: "متوسطة",
+            low: "منخفضة"
+        };
+        const pLevel = rec.priority_level || "medium";
+        const priorityClass = `rec-pri-${pLevel}`;
+        const label = rec.priority_label_ar || priorityLabels[pLevel] || pLevel;
+
+        if (recPriorityBadge) {
+            recPriorityBadge.innerHTML = `<span class="rec-priority-badge ${priorityClass}"><i class="fa-solid fa-bolt"></i> أولوية ${escapeHtml(label)}</span>`;
+        }
+
+        if (recTimestamp) {
+            const d = rec.created_at ? new Date(rec.created_at).toLocaleString("ar-EG") : "—";
+            recTimestamp.textContent = `تاريخ التقييم: ${d}`;
+        }
+
+        if (recScore) {
+            recScore.textContent = rec.score !== undefined ? `النقاط: ${formatNumber(rec.score)}` : "";
+        }
+
+        // 30-Day Recent Support Warning
+        if (recRecentSupportWarning && recRecentSupportMsg) {
+            if (rec.recent_support_warning?.hasRecentSupport) {
+                recRecentSupportWarning.hidden = false;
+                recRecentSupportMsg.textContent = rec.recent_support_warning.message ||
+                    `استفاد المستفيد من مساعدة منذ ${rec.recent_support_warning.daysAgo} يوماً. التوصية للمراجعة والاستثناء وفق تقدير الموظف ولا تمنع الصرف.`;
+            } else {
+                recRecentSupportWarning.hidden = true;
+            }
+        }
+
+        // Reasons List
+        if (recReasonsList) {
+            recReasonsList.innerHTML = "";
+            const reasons = Array.isArray(rec.reasons) ? rec.reasons : [];
+            if (reasons.length === 0) {
+                recReasonsList.innerHTML = `<li>لا توجد مبررات مسجلة.</li>`;
+            } else {
+                reasons.forEach(r => {
+                    const li = document.createElement("li");
+                    li.textContent = r;
+                    recReasonsList.appendChild(li);
+                });
+            }
+        }
+
+        // Inventory Matching
+        if (recInventoryTbody) {
+            recInventoryTbody.innerHTML = "";
+            const items = Array.isArray(rec.suggested_items) ? rec.suggested_items : [];
+            if (items.length === 0) {
+                if (recInventoryEmpty) recInventoryEmpty.hidden = false;
+            } else {
+                if (recInventoryEmpty) recInventoryEmpty.hidden = true;
+                items.forEach(it => {
+                    const tr = document.createElement("tr");
+                    const statusCls = it.match_status === "full" ? "match-full" : it.match_status === "partial" ? "match-partial" : "match-none";
+                    const statusLabel = it.match_label_ar || (it.match_status === "full" ? "متوفر بالكامل" : it.match_status === "partial" ? "متوفر جزئياً" : "غير متوفر");
+
+                    tr.innerHTML =
+                        `<td><strong>${escapeHtml(it.need_title || "احتياج")}</strong></td>` +
+                        `<td>${escapeHtml(it.category || "—")}</td>` +
+                        `<td>${formatNumber(it.needed_quantity)} ${escapeHtml(it.unit || "")}</td>` +
+                        `<td>${it.inventory_item_name ? `<strong>${escapeHtml(it.inventory_item_name)}</strong>` : `<span style="color: var(--text-muted);">لا يوجد تطابق</span>`}</td>` +
+                        `<td>${formatNumber(it.available_quantity)} ${escapeHtml(it.unit || "")}</td>` +
+                        `<td><span class="match-badge ${statusCls}">${escapeHtml(statusLabel)}</span></td>`;
+                    recInventoryTbody.appendChild(tr);
+                });
+            }
+        }
     }
 
     /* ---------------------------------------------------------
@@ -485,6 +620,9 @@
     if (verifyApproveBtn) verifyApproveBtn.addEventListener("click", () => updateVerification("verified"));
     if (verifyReviewBtn) verifyReviewBtn.addEventListener("click", () => updateVerification("needs_review"));
     if (verifyRejectBtn) verifyRejectBtn.addEventListener("click", () => updateVerification("rejected"));
+    if (recRefreshBtn) recRefreshBtn.addEventListener("click", () => {
+        if (currentBeneficiary) loadRecommendation(currentBeneficiary.id, true);
+    });
 
     // Modal
     if (modalCloseBtn) modalCloseBtn.addEventListener("click", closeModal);
