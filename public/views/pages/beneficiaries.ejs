@@ -466,6 +466,66 @@
                         </button>
                     </div>
 
+                    <!-- AI Assistant Section -->
+                    <div class="ai-assistant-wrapper">
+                        <button type="button" class="btn btn-outline ai-toggle-btn" id="aiToggleBtn"
+                            title="انقر لفتح المساعد الذكي لتفريغ الملاحظات">
+                            <i class="fa-solid fa-wand-magic-sparkles text-teal"></i>
+                            <span>استخراج ذكي من نص الملاحظات بالذكاء الاصطناعي (AI)</span>
+                            <i class="fa-solid fa-chevron-down ai-toggle-chevron"></i>
+                        </button>
+
+                        <div class="ai-assistant-panel" id="aiAssistantPanel" hidden>
+                            <div class="ai-panel-header">
+                                <div class="ai-panel-title">
+                                    <i class="fa-solid fa-robot text-teal"></i>
+                                    <strong>مساعد تفريغ الملاحظات والتقارير الميدانية</strong>
+                                </div>
+                                <span class="ai-badge-pill">مراجعة بشرية إلزامية</span>
+                            </div>
+                            <p class="ai-panel-desc">
+                                الصق تقرير الحالة غير المنظم الصادر عن الباحث الميداني، وسيقوم المساعد الذكي باستخراج
+                                بيانات الأسرة، الدخل، الأرقام القومية، والاحتياجات تلقائياً لتراجعها وتعتمدها قبل الحفظ.
+                            </p>
+
+                            <div class="ai-input-wrap">
+                                <textarea id="aiRawNotes" class="ai-textarea" rows="4"
+                                    placeholder="اكتب أو الصق تقرير الحالة هنا... مثال: زار الباحث أسرة المواطن محمود أحمد الشريف (هاتف: 01012345678، رقم قومي: 28904011234567) بمركز أوسيم الجيزة، الأسرة 6 أفراد و 4 أطفال و 3 في سن المدرسة، يعمل باليومية ودخله 2500 جنيه، والزوجة مريضة سكر وتحتاج علاج شهري، والأسرة تطلب طرد غذائي وكسوة مدرسية للأطفال..."></textarea>
+                                <div class="ai-input-actions">
+                                    <button type="button" class="btn btn-sm btn-outline" id="aiSampleBtn">
+                                        <i class="fa-solid fa-file-lines"></i> تجربة تقرير ميداني نموذجي
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-primary" id="aiAnalyzeBtn">
+                                        <i class="fa-solid fa-wand-magic-sparkles"></i> تحليل واستخراج البيانات
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Extracted Review Block -->
+                            <div class="ai-review-block" id="aiReviewBlock" hidden>
+                                <div class="ai-disclaimer-banner">
+                                    <i class="fa-solid fa-shield-halved"></i>
+                                    <span>تم استخراج هذه البيانات بواسطة الذكاء الاصطناعي — يرجى المراجعة والتدقيق
+                                        البشري قبل الحفظ</span>
+                                </div>
+
+                                <div class="ai-preview-summary" id="aiPreviewSummary"></div>
+
+                                <div class="ai-preview-grid" id="aiPreviewGrid">
+                                    <!-- Populated dynamically -->
+                                </div>
+
+                                <div class="ai-review-actions">
+                                    <button type="button" class="btn btn-sm btn-outline" id="aiDiscardBtn">تجاهل
+                                        النتائج</button>
+                                    <button type="button" class="btn btn-sm btn-primary" id="aiApplyBtn">
+                                        <i class="fa-solid fa-check"></i> تطبيق البيانات على النموذج ومراجعتها
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <form class="ben-modal-body" id="beneficiaryForm">
                         <input type="hidden" id="benId" value="" />
                         <div class="ben-form-grid">

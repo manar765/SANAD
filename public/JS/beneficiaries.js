@@ -64,6 +64,22 @@
     const form = $("#beneficiaryForm");
     const saveBtn = $("#benModalSaveBtn");
 
+    // AI Assistant Elements (Phase 7)
+    const aiToggleBtn = $("#aiToggleBtn");
+    const aiAssistantPanel = $("#aiAssistantPanel");
+    const aiRawNotes = $("#aiRawNotes");
+    const aiSampleBtn = $("#aiSampleBtn");
+    const aiAnalyzeBtn = $("#aiAnalyzeBtn");
+    const aiReviewBlock = $("#aiReviewBlock");
+    const aiPreviewSummary = $("#aiPreviewSummary");
+    const aiPreviewGrid = $("#aiPreviewGrid");
+    const aiDiscardBtn = $("#aiDiscardBtn");
+    const aiApplyBtn = $("#aiApplyBtn");
+    let currentExtractedData = null;
+
+    const SAMPLE_CASE_NOTE =
+        "زار الباحث أسرة المواطن محمود أحمد الشريف (هاتف: 01012345678، رقم قومي: 28904011234567) بمركز أوسيم بمحافظة الجيزة. الأسرة مكونة من 6 أفراد بينهم 4 أطفال، منهم 3 في سن المدرسة. تسكن الأسرة في شقة إيجار جديد. يعمل رب الأسرة باليومية في البناء ويعاني من دخل متقطع لا يتجاوز 2500 جنيه شهرياً. الزوجة مريضة سكر وتحتاج علاج شهري مستمر. تحتاج الأسرة بشكل عاجل إلى طرد مواد غذائية، وكسوة مدرسية للأطفال، ودعم علاجي للزوجة.";
+
     const STATUS_META = {
         verified: { label: "تم التحقق", badge: "ben-badge-verified", icon: "fa-solid fa-circle-check" },
         pending: { label: "قيد المراجعة", badge: "ben-badge-pending", icon: "fa-solid fa-hourglass-half" },
@@ -505,6 +521,146 @@
         $("#benFamilySize").value = "1";
         $("#benChildrenCount").value = "0";
         $("#benVerificationStatus").value = "pending";
+        resetAiAssistant();
+    }
+
+    function toggleAiAssistant() {
+        if (!aiAssistantPanel || !aiToggleBtn) return;
+        const isHidden = aiAssistantPanel.hasAttribute("hidden");
+        if (isHidden) {
+            aiAssistantPanel.removeAttribute("hidden");
+            aiToggleBtn.classList.add("active");
+            if (aiRawNotes) aiRawNotes.focus();
+        } else {
+            aiAssistantPanel.setAttribute("hidden", "");
+            aiToggleBtn.classList.remove("active");
+        }
+    }
+
+    function resetAiAssistant() {
+        currentExtractedData = null;
+        if (aiRawNotes) aiRawNotes.value = "";
+        if (aiReviewBlock) aiReviewBlock.setAttribute("hidden", "");
+        if (aiAssistantPanel) aiAssistantPanel.setAttribute("hidden", "");
+        if (aiToggleBtn) aiToggleBtn.classList.remove("active");
+        if (aiPreviewGrid) aiPreviewGrid.innerHTML = "";
+        if (aiPreviewSummary) aiPreviewSummary.innerHTML = "";
+    }
+
+    async function handleAiAnalyze() {
+        if (!aiRawNotes || !aiAnalyzeBtn) return;
+        const notes = aiRawNotes.value.trim();
+        if (notes.length < 10) {
+            showToast("يرجى كتابة أو لصق تقرير مفصل يحتوي على 10 أحرف على الأقل.");
+            aiRawNotes.focus();
+            return;
+        }
+
+        const originalHtml = aiAnalyzeBtn.innerHTML;
+        aiAnalyzeBtn.disabled = true;
+        aiAnalyzeBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جارٍ التحليل الذكي...';
+
+        try {
+            const token = await getCsrf();
+            const res = await fetch("/api/ai/analyze", {
+                method: "POST",
+                credentials: "same-origin",
+                headers: { "Content-Type": "application/json", "X-CSRF-Token": token },
+                body: JSON.stringify({ notes }),
+            });
+            const payload = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(payload.message || "تعذر تحليل التقرير بالذكاء الاصطناعي.");
+
+            currentExtractedData = payload.data;
+            renderAiExtractedPreview(payload);
+            showToast("تم استخراج البيانات بنجاح! راجع النتائج واعتمد تطبيقها.");
+        } catch (err) {
+            showToast(err.message || "تعذر تحليل التقرير الميداني.");
+        } finally {
+            aiAnalyzeBtn.disabled = false;
+            aiAnalyzeBtn.innerHTML = originalHtml;
+        }
+    }
+
+    function renderAiExtractedPreview(payload) {
+        if (!aiReviewBlock || !aiPreviewGrid || !aiPreviewSummary) return;
+        const data = payload.data || {};
+
+        aiPreviewSummary.innerHTML = `<i class="fa-solid fa-file-lines text-teal"></i> <strong>ملخص الحالة:</strong> ${escapeHtml(data.summary || "تم تحليل التقرير بنجاح.")}`;
+
+        const items = [
+            { label: "اسم المستفيد", val: data.name },
+            { label: "رقم الهاتف", val: data.phone },
+            { label: "الرقم القومي", val: data.nationalId },
+            { label: "المحافظة", val: data.governorate },
+            { label: "المركز / الحي", val: data.district },
+            { label: "أفراد الأسرة", val: data.familySize ? `${data.familySize} أفراد` : null },
+            { label: "الأطفال", val: data.childrenCount != null ? `${data.childrenCount} أطفال` : null },
+            { label: "في سن المدرسة", val: data.schoolAgeChildren != null ? `${data.schoolAgeChildren} طلاب` : null },
+            { label: "الدخل الشهري", val: data.monthlyIncome != null ? `${formatNumber(data.monthlyIncome)} ج.م` : null },
+            { label: "الوضع الوظيفي", val: data.employmentStatus },
+            { label: "نوع السكن", val: data.housingType },
+            { label: "الظروف الصحية", val: data.healthConditions },
+            {
+                label: "الاحتياجات المقترحة",
+                val: Array.isArray(data.needs) && data.needs.length > 0
+                    ? data.needs.map(n => `${n.description} (${n.quantity || 1})`).join("، ")
+                    : null
+            },
+        ];
+
+        aiPreviewGrid.innerHTML = items
+            .filter(item => Boolean(item.val))
+            .map(item => `
+                <div class="ai-preview-item">
+                    <span class="ai-preview-label">${escapeHtml(item.label)}</span>
+                    <span class="ai-preview-val highlight-val">${escapeHtml(item.val)}</span>
+                </div>
+            `)
+            .join("");
+
+        aiReviewBlock.removeAttribute("hidden");
+        aiReviewBlock.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+
+    function applyAiExtractedToForm() {
+        if (!currentExtractedData) return;
+        const d = currentExtractedData;
+
+        if (d.name && $("#benName")) $("#benName").value = d.name;
+        if (d.phone && $("#benPhone")) $("#benPhone").value = d.phone;
+        if (d.nationalId && $("#benNationalId")) $("#benNationalId").value = d.nationalId;
+        if (d.governorate && $("#benGov")) $("#benGov").value = d.governorate;
+        if (d.district && $("#benDistrict")) $("#benDistrict").value = d.district;
+        if (d.familySize && $("#benFamilySize")) $("#benFamilySize").value = d.familySize;
+        if (d.childrenCount != null && $("#benChildrenCount")) $("#benChildrenCount").value = d.childrenCount;
+        if (d.housingType && $("#benHousingType")) $("#benHousingType").value = d.housingType;
+        if (d.monthlyIncome != null && $("#benMonthlyIncome")) $("#benMonthlyIncome").value = d.monthlyIncome;
+        if (d.employmentStatus && $("#benEmploymentStatus")) $("#benEmploymentStatus").value = d.employmentStatus;
+        if (d.healthConditions && $("#benHealthConditions")) $("#benHealthConditions").value = d.healthConditions;
+
+        if (d.summary && $("#benNotes")) {
+            const currentNotes = $("#benNotes").value.trim();
+            const aiNoteSnippet = `[تقرير الذكاء الاصطناعي]: ${d.summary}`;
+            $("#benNotes").value = currentNotes ? `${currentNotes}\n\n${aiNoteSnippet}` : aiNoteSnippet;
+        }
+
+        const highlightedFields = [
+            "#benName", "#benPhone", "#benNationalId", "#benGov", "#benDistrict",
+            "#benFamilySize", "#benChildrenCount", "#benHousingType", "#benMonthlyIncome",
+            "#benEmploymentStatus", "#benHealthConditions", "#benNotes"
+        ];
+        highlightedFields.forEach(selector => {
+            const el = $(selector);
+            if (el && el.value) {
+                el.style.transition = "background-color 0.5s";
+                el.style.backgroundColor = "rgba(16, 185, 129, 0.15)";
+                setTimeout(() => { el.style.backgroundColor = ""; }, 2500);
+            }
+        });
+
+        showToast("تم تطبيق البيانات بنجاح على النموذج! يرجى المراجعة والضغط على حفظ.");
+        if (form) form.scrollIntoView({ behavior: "smooth", block: "start" });
     }
 
     function openModal(item) {
@@ -631,6 +787,21 @@
         if (e.target === modalOverlay) closeModal();
     });
     if (form) form.addEventListener("submit", handleFormSubmit);
+
+    // AI Assistant Listeners
+    if (aiToggleBtn) aiToggleBtn.addEventListener("click", toggleAiAssistant);
+    if (aiSampleBtn) aiSampleBtn.addEventListener("click", () => {
+        if (aiRawNotes) {
+            aiRawNotes.value = SAMPLE_CASE_NOTE;
+            aiRawNotes.focus();
+        }
+    });
+    if (aiAnalyzeBtn) aiAnalyzeBtn.addEventListener("click", handleAiAnalyze);
+    if (aiDiscardBtn) aiDiscardBtn.addEventListener("click", () => {
+        if (aiReviewBlock) aiReviewBlock.setAttribute("hidden", "");
+        currentExtractedData = null;
+    });
+    if (aiApplyBtn) aiApplyBtn.addEventListener("click", applyAiExtractedToForm);
 
     // Escape Key Support
     window.addEventListener("keydown", (e) => {

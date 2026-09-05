@@ -5,6 +5,7 @@ export async function migrate() {
     const client = await pool.connect();
     try {
       await client.query("BEGIN");
+      await client.query("SELECT pg_advisory_xact_lock(746352)");
 
       await client.query(`
       CREATE TABLE IF NOT EXISTS organizations (

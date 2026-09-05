@@ -126,7 +126,7 @@
                         <div class="don-stat reveal">
                             <span class="don-stat-icon ds-green"><i class="fa-solid fa-box-open"></i></span>
                             <div class="don-stat-text">
-                                <div class="stat-value don-stat-value" data-target="1256">0</div>
+                                <div class="stat-value don-stat-value" id="totalDonations" data-target="1256">0</div>
                                 <span class="don-stat-label">إجمالي التبرعات</span>
                             </div>
                         </div>
@@ -134,7 +134,7 @@
                         <div class="don-stat reveal">
                             <span class="don-stat-icon ds-orange"><i class="fa-solid fa-circle-check"></i></span>
                             <div class="don-stat-text">
-                                <div class="stat-value don-stat-value" data-target="845">0</div>
+                                <div class="stat-value don-stat-value" id="availableDonations" data-target="845">0</div>
                                 <span class="don-stat-label">تبرعات متاحة</span>
                             </div>
                         </div>
@@ -142,7 +142,7 @@
                         <div class="don-stat reveal">
                             <span class="don-stat-icon ds-blue"><i class="fa-solid fa-hand-holding-heart"></i></span>
                             <div class="don-stat-text">
-                                <div class="stat-value don-stat-value" data-target="411">0</div>
+                                <div class="stat-value don-stat-value" id="distributedDonations" data-target="411">0</div>
                                 <span class="don-stat-label">تم توزيعها</span>
                             </div>
                         </div>
@@ -300,11 +300,19 @@
 
                     </div>
 
+                    <!-- show more / less button -->
+                    <div class="don-more-wrap" style="text-align: center; margin-top: 2rem;">
+                        <button type="button" class="btn btn-outline" id="showMoreBtn" hidden>عرض المزيد</button>
+                    </div>
+
                     <!-- empty state -->
                     <div class="don-empty" id="donEmpty" hidden>
                         <i class="fa-solid fa-box-open"></i>
                         <h3>لا توجد تبرعات مطابقة</h3>
                         <p>جرّب تعديل البحث أو إعادة تعيين الفلاتر.</p>
+                        <button type="button" class="btn btn-outline" id="emptyResetBtn" style="margin-top: 1rem;">
+                            <i class="fa-solid fa-rotate-left"></i> إعادة تعيين الفلاتر
+                        </button>
                     </div>
 
                 </div>
@@ -327,6 +335,65 @@
                         </button>
                     </div>
                 </div>
+            </section>
+
+            <!-- ============================================================
+                 DONATION DETAILS DRAWER / MODAL
+            ============================================================ -->
+            <div class="drawer-backdrop" id="drawerBackdrop" aria-hidden="true"></div>
+            <section class="drawer" id="donationDrawer" role="dialog" aria-modal="true" aria-labelledby="drawerItemTitle" aria-hidden="true">
+                <header class="drawer-header">
+                    <div class="drawer-header-info">
+                        <span class="drawer-id" id="drawerItemId">DON-0000</span>
+                        <span class="status-badge st-available" id="drawerItemStatus">متاح</span>
+                    </div>
+                    <button type="button" class="drawer-close" id="drawerCloseBtn" aria-label="إغلاق تفاصيل التبرع">
+                        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                    </button>
+                </header>
+                <div class="drawer-body">
+                    <div class="drawer-section">
+                        <h2 class="drawer-title" id="drawerItemTitle" style="margin-bottom: 8px;">عنوان التبرع</h2>
+                        <p class="drawer-notes" id="drawerItemDesc">وصف التبرع</p>
+                    </div>
+                    <div class="drawer-section">
+                        <h3 class="drawer-section-title"><i class="fa-solid fa-circle-info"></i> معلومات التبرع</h3>
+                        <div class="drawer-grid-2">
+                            <div class="drawer-field">
+                                <span class="drawer-field-label">الفئة</span>
+                                <span class="drawer-field-value" id="drawerItemCategory">—</span>
+                            </div>
+                            <div class="drawer-field">
+                                <span class="drawer-field-label">الكمية</span>
+                                <span class="drawer-field-value" id="drawerItemQty">—</span>
+                            </div>
+                            <div class="drawer-field">
+                                <span class="drawer-field-label">الحالة</span>
+                                <span class="drawer-field-value" id="drawerItemCondition">—</span>
+                            </div>
+                            <div class="drawer-field">
+                                <span class="drawer-field-label">المخزن</span>
+                                <span class="drawer-field-value" id="drawerItemWarehouse">—</span>
+                            </div>
+                            <div class="drawer-field">
+                                <span class="drawer-field-label">تاريخ الاستلام</span>
+                                <span class="drawer-field-value" id="drawerItemDate">—</span>
+                            </div>
+                            <div class="drawer-field">
+                                <span class="drawer-field-label">المتبرع</span>
+                                <span class="drawer-field-value" id="drawerItemDonor">—</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="drawer-section">
+                        <h3 class="drawer-section-title"><i class="fa-solid fa-bullseye"></i> الفئة المستهدفة</h3>
+                        <p class="drawer-notes" id="drawerItemTarget">حسب أولويات التوزيع المعتمدة</p>
+                    </div>
+                </div>
+                <footer class="drawer-footer">
+                    <button type="button" class="btn btn-outline" id="drawerDismissBtn">إغلاق</button>
+                    <button type="button" class="btn btn-primary" id="drawerAllocateBtn"><i class="fa-solid fa-share-nodes"></i> تخصيص للتوزيع</button>
+                </footer>
             </section>
 
             <div class="drawer-backdrop" id="addDonationModalBackdrop" aria-hidden="true"></div>
@@ -374,6 +441,7 @@
 
         <!-- scripts -->
         <script src="/JS/main.js"></script>
+        <script src="/JS/donations-store.js"></script>
         <script src="/JS/donation.js"></script>
         <script src="/JS/logout.js"></script>
 

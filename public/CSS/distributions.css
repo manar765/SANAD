@@ -385,6 +385,9 @@
     overflow: hidden;
     transform: scale(0.97);
     transition: transform 0.25s ease;
+    overflow-y: scroll;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
 }
 
 .dist-modal-overlay.active .dist-modal-card {

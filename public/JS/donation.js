@@ -42,18 +42,19 @@
     let visibleLimit = PAGE_SIZE;
     let isFirstRender = true;
 
-    if (!grid || !store) return;
+    if (!grid) return;
 
     /* ---------------------------------------------------------
        1. Filtering & Search Logic (object-based, on the shared data)
     --------------------------------------------------------- */
     function matchesFilters(donation) {
+        if (!donation) return false;
         const query = searchInput ? searchInput.value.trim().toLowerCase() : "";
         const category = categorySelect ? categorySelect.value : "";
         const location = locationSelect ? locationSelect.value : "";
         const status = statusSelect ? statusSelect.value : "";
 
-        const haystack = `${donation.title} ${donation.location} ${donation.category} ${donation.desc}`.toLowerCase();
+        const haystack = `${donation.title || ""} ${donation.location || ""} ${donation.category || ""} ${donation.desc || ""}`.toLowerCase();
 
         if (query && haystack.indexOf(query) === -1) return false;
         if (category && donation.category !== category) return false;
@@ -66,7 +67,12 @@
     let serverDonations = [];
 
     function getFilteredDonations() {
-        return serverDonations.concat(store.getPublicDonations()).filter(matchesFilters);
+        const localDonations = (store && typeof store.getPublicDonations === "function")
+            ? store.getPublicDonations()
+            : [];
+        const serverIds = new Set(serverDonations.map(d => String(d.id || d.referenceCode)));
+        const uniqueLocal = localDonations.filter(d => !serverIds.has(String(d.id)));
+        return serverDonations.concat(uniqueLocal).filter(matchesFilters);
     }
 
     async function loadServerDonations() {
@@ -205,6 +211,7 @@
     }
 
     function updateDonationStats() {
+        if (!store || typeof store.computeStats !== "function") return;
         const stats = store.computeStats();
         setStat("totalDonations", stats.total);
         setStat("availableDonations", stats.available);
@@ -501,6 +508,7 @@
 
             form.reset();
             closeModal();
+            loadServerDonations();
         });
     }
 })();

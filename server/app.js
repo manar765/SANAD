@@ -40,6 +40,7 @@ import {
   getNeeds,
   searchVerification,
 } from "./operations-service.js";
+import { extractCaseNotes } from "./ai-service.js";
 import {
   authenticateUser,
   authenticateUserById,
@@ -776,6 +777,33 @@ app.patch("/api/admin/distributions/:id/status", requireAdmin, requireCsrf, asyn
     await recordAuditEvent(req, { userId: req.user.id, action: "distribution_status_changed", metadata: { distributionId: id, status: req.body?.status } });
     return res.json({ message: "تم تحديث حالة التوزيع." });
   } catch (error) { return operationError(error, res); }
+});
+
+// ============================================================================
+// Phase 7: AI-Assisted Case Note Extraction
+// ============================================================================
+app.post("/api/ai/analyze", requireAdmin, requireCsrf, async (req, res) => {
+  try {
+    const rawNotes = req.body?.notes ?? req.body?.text;
+    const forceHeuristic = req.body?.forceHeuristic === true;
+    const result = await extractCaseNotes(rawNotes, { forceHeuristic });
+    await recordAuditEvent(req, {
+      userId: req.user.id,
+      action: "ai_case_note_extracted",
+      metadata: {
+        provider: result.provider,
+        hasName: Boolean(result.data?.name),
+        familySize: result.data?.familySize,
+        needsCount: result.data?.needs?.length || 0,
+      },
+    });
+    return res.json(result);
+  } catch (error) {
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ message: error.message, code: error.code });
+    }
+    return operationError(error, res);
+  }
 });
 
 app.get("/api/donations", requireAuth, async (req, res) => {
