@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<% /* EJS page template */ %>
+    <html lang="ar" dir="rtl">
+
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>سند | SANAD — المستفيدون</title>
+        <meta name="description"
+            content="سجل المستفيدين — تتبع بيانات الأسر والمستفيدين، واحتياجاتهم المسجلة وسجل الدعم والتوزيعات." />
+
+        <!-- favicon -->
+        <link rel="icon" type="image/png" href="/assets/images/LogoSANAD.png" />
+
+        <!-- fonts -->
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+        <!-- font awesome -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+
+        <!-- styles -->
+        <link rel="stylesheet" href="/CSS/style.css" />
+    </head>
+
+    <body class="beneficiaries-page">
+        <a class="skip-link" href="#main-content">تخطي إلى المحتوى الرئيسي</a>
+
+        <!-- scroll progress indicator -->
+        <div class="progress-bar" id="progressBar" aria-hidden="true"></div>
+
+        <!-- ============================================================
+         NAVBAR
+    ============================================================ -->
+        <%- include('../partials/navbar', { activePath: '/beneficiaries' }) %>
+
+            <main id="main-content" class="beneficiaries-main">
+                <div class="beneficiaries-container">
+
+                    <!-- ============================================================
+                 HEADER
+            ============================================================ -->
+                    <div class="beneficiaries-header">
+                        <div class="beneficiaries-header-text">
+                            <span class="eyebrow"><i class="fa-solid fa-users" aria-hidden="true"></i> إدارة الحالات
+                                والمستفيدين</span>
+                            <h1>سجل المستفيدين</h1>
+                            <p>إدارة ملفات الأسر المستفيدة، والتحقق من الحالات، ومتابعة الاحتياجات العينية وسجل الدعم
+                                المقدم.</p>
+                        </div>
+                        <div class="beneficiaries-header-actions">
+                            <button type="button" class="btn btn-outline" id="beneficiariesRefreshBtn">
+                                <i class="fa-solid fa-rotate" aria-hidden="true"></i> تحديث
+                            </button>
+                            <button type="button" class="btn btn-primary admin-only" id="addBeneficiaryBtn" hidden>
+                                <i class="fa-solid fa-user-plus" aria-hidden="true"></i> إضافة مستفيد جديد
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- ============================================================
+                 KPI SUMMARY CARDS
+            ============================================================ -->
+                    <div class="beneficiaries-kpis">
+                        <div class="beneficiaries-kpi-card">
+                            <span class="beneficiaries-kpi-icon kpi-icon-teal"><i class="fa-solid fa-users-rectangle"
+                                    aria-hidden="true"></i></span>
+                            <div class="beneficiaries-kpi-content">
+                                <strong id="kpiTotalBeneficiaries">0</strong>
+                                <span>إجمالي المستفيدين المسجلين</span>
+                            </div>
+                        </div>
+
+                        <div class="beneficiaries-kpi-card">
+                            <span class="beneficiaries-kpi-icon kpi-icon-emerald"><i class="fa-solid fa-shield-halved"
+                                    aria-hidden="true"></i></span>
+                            <div class="beneficiaries-kpi-content">
+                                <strong id="kpiVerifiedCount">0</strong>
+                                <span>حالات تم التحقق منها</span>
+                            </div>
+                        </div>
+
+                        <div class="beneficiaries-kpi-card">
+                            <span class="beneficiaries-kpi-icon kpi-icon-amber"><i class="fa-solid fa-hourglass-half"
+                                    aria-hidden="true"></i></span>
+                            <div class="beneficiaries-kpi-content">
+                                <strong id="kpiPendingCount">0</strong>
+                                <span>قيد المراجعة والتدقيق</span>
+                            </div>
+                        </div>
+
+                        <div class="beneficiaries-kpi-card">
+                            <span class="beneficiaries-kpi-icon kpi-icon-rose"><i
+                                    class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i></span>
+                            <div class="beneficiaries-kpi-content">
+                                <strong id="kpiActiveNeedsCount">0</strong>
+                                <span>احتياجات مفتوحة وعاجلة</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ============================================================
+                 SEARCH & FILTER
+            ============================================================ -->
+                    <div class="beneficiaries-controls">
+                        <div class="beneficiaries-search-group">
+                            <label for="beneficiarySearch">بحث سريع</label>
+                            <input type="search" id="beneficiarySearch"
+                                placeholder="ابحث بالاسم، كود المستفيد (BEN-XXXX)، الهاتف، أو الرقم القومي..."
+                                aria-label="ابحث في سجل المستفيدين" />
+                        </div>
+
+                        <div class="beneficiaries-filter-group">
+                            <label for="beneficiaryStatusFilter">حالة التحقق</label>
+                            <select id="beneficiaryStatusFilter" aria-label="تصفية حسب حالة التحقق">
+                                <option value="">جميع الحالات</option>
+                                <option value="verified">تم التحقق</option>
+                                <option value="pending">قيد المراجعة</option>
+                                <option value="needs_review">يحتاج مراجعة</option>
+                                <option value="rejected">مرفوض</option>
+                            </select>
+                        </div>
+
+                        <div class="beneficiaries-filter-group">
+                            <label for="beneficiaryGovFilter">المحافظة</label>
+                            <select id="beneficiaryGovFilter" aria-label="تصفية حسب المحافظة">
+                                <option value="">جميع المحافظات</option>
+                                <option value="القاهرة">القاهرة</option>
+                                <option value="الجيزة">الجيزة</option>
+                                <option value="الإسكندرية">الإسكندرية</option>
+                                <option value="القليوبية">القليوبية</option>
+                                <option value="الشرقية">الشرقية</option>
+                                <option value="الدقهلية">الدقهلية</option>
+                                <option value="المنوفية">المنوفية</option>
+                                <option value="البحيرة">البحيرة</option>
+                                <option value="الفيوم">الفيوم</option>
+                                <option value="بني سويف">بني سويف</option>
+                                <option value="المنيا">المنيا</option>
+                                <option value="أسيوط">أسيوط</option>
+                                <option value="سوهاج">سوهاج</option>
+                                <option value="قنا">قنا</option>
+                                <option value="الأقصر">الأقصر</option>
+                                <option value="أسوان">أسوان</option>
+                            </select>
+                        </div>
+
+                        <button type="button" class="btn btn-outline beneficiaries-reset-btn"
+                            id="beneficiariesResetBtn">
+                            <i class="fa-solid fa-rotate-left" aria-hidden="true"></i> إعادة تعيين
+                        </button>
+                    </div>
+
+                    <!-- ============================================================
+                 LOADING / ERROR STATES
+            ============================================================ -->
+                    <div class="ui-state ui-loading" id="beneficiariesLoading" role="status" aria-live="polite"
+                        aria-busy="true">
+                        <i class="fa-solid fa-spinner" aria-hidden="true"></i>
+                        <span data-state-message>جارٍ تحميل سجل المستفيدين…</span>
+                    </div>
+                    <div class="ui-state ui-error" id="beneficiariesError" role="alert" hidden>
+                        <div class="ui-error-content">
+                            <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>
+                            <span data-state-message>تعذر تحميل بيانات المستفيدين.</span>
+                        </div>
+                        <button type="button" class="btn btn-outline ui-error-retry" data-state-retry>إعادة
+                            المحاولة</button>
+                    </div>
+
+                    <!-- ============================================================
+                 BENEFICIARIES TABLE
+            ============================================================ -->
+                    <div class="beneficiaries-card">
+                        <div class="beneficiaries-card-header">
+                            <h2 class="beneficiaries-card-title">
+                                <i class="fa-solid fa-clipboard-user" aria-hidden="true"></i> قائمة المستفيدين
+                                <span class="beneficiaries-count-badge" id="beneficiariesCount">0</span>
+                            </h2>
+                        </div>
+
+                        <div class="beneficiaries-table-wrap">
+                            <table class="beneficiaries-table">
+                                <thead>
+                                    <tr>
+                                        <th>الكود</th>
+                                        <th>المستفيد</th>
+                                        <th>الهاتف</th>
+                                        <th>المحافظة / العنوان</th>
+                                        <th>الأسرة</th>
+                                        <th>حالة التحقق</th>
+                                        <th>الاحتياجات المفتوحة</th>
+                                        <th>إجراءات</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="beneficiariesTableBody">
+                                    <!-- rows rendered by beneficiaries.js -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="don-empty" id="beneficiariesEmpty" hidden>
+                            <i class="fa-solid fa-user-slash"></i>
+                            <h3>لا يوجد مستفيدون مطابقون</h3>
+                            <p>جرّب تعديل مصطلحات البحث أو تغيير خيارات التصفية.</p>
+                        </div>
+                    </div>
+
+                </div>
+            </main>
+
+            <!-- ============================================================
+         BENEFICIARY DETAIL DRAWER (SLIDE-IN PANEL)
+    ============================================================ -->
+            <div class="ben-drawer-overlay" id="beneficiaryDrawerOverlay" aria-hidden="true">
+                <div class="ben-drawer-panel" role="dialog" aria-modal="true" aria-labelledby="drawerTitle">
+                    <div class="ben-drawer-header">
+                        <h2>
+                            <i class="fa-solid fa-id-card text-teal" aria-hidden="true"></i>
+                            <span id="drawerTitle">ملف المستفيد</span>
+                            <span class="ben-code-badge" id="drawerCodeBadge">BEN-0000</span>
+                        </h2>
+                        <button type="button" class="ben-drawer-close" id="drawerCloseBtn" aria-label="إغلاق الملف">
+                            <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                        </button>
+                    </div>
+
+                    <div class="ben-drawer-tabs" role="tablist">
+                        <button type="button" class="ben-tab-btn active" data-tab="tab-profile" role="tab"
+                            aria-selected="true">
+                            <i class="fa-solid fa-house-chimney-user" aria-hidden="true"></i> بيانات الأسرة
+                        </button>
+                        <button type="button" class="ben-tab-btn" data-tab="tab-needs" role="tab" aria-selected="false">
+                            <i class="fa-solid fa-hand-holding-heart" aria-hidden="true"></i> الاحتياجات (<span
+                                id="drawerNeedsCount">0</span>)
+                        </button>
+                        <button type="button" class="ben-tab-btn" data-tab="tab-history" role="tab"
+                            aria-selected="false">
+                            <i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i> سجل الدعم (<span
+                                id="drawerHistoryCount">0</span>)
+                        </button>
+                    </div>
+
+                    <div class="ben-drawer-body">
+                        <!-- Tab 1: Profile & Household -->
+                        <div class="ben-tab-pane active" id="tab-profile" role="tabpanel">
+                            <div class="ben-info-grid">
+                                <div class="ben-info-item">
+                                    <span class="ben-info-label">الاسم الكامل</span>
+                                    <span class="ben-info-val" id="dName">—</span>
+                                </div>
+                                <div class="ben-info-item">
+                                    <span class="ben-info-label">رقم الهاتف</span>
+                                    <span class="ben-info-val" id="dPhone">—</span>
+                                </div>
+                                <div class="ben-info-item">
+                                    <span class="ben-info-label">الرقم القومي</span>
+                                    <span class="ben-info-val" id="dNationalId">—</span>
+                                </div>
+                                <div class="ben-info-item">
+                                    <span class="ben-info-label">حالة التحقق</span>
+                                    <span class="ben-info-val" id="dVerificationBadge">—</span>
+                                </div>
+                                <div class="ben-info-item">
+                                    <span class="ben-info-label">المحافظة والمنطقة</span>
+                                    <span class="ben-info-val" id="dLocation">—</span>
+                                </div>
+                                <div class="ben-info-item">
+                                    <span class="ben-info-label">العنوان التفصيلي</span>
+                                    <span class="ben-info-val" id="dAddress">—</span>
+                                </div>
+                                <div class="ben-info-item">
+                                    <span class="ben-info-label">أفراد الأسرة</span>
+                                    <span class="ben-info-val" id="dFamily">—</span>
+                                </div>
+                                <div class="ben-info-item">
+                                    <span class="ben-info-label">نوع السكن</span>
+                                    <span class="ben-info-val" id="dHousing">—</span>
+                                </div>
+                                <div class="ben-info-item">
+                                    <span class="ben-info-label">الدخل التقريبي</span>
+                                    <span class="ben-info-val" id="dIncome">—</span>
+                                </div>
+                                <div class="ben-info-item">
+                                    <span class="ben-info-label">الوضع الوظيفي</span>
+                                    <span class="ben-info-val" id="dEmployment">—</span>
+                                </div>
+                            </div>
+
+                            <div class="ben-info-item" style="margin-bottom: 1.25rem;">
+                                <span class="ben-info-label">الحالة الصحية / ظروف خاصة</span>
+                                <span class="ben-info-val" id="dHealth">—</span>
+                            </div>
+
+                            <div class="ben-info-item">
+                                <span class="ben-info-label">ملاحظات الباحث الاجتماعي</span>
+                                <span class="ben-info-val" id="dNotes">—</span>
+                            </div>
+
+                            <!-- Verification Action Bar (Admin Only) -->
+                            <div class="ben-verify-bar admin-only" hidden>
+                                <h3><i class="fa-solid fa-user-check"></i> تحديث حالة التحقق</h3>
+                                <div class="ben-verify-actions">
+                                    <button type="button" class="btn btn-sm btn-primary" id="verifyApproveBtn">
+                                        <i class="fa-solid fa-check"></i> اعتماد وتوثيق الحالة
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline" id="verifyReviewBtn">
+                                        <i class="fa-solid fa-clipboard-question"></i> طلب فحص ميداني إضافي
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-danger" id="verifyRejectBtn"
+                                        style="background-color: #fee2e2; color: #dc2626; border-color: #fca5a5;">
+                                        <i class="fa-solid fa-ban"></i> رفض الحالة
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tab 2: Needs -->
+                        <div class="ben-tab-pane" id="tab-needs" role="tabpanel">
+                            <div class="beneficiaries-table-wrap">
+                                <table class="beneficiaries-table" id="drawerNeedsTable">
+                                    <thead>
+                                        <tr>
+                                            <th>الصنف المطلوب</th>
+                                            <th>الفئة</th>
+                                            <th>الكمية</th>
+                                            <th>الأولوية</th>
+                                            <th>الحالة</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="drawerNeedsTbody">
+                                        <!-- rendered dynamically -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="don-empty" id="drawerNeedsEmpty" hidden>
+                                <i class="fa-solid fa-circle-check text-teal"></i>
+                                <h4>لا توجد احتياجات مسجلة حالياً</h4>
+                            </div>
+                        </div>
+
+                        <!-- Tab 3: Distribution History -->
+                        <div class="ben-tab-pane" id="tab-history" role="tabpanel">
+                            <div class="beneficiaries-table-wrap">
+                                <table class="beneficiaries-table" id="drawerHistoryTable">
+                                    <thead>
+                                        <tr>
+                                            <th>رقم التوزيع</th>
+                                            <th>التاريخ</th>
+                                            <th>الأصناف المستلمة</th>
+                                            <th>الحالة</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="drawerHistoryTbody">
+                                        <!-- rendered dynamically -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="don-empty" id="drawerHistoryEmpty" hidden>
+                                <i class="fa-solid fa-box-open"></i>
+                                <h4>لا يوجد سجل توزيعات سابق</h4>
+                                <p>لم يتم تسليم مساعدات عينية لهذا المستفيد حتى الآن.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================================================
+         ADD / EDIT BENEFICIARY MODAL
+    ============================================================ -->
+            <div class="ben-modal-overlay" id="beneficiaryModalOverlay" aria-hidden="true">
+                <div class="ben-modal-card" role="dialog" aria-modal="true" aria-labelledby="benModalTitle">
+                    <div class="ben-modal-header">
+                        <h2 id="benModalTitle">تسجيل مستفيد جديد</h2>
+                        <button type="button" class="ben-drawer-close" id="benModalCloseBtn" aria-label="إغلاق">
+                            <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                        </button>
+                    </div>
+
+                    <form class="ben-modal-body" id="beneficiaryForm">
+                        <input type="hidden" id="benId" value="" />
+                        <div class="ben-form-grid">
+                            <div class="ben-form-group">
+                                <label for="benName">اسم رب الأسرة / المستفيد *</label>
+                                <input id="benName" required maxlength="120" placeholder="الاسم الثلاثي أو الرباعي"
+                                    autocomplete="off" />
+                            </div>
+
+                            <div class="ben-form-group">
+                                <label for="benPhone">رقم الهاتف *</label>
+                                <input id="benPhone" required maxlength="30" placeholder="010XXXXXXXX" />
+                            </div>
+
+                            <div class="ben-form-group">
+                                <label for="benNationalId">الرقم القومي (14 رقماً)</label>
+                                <input id="benNationalId" maxlength="14" placeholder="2950101XXXXXXXX" />
+                            </div>
+
+                            <div class="ben-form-group">
+                                <label for="benGov">المحافظة *</label>
+                                <select id="benGov" required>
+                                    <option value="">اختر المحافظة</option>
+                                    <option value="القاهرة">القاهرة</option>
+                                    <option value="الجيزة">الجيزة</option>
+                                    <option value="الإسكندرية">الإسكندرية</option>
+                                    <option value="القليوبية">القليوبية</option>
+                                    <option value="الشرقية">الشرقية</option>
+                                    <option value="الدقهلية">الدقهلية</option>
+                                    <option value="المنوفية">المنوفية</option>
+                                    <option value="البحيرة">البحيرة</option>
+                                    <option value="الفيوم">الفيوم</option>
+                                    <option value="بني سويف">بني سويف</option>
+                                    <option value="المنيا">المنيا</option>
+                                    <option value="أسيوط">أسيوط</option>
+                                    <option value="سوهاج">سوهاج</option>
+                                    <option value="قنا">قنا</option>
+                                    <option value="الأقصر">الأقصر</option>
+                                    <option value="أسوان">أسوان</option>
+                                </select>
+                            </div>
+
+                            <div class="ben-form-group">
+                                <label for="benDistrict">المركز / الحي</label>
+                                <input id="benDistrict" maxlength="80" placeholder="مثال: الدقي، عين شمس" />
+                            </div>
+
+                            <div class="ben-form-group">
+                                <label for="benAddress">العنوان التفصيلي</label>
+                                <input id="benAddress" maxlength="200" placeholder="الشارع، رقم العقار، علامة مميزة" />
+                            </div>
+
+                            <div class="ben-form-group">
+                                <label for="benFamilySize">إجمالي عدد أفراد الأسرة</label>
+                                <input id="benFamilySize" type="number" min="1" value="1" />
+                            </div>
+
+                            <div class="ben-form-group">
+                                <label for="benChildrenCount">عدد الأطفال</label>
+                                <input id="benChildrenCount" type="number" min="0" value="0" />
+                            </div>
+
+                            <div class="ben-form-group">
+                                <label for="benHousingType">نوع السكن</label>
+                                <select id="benHousingType">
+                                    <option value="إيجار جديد">إيجار جديد</option>
+                                    <option value="إيجار قديم">إيجار قديم</option>
+                                    <option value="ملك">ملك</option>
+                                    <option value="غرفة مشتركة">غرفة مشتركة</option>
+                                    <option value="مأوى مؤقت">مأوى مؤقت</option>
+                                </select>
+                            </div>
+
+                            <div class="ben-form-group">
+                                <label for="benMonthlyIncome">الدخل الشهري التقريبي (ج.م)</label>
+                                <input id="benMonthlyIncome" type="number" min="0" step="100" placeholder="0" />
+                            </div>
+
+                            <div class="ben-form-group">
+                                <label for="benEmploymentStatus">الوضع الوظيفي</label>
+                                <input id="benEmploymentStatus" maxlength="80"
+                                    placeholder="مثال: عمالة يومية، بدون عمل" />
+                            </div>
+
+                            <div class="ben-form-group">
+                                <label for="benVerificationStatus">حالة التوثيق الأولية</label>
+                                <select id="benVerificationStatus">
+                                    <option value="pending">قيد المراجعة</option>
+                                    <option value="verified">معتمد ومتحقق منه</option>
+                                    <option value="needs_review">يحتاج فحص ميداني</option>
+                                </select>
+                            </div>
+
+                            <div class="ben-form-group ben-form-col-2">
+                                <label for="benHealthConditions">الحالات الصحية أو الأمراض المزمنة (إن وجدت)</label>
+                                <textarea id="benHealthConditions" rows="2" maxlength="500"
+                                    placeholder="أي إعاقة أو علاج شهري تحتاجه الأسرة"></textarea>
+                            </div>
+
+                            <div class="ben-form-group ben-form-col-2">
+                                <label for="benNotes">ملاحظات إضافية</label>
+                                <textarea id="benNotes" rows="2" maxlength="2000"
+                                    placeholder="ملاحظات البحث الاجتماعي..."></textarea>
+                            </div>
+                        </div>
+                    </form>
+
+                    <div class="ben-modal-footer">
+                        <button type="button" class="btn btn-outline" id="benModalCancelBtn">إلغاء</button>
+                        <button type="submit" form="beneficiaryForm" class="btn btn-primary"
+                            id="benModalSaveBtn">حفظ</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================================================
+         FOOTER
+    ============================================================ -->
+            <%- include('../partials/footer') %>
+
+                <!-- toast notification -->
+                <div class="toast" id="toast" role="status" aria-live="polite">
+                    <i class="fa-solid fa-circle-info"></i>
+                    <span></span>
+                </div>
+
+                <!-- back to top -->
+                <button class="back-to-top" id="backToTop" aria-label="العودة إلى الأعلى">
+                    <i class="fa-solid fa-arrow-up"></i>
+                </button>
+
+                <!-- scripts -->
+                <script src="/JS/main.js"></script>
+                <script src="/JS/ui-states.js"></script>
+                <script src="/JS/beneficiaries.js"></script>
+                <script src="/JS/logout.js"></script>
+                <script src="/JS/preferences.js"></script>
+    </body>
+
+    </html>

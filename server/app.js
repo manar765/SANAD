@@ -18,13 +18,17 @@ import {
   verifyTotpCode,
 } from "./mfa-service.js";
 import {
+  addBeneficiary,
   addDistribution,
   addInventoryItem,
   addNeed,
   approveOrRejectDonation,
   changeDistributionStatus,
+  editBeneficiary,
   editInventoryItem,
   editNeed,
+  getBeneficiaries,
+  getBeneficiary,
   getBeneficiaryProfileId,
   getDistributions,
   getInventory,
@@ -344,7 +348,7 @@ const pageRoutes = Object.freeze({
   "/donations": "donations",
   "/admin-requests": "AdminRequests",
   "/inventory": "inventory",
-  "/beneficiaries": "coming-soon",
+  "/beneficiaries": "beneficiaries",
   "/distributions": "coming-soon",
 });
 
@@ -492,6 +496,8 @@ const operationError = (error, res) => {
     INVALID_DISTRIBUTION_TRANSITION: "This distribution can no longer change status.",
     INSUFFICIENT_INVENTORY: "The requested quantity is not available in inventory.",
     CANNOT_REVERT_DISTRIBUTED_DONATION: "لا يمكن إلغاء أو تعديل تبرع تم توزيع أجزاء منه في المخزون بالفعل.",
+    INVALID_BENEFICIARY_NAME: "Please provide a valid beneficiary name.",
+    INVALID_VERIFICATION_STATUS: "Please provide a valid verification status.",
   };
   const message = messages[error.message];
   if (message) return res.status(["INSUFFICIENT_INVENTORY", "CANNOT_REVERT_DISTRIBUTED_DONATION"].includes(error.message) ? 409 : 400).json({ message });
@@ -520,6 +526,81 @@ app.patch("/api/admin/inventory/:id", requireAdmin, requireCsrf, async (req, res
     await recordAuditEvent(req, { userId: req.user.id, action: "inventory_item_updated", metadata: { inventoryItemId: id } });
     return res.json({ item });
   } catch (error) { return operationError(error, res); }
+});
+
+app.get("/api/beneficiaries", requireAdmin, async (req, res) => {
+  try {
+    const beneficiaries = await getBeneficiaries(req.query);
+    return res.json({ beneficiaries });
+  } catch (error) {
+    return operationError(error, res);
+  }
+});
+
+app.get("/api/beneficiaries/:id", requireAuth, async (req, res) => {
+  try {
+    const targetId = req.params.id;
+    const beneficiary = await getBeneficiary(targetId);
+    if (!beneficiary) return res.status(404).json({ message: "Beneficiary profile not found." });
+    if (req.user.role !== "admin" && req.user.id !== beneficiary.userId) {
+      return res.status(403).json({ message: "You are not authorized to view this beneficiary profile." });
+    }
+    return res.json({ beneficiary });
+  } catch (error) {
+    return operationError(error, res);
+  }
+});
+
+app.post("/api/beneficiaries", requireAdmin, requireCsrf, async (req, res) => {
+  try {
+    const beneficiary = await addBeneficiary(req.body, req.user.id);
+    await recordAuditEvent(req, {
+      userId: req.user.id,
+      action: "beneficiary_created",
+      metadata: { beneficiaryId: beneficiary.id, referenceCode: beneficiary.referenceCode },
+    });
+    return res.status(201).json({ beneficiary });
+  } catch (error) {
+    return operationError(error, res);
+  }
+});
+
+app.patch("/api/beneficiaries/:id", requireAdmin, requireCsrf, async (req, res) => {
+  const id = Number.parseInt(req.params.id, 10);
+  if (!Number.isInteger(id)) return res.status(400).json({ message: "Invalid beneficiary ID." });
+  try {
+    const updated = await editBeneficiary(id, req.body, req.user.id);
+    if (!updated) return res.status(404).json({ message: "Beneficiary profile not found." });
+    await recordAuditEvent(req, {
+      userId: req.user.id,
+      action: "beneficiary_updated",
+      metadata: { beneficiaryId: id },
+    });
+    return res.json({ beneficiary: updated });
+  } catch (error) {
+    return operationError(error, res);
+  }
+});
+
+app.patch("/api/beneficiaries/:id/verification", requireAdmin, requireCsrf, async (req, res) => {
+  const id = Number.parseInt(req.params.id, 10);
+  if (!Number.isInteger(id)) return res.status(400).json({ message: "Invalid beneficiary ID." });
+  const status = String(req.body?.status || "").trim();
+  if (!["pending", "verified", "rejected", "needs_review"].includes(status)) {
+    return res.status(400).json({ message: "Invalid verification status." });
+  }
+  try {
+    const updated = await editBeneficiary(id, { verificationStatus: status, notes: req.body?.notes }, req.user.id);
+    if (!updated) return res.status(404).json({ message: "Beneficiary profile not found." });
+    await recordAuditEvent(req, {
+      userId: req.user.id,
+      action: "beneficiary_verification_changed",
+      metadata: { beneficiaryId: id, status },
+    });
+    return res.json({ beneficiary: updated });
+  } catch (error) {
+    return operationError(error, res);
+  }
 });
 
 app.get("/api/beneficiary/needs", requireAuth, async (req, res) => {

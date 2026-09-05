@@ -231,7 +231,7 @@ export async function syncDonationToInventory(client, donationId, status, review
                      updated_at = NOW()
                  WHERE id = $1`,
                 [existing.id, donation.title, donation.category, donation.description, donation.unit,
-                 donation.warehouse, donation.location, donation.item_condition, donation.expiration_date, donation.notes],
+                donation.warehouse, donation.location, donation.item_condition, donation.expiration_date, donation.notes],
             );
             return existing.id;
         }
@@ -243,7 +243,7 @@ export async function syncDonationToInventory(client, donationId, status, review
              VALUES ($1, $2, $3, $4, $5, $6, $6, 0, 1, 'available', $7, $8, $9, $10, $11, $12)
              RETURNING id`,
             [donation.id, donation.title, donation.category, donation.description, donation.unit, donation.quantity,
-             donation.warehouse, donation.location, donation.item_condition, donation.expiration_date, donation.notes, reviewerId || null],
+            donation.warehouse, donation.location, donation.item_condition, donation.expiration_date, donation.notes, reviewerId || null],
         );
         return insertRes.rows[0].id;
     }
@@ -260,5 +260,328 @@ export async function syncDonationToInventory(client, donationId, status, review
     }
 
     return existing ? existing.id : null;
+}
+
+export async function listBeneficiaries({ search, status, governorate } = {}) {
+    const values = [];
+    const where = [];
+
+    if (status) {
+        values.push(status);
+        where.push(`bp.verification_status = $${values.length}`);
+    }
+
+    if (governorate) {
+        values.push(governorate);
+        where.push(`bp.governorate = $${values.length}`);
+    }
+
+    if (search) {
+        values.push(`%${search.trim().toLowerCase()}%`);
+        where.push(`(
+            LOWER(bp.reference_code) LIKE $${values.length} OR
+            LOWER(COALESCE(u.full_name, u.name, '')) LIKE $${values.length} OR
+            LOWER(u.email) LIKE $${values.length} OR
+            LOWER(COALESCE(bp.phone, u.phone, '')) LIKE $${values.length} OR
+            LOWER(COALESCE(bp.national_id, '')) LIKE $${values.length} OR
+            LOWER(COALESCE(bp.address, '')) LIKE $${values.length} OR
+            LOWER(COALESCE(bp.district, '')) LIKE $${values.length}
+        )`);
+    }
+
+    const query = `
+        SELECT
+            bp.id,
+            bp.user_id AS "userId",
+            bp.reference_code AS "referenceCode",
+            bp.national_id AS "nationalId",
+            COALESCE(bp.phone, u.phone) AS phone,
+            bp.address,
+            bp.governorate,
+            bp.district,
+            bp.family_size AS "familySize",
+            bp.children_count AS "childrenCount",
+            bp.housing_type AS "housingType",
+            bp.monthly_income AS "monthlyIncome",
+            bp.employment_status AS "employmentStatus",
+            bp.health_conditions AS "healthConditions",
+            bp.location,
+            bp.current_needs AS "currentNeeds",
+            bp.verification_status AS "verificationStatus",
+            bp.notes,
+            bp.created_at AS "createdAt",
+            bp.updated_at AS "updatedAt",
+            COALESCE(NULLIF(u.full_name, ''), NULLIF(u.name, ''), u.email) AS name,
+            u.email,
+            (SELECT COUNT(*)::int FROM beneficiary_needs bn WHERE bn.beneficiary_id = bp.id AND bn.status IN ('open', 'partially_fulfilled')) AS "activeNeedsCount",
+            (SELECT COUNT(*)::int FROM distributions d WHERE d.beneficiary_id = bp.id AND d.status = 'completed') AS "completedDistributionsCount"
+        FROM beneficiary_profiles bp
+        JOIN users u ON u.id = bp.user_id
+        ${where.length ? `WHERE ${where.join(" AND ")}` : ""}
+        ORDER BY bp.created_at DESC
+    `;
+
+    const result = await pool.query(query, values);
+    return result.rows.map(row => {
+        let maskedNationalId = null;
+        if (row.nationalId) {
+            const raw = String(row.nationalId).trim();
+            maskedNationalId = raw.length >= 8 ? `${raw.slice(0, 3)}****${raw.slice(-4)}` : raw;
+        }
+        return {
+            ...row,
+            nationalId: maskedNationalId,
+        };
+    });
+}
+
+export async function getBeneficiaryDetail(id) {
+    const isIdNumeric = Number.isInteger(Number(id));
+    const profileRes = await pool.query(
+        `SELECT
+            bp.id,
+            bp.user_id AS "userId",
+            bp.reference_code AS "referenceCode",
+            bp.national_id AS "nationalId",
+            COALESCE(bp.phone, u.phone) AS phone,
+            bp.address,
+            bp.governorate,
+            bp.district,
+            bp.family_size AS "familySize",
+            bp.children_count AS "childrenCount",
+            bp.housing_type AS "housingType",
+            bp.monthly_income AS "monthlyIncome",
+            bp.employment_status AS "employmentStatus",
+            bp.health_conditions AS "healthConditions",
+            bp.location,
+            bp.current_needs AS "currentNeeds",
+            bp.verification_status AS "verificationStatus",
+            bp.verified_by AS "verifiedBy",
+            bp.verified_at AS "verifiedAt",
+            bp.notes,
+            bp.created_at AS "createdAt",
+            bp.updated_at AS "updatedAt",
+            COALESCE(NULLIF(u.full_name, ''), NULLIF(u.name, ''), u.email) AS name,
+            u.email,
+            v.full_name AS "verifierName"
+        FROM beneficiary_profiles bp
+        JOIN users u ON u.id = bp.user_id
+        LEFT JOIN users v ON v.id = bp.verified_by
+        WHERE ${isIdNumeric ? "bp.id = $1 OR bp.user_id = $1 OR bp.reference_code = $2" : "bp.reference_code = $1"}`,
+        isIdNumeric ? [Number(id), String(id)] : [String(id)],
+    );
+
+    const profile = profileRes.rows[0];
+    if (!profile) return null;
+
+    const needsRes = await pool.query(
+        `SELECT id, title, description, category, quantity_requested AS "quantityRequested",
+                quantity_fulfilled AS "quantityFulfilled", unit, priority, status,
+                due_date AS "dueDate", created_at AS "createdAt"
+         FROM beneficiary_needs
+         WHERE beneficiary_id = $1
+         ORDER BY CASE priority WHEN 'urgent' THEN 1 WHEN 'high' THEN 2 WHEN 'medium' THEN 3 ELSE 4 END, created_at DESC`,
+        [profile.id],
+    );
+
+    const distributionsRes = await pool.query(
+        `SELECT d.id, d.status, d.scheduled_at AS "scheduledAt", d.distributed_at AS "distributedAt",
+                d.location, d.notes, d.created_at AS "createdAt",
+                COALESCE(json_agg(json_build_object(
+                    'inventoryItemId', di.inventory_item_id,
+                    'itemName', ii.name,
+                    'category', ii.category,
+                    'quantity', di.quantity,
+                    'unit', ii.unit
+                )) FILTER (WHERE di.inventory_item_id IS NOT NULL), '[]') AS items
+         FROM distributions d
+         LEFT JOIN distribution_items di ON di.distribution_id = d.id
+         LEFT JOIN inventory_items ii ON ii.id = di.inventory_item_id
+         WHERE d.beneficiary_id = $1
+         GROUP BY d.id
+         ORDER BY d.created_at DESC`,
+        [profile.id],
+    );
+
+    return {
+        ...profile,
+        needs: needsRes.rows,
+        distributions: distributionsRes.rows,
+    };
+}
+
+export async function createBeneficiaryProfile(input, createdBy) {
+    const client = await pool.connect();
+    try {
+        await client.query("BEGIN");
+        let userId = input.userId;
+        const fullName = input.name || "مستفيد جديد";
+        const parts = fullName.trim().split(/\s+/);
+        const firstName = parts[0] || "مستفيد";
+        const lastName = parts.slice(1).join(" ") || "جديد";
+
+        if (!userId) {
+            const email = input.email ? input.email.trim().toLowerCase() : `ben.${Date.now()}.${Math.random().toString(36).slice(2, 7)}@sanad.local`;
+            const existingUser = await client.query("SELECT id FROM users WHERE email = $1", [email]);
+            if (existingUser.rows[0]) {
+                userId = existingUser.rows[0].id;
+            } else {
+                const passwordHash = "managed_account";
+                const userRes = await client.query(
+                    `INSERT INTO users (name, first_name, last_name, full_name, email, password, password_hash, role, phone)
+                     VALUES ($1, $2, $3, $4, $5, $6, $7, 'beneficiary', $8)
+                     RETURNING id`,
+                    [fullName, firstName, lastName, fullName, email, passwordHash, passwordHash, input.phone || null],
+                );
+                userId = userRes.rows[0].id;
+            }
+        }
+
+        const existingProfile = await client.query("SELECT id FROM beneficiary_profiles WHERE user_id = $1", [userId]);
+        let profileId;
+        if (existingProfile.rows[0]) {
+            profileId = existingProfile.rows[0].id;
+            await client.query(
+                `UPDATE beneficiary_profiles SET
+                  national_id = COALESCE($2, national_id),
+                  phone = COALESCE($3, phone),
+                  address = COALESCE($4, address),
+                  governorate = COALESCE($5, governorate),
+                  district = COALESCE($6, district),
+                  family_size = COALESCE($7, family_size),
+                  children_count = COALESCE($8, children_count),
+                  housing_type = COALESCE($9, housing_type),
+                  monthly_income = COALESCE($10, monthly_income),
+                  employment_status = COALESCE($11, employment_status),
+                  health_conditions = COALESCE($12, health_conditions),
+                  location = COALESCE($13, location),
+                  verification_status = COALESCE($14, verification_status),
+                  verified_by = CASE WHEN $14 = 'verified' THEN $15 ELSE verified_by END,
+                  verified_at = CASE WHEN $14 = 'verified' THEN NOW() ELSE verified_at END,
+                  notes = COALESCE($16, notes),
+                  updated_at = NOW()
+                 WHERE id = $1`,
+                [
+                    profileId,
+                    input.nationalId || null,
+                    input.phone || null,
+                    input.address || null,
+                    input.governorate || null,
+                    input.district || null,
+                    input.familySize || null,
+                    input.childrenCount || null,
+                    input.housingType || null,
+                    input.monthlyIncome || null,
+                    input.employmentStatus || null,
+                    input.healthConditions || null,
+                    input.location || null,
+                    input.verificationStatus || "pending",
+                    input.verificationStatus === "verified" ? (createdBy || null) : null,
+                    input.notes || "",
+                ],
+            );
+        } else {
+            const profileRes = await client.query(
+                `INSERT INTO beneficiary_profiles
+                  (user_id, national_id, phone, address, governorate, district, family_size, children_count,
+                   housing_type, monthly_income, employment_status, health_conditions, location,
+                   verification_status, verified_by, verified_at, notes)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+                 RETURNING id`,
+                [
+                    userId,
+                    input.nationalId || null,
+                    input.phone || null,
+                    input.address || null,
+                    input.governorate || null,
+                    input.district || null,
+                    input.familySize || null,
+                    input.childrenCount || null,
+                    input.housingType || null,
+                    input.monthlyIncome || null,
+                    input.employmentStatus || null,
+                    input.healthConditions || null,
+                    input.location || null,
+                    input.verificationStatus || "pending",
+                    input.verificationStatus === "verified" ? (createdBy || null) : null,
+                    input.verificationStatus === "verified" ? new Date() : null,
+                    input.notes || "",
+                ],
+            );
+            profileId = profileRes.rows[0].id;
+        }
+
+        await client.query("COMMIT");
+        return getBeneficiaryDetail(profileId);
+    } catch (error) {
+        await client.query("ROLLBACK").catch(() => { });
+        throw error;
+    } finally {
+        client.release();
+    }
+}
+
+export async function updateBeneficiaryProfile(id, input, updatedBy) {
+    const client = await pool.connect();
+    try {
+        await client.query("BEGIN");
+        const existing = await client.query("SELECT id, user_id, verification_status FROM beneficiary_profiles WHERE id = $1 FOR UPDATE", [id]);
+        if (!existing.rows[0]) {
+            await client.query("ROLLBACK");
+            return null;
+        }
+
+        await client.query(
+            `UPDATE beneficiary_profiles SET
+                national_id = COALESCE($2, national_id),
+                phone = COALESCE($3, phone),
+                address = COALESCE($4, address),
+                governorate = COALESCE($5, governorate),
+                district = COALESCE($6, district),
+                family_size = COALESCE($7, family_size),
+                children_count = COALESCE($8, children_count),
+                housing_type = COALESCE($9, housing_type),
+                monthly_income = COALESCE($10, monthly_income),
+                employment_status = COALESCE($11, employment_status),
+                health_conditions = COALESCE($12, health_conditions),
+                location = COALESCE($13, location),
+                verification_status = COALESCE($14, verification_status),
+                verified_by = CASE WHEN $14 = 'verified' THEN $15 WHEN $14 IS NOT NULL AND $14 != 'verified' THEN NULL ELSE verified_by END,
+                verified_at = CASE WHEN $14 = 'verified' THEN NOW() WHEN $14 IS NOT NULL AND $14 != 'verified' THEN NULL ELSE verified_at END,
+                notes = COALESCE($16, notes),
+                updated_at = NOW()
+             WHERE id = $1`,
+            [
+                id,
+                input.nationalId === undefined ? null : input.nationalId,
+                input.phone === undefined ? null : input.phone,
+                input.address === undefined ? null : input.address,
+                input.governorate === undefined ? null : input.governorate,
+                input.district === undefined ? null : input.district,
+                input.familySize === undefined ? null : input.familySize,
+                input.childrenCount === undefined ? null : input.childrenCount,
+                input.housingType === undefined ? null : input.housingType,
+                input.monthlyIncome === undefined ? null : input.monthlyIncome,
+                input.employmentStatus === undefined ? null : input.employmentStatus,
+                input.healthConditions === undefined ? null : input.healthConditions,
+                input.location === undefined ? null : input.location,
+                input.verificationStatus === undefined ? null : input.verificationStatus,
+                updatedBy || null,
+                input.notes === undefined ? null : input.notes,
+            ],
+        );
+
+        if (input.name) {
+            await client.query("UPDATE users SET full_name = $1 WHERE id = $2", [input.name, existing.rows[0].user_id]);
+        }
+
+        await client.query("COMMIT");
+        return getBeneficiaryDetail(id);
+    } catch (error) {
+        await client.query("ROLLBACK").catch(() => { });
+        throw error;
+    } finally {
+        client.release();
+    }
 }
 

@@ -1,14 +1,18 @@
 import pool from "./database/index.js";
 import {
     createBeneficiaryNeed,
+    createBeneficiaryProfile,
     createDistribution,
     createInventoryItem,
+    getBeneficiaryDetail,
     getBeneficiaryProfileId,
+    listBeneficiaries,
     listBeneficiaryNeeds,
     listDistributions,
     listInventory,
     syncDonationToInventory,
     updateBeneficiaryNeed,
+    updateBeneficiaryProfile,
     updateDistributionStatus,
     updateInventoryItem,
 } from "./operations-repository.js";
@@ -17,6 +21,7 @@ const INVENTORY_STATUSES = new Set(["available", "low_stock", "out_of_stock", "i
 const NEED_PRIORITIES = new Set(["low", "medium", "high", "urgent"]);
 const NEED_STATUSES = new Set(["open", "partially_fulfilled", "fulfilled", "cancelled"]);
 const DISTRIBUTION_STATUSES = new Set(["draft", "planned", "in_progress", "completed", "cancelled"]);
+const BENEFICIARY_VERIFICATION_STATUSES = new Set(["pending", "verified", "rejected", "needs_review"]);
 
 const text = (value, max) => String(value ?? "").trim().replace(/\s+/g, " ").slice(0, max);
 const positiveInt = value => Number.isInteger(Number(value)) && Number(value) > 0 ? Number(value) : null;
@@ -110,11 +115,76 @@ export async function approveOrRejectDonation(donationId, status, reviewerId) {
             inventoryItemId,
         };
     } catch (error) {
-        await client.query("ROLLBACK").catch(() => {});
+        await client.query("ROLLBACK").catch(() => { });
         throw error;
     } finally {
         client.release();
     }
+}
+
+export async function getBeneficiaries(filters) {
+    return listBeneficiaries({
+        search: text(filters?.search, 100) || null,
+        status: text(filters?.status, 30) || null,
+        governorate: text(filters?.governorate, 60) || null,
+    });
+}
+
+export async function getBeneficiary(id) {
+    return getBeneficiaryDetail(id);
+}
+
+export async function addBeneficiary(body, createdBy) {
+    const input = {
+        userId: body?.userId ? positiveInt(body.userId) : null,
+        name: text(body?.name, 120),
+        email: text(body?.email, 120) || null,
+        phone: text(body?.phone, 30) || null,
+        nationalId: text(body?.nationalId, 30) || null,
+        address: text(body?.address, 200) || null,
+        governorate: text(body?.governorate, 60) || null,
+        district: text(body?.district, 80) || null,
+        familySize: body?.familySize !== undefined ? positiveInt(body.familySize) : 1,
+        childrenCount: body?.childrenCount !== undefined ? nonNegativeInt(body.childrenCount) : 0,
+        housingType: text(body?.housingType, 60) || null,
+        monthlyIncome: body?.monthlyIncome !== undefined && !Number.isNaN(Number(body.monthlyIncome)) ? Number(body.monthlyIncome) : null,
+        employmentStatus: text(body?.employmentStatus, 80) || null,
+        healthConditions: text(body?.healthConditions, 500) || null,
+        location: text(body?.location || body?.governorate || "غير محدد", 160),
+        verificationStatus: text(body?.verificationStatus || "pending", 30),
+        notes: text(body?.notes, 2000),
+    };
+
+    if (!input.name || input.name.length < 2) throw new Error("INVALID_BENEFICIARY_NAME");
+    if (input.verificationStatus && !BENEFICIARY_VERIFICATION_STATUSES.has(input.verificationStatus)) throw new Error("INVALID_VERIFICATION_STATUS");
+
+    return createBeneficiaryProfile(input, createdBy);
+}
+
+export async function editBeneficiary(id, body, updatedBy) {
+    const input = {
+        name: body?.name !== undefined ? text(body.name, 120) : undefined,
+        phone: body?.phone !== undefined ? text(body.phone, 30) : undefined,
+        nationalId: body?.nationalId !== undefined ? text(body.nationalId, 30) : undefined,
+        address: body?.address !== undefined ? text(body.address, 200) : undefined,
+        governorate: body?.governorate !== undefined ? text(body.governorate, 60) : undefined,
+        district: body?.district !== undefined ? text(body.district, 80) : undefined,
+        familySize: body?.familySize !== undefined ? positiveInt(body.familySize) : undefined,
+        childrenCount: body?.childrenCount !== undefined ? nonNegativeInt(body.childrenCount) : undefined,
+        housingType: body?.housingType !== undefined ? text(body.housingType, 60) : undefined,
+        monthlyIncome: body?.monthlyIncome !== undefined ? Number(body.monthlyIncome) : undefined,
+        employmentStatus: body?.employmentStatus !== undefined ? text(body.employmentStatus, 80) : undefined,
+        healthConditions: body?.healthConditions !== undefined ? text(body.healthConditions, 500) : undefined,
+        location: body?.location !== undefined ? text(body.location, 160) : undefined,
+        verificationStatus: body?.verificationStatus !== undefined ? text(body.verificationStatus, 30) : undefined,
+        notes: body?.notes !== undefined ? text(body.notes, 2000) : undefined,
+    };
+
+    if (input.verificationStatus && !BENEFICIARY_VERIFICATION_STATUSES.has(input.verificationStatus)) {
+        throw new Error("INVALID_VERIFICATION_STATUS");
+    }
+
+    return updateBeneficiaryProfile(id, input, updatedBy);
 }
 
 export { getBeneficiaryProfileId };
