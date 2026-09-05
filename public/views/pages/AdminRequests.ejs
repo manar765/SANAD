@@ -93,70 +93,146 @@
                     </section>
 
                     <!-- ============================================================
-             REQUESTS SECTION
+             REQUESTS & USERS SECTION
         ============================================================ -->
-                    <section class="don-section" aria-label="طلبات التبرعات">
+                    <section class="don-section" aria-label="أقسام الإدارة">
                         <div class="container">
 
-                            <div class="admin-toolbar reveal">
-                                <div class="admin-toolbar-title">
-                                    <i class="fa-solid fa-inbox"></i>
-                                    <span>طلبات إضافة التبرعات</span>
-                                    <span class="admin-pending-badge" id="pendingCount">0</span>
+                            <div class="admin-tabs-nav reveal" role="tablist" aria-label="أقسام لوحة الإدارة">
+                                <button type="button" class="admin-tab-btn active" id="tabDonationsBtn" role="tab" aria-selected="true" aria-controls="donationsSection">
+                                    <i class="fa-solid fa-inbox" aria-hidden="true"></i> طلبات التبرعات
+                                </button>
+                                <button type="button" class="admin-tab-btn" id="tabUsersBtn" role="tab" aria-selected="false" aria-controls="usersSection">
+                                    <i class="fa-solid fa-users-gear" aria-hidden="true"></i> إدارة المستخدمين والأدوار
+                                </button>
+                            </div>
+
+                            <div id="donationsSection" role="tabpanel">
+                                <div class="admin-toolbar reveal">
+                                    <div class="admin-toolbar-title">
+                                        <i class="fa-solid fa-inbox"></i>
+                                        <span>طلبات إضافة التبرعات</span>
+                                        <span class="admin-pending-badge" id="pendingCount">0</span>
+                                    </div>
+
+                                    <div class="admin-filter">
+                                        <i class="fa-solid fa-filter" aria-hidden="true"></i>
+                                        <select id="approvalFilter" aria-label="تصفية حالة الطلب">
+                                            <option value="all">كل الطلبات</option>
+                                            <option value="pending">بانتظار الموافقة</option>
+                                            <option value="approved">تمت الموافقة</option>
+                                            <option value="rejected">مرفوضة</option>
+                                        </select>
+                                    </div>
                                 </div>
 
-                                <div class="admin-filter">
-                                    <i class="fa-solid fa-filter" aria-hidden="true"></i>
-                                    <select id="approvalFilter" aria-label="تصفية حالة الطلب">
-                                        <option value="all">كل الطلبات</option>
-                                        <option value="pending">بانتظار الموافقة</option>
-                                        <option value="approved">تمت الموافقة</option>
-                                        <option value="rejected">مرفوضة</option>
-                                    </select>
+                                <div class="ui-state ui-loading" id="adminLoading" role="status" aria-live="polite"
+                                    aria-busy="true">
+                                    <i class="fa-solid fa-spinner" aria-hidden="true"></i>
+                                    <span data-state-message>جارٍ تحميل طلبات التبرعات…</span>
+                                </div>
+                                <div class="ui-state ui-error" id="adminError" role="alert" hidden>
+                                    <div class="ui-error-content">
+                                        <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>
+                                        <span data-state-message>تعذر تحميل طلبات التبرعات.</span>
+                                    </div>
+                                    <button type="button" class="btn btn-outline ui-error-retry" data-state-retry>إعادة
+                                        المحاولة</button>
+                                </div>
+                                <div class="admin-card reveal">
+                                    <div class="admin-table-wrap">
+                                        <table class="dash-table admin-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>معرّف الطلب</th>
+                                                    <th>التبرع</th>
+                                                    <th>المتبرع</th>
+                                                    <th>الفئة</th>
+                                                    <th>الكمية</th>
+                                                    <th>الحالة</th>
+                                                    <th>المخزن / الموقع</th>
+                                                    <th>الوصف</th>
+                                                    <th>التاريخ</th>
+                                                    <th>حالة الطلب</th>
+                                                    <th>إجراءات</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="adminTableBody">
+                                                <!-- rows rendered by admin-requests.js -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    <div class="don-empty admin-empty" id="adminEmpty" hidden>
+                                        <i class="fa-solid fa-inbox"></i>
+                                        <h3>لا توجد طلبات مطابقة</h3>
+                                        <p>عندما يرسل المستخدمون طلبات إضافة تبرع ستظهر هنا.</p>
+                                    </div>
                                 </div>
                             </div>
 
-                            <div class="ui-state ui-loading" id="adminLoading" role="status" aria-live="polite"
-                                aria-busy="true">
-                                <i class="fa-solid fa-spinner" aria-hidden="true"></i>
-                                <span data-state-message>جارٍ تحميل طلبات التبرعات…</span>
-                            </div>
-                            <div class="ui-state ui-error" id="adminError" role="alert" hidden>
-                                <div class="ui-error-content">
-                                    <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>
-                                    <span data-state-message>تعذر تحميل طلبات التبرعات.</span>
-                                </div>
-                                <button type="button" class="btn btn-outline ui-error-retry" data-state-retry>إعادة
-                                    المحاولة</button>
-                            </div>
-                            <div class="admin-card reveal">
-                                <div class="admin-table-wrap">
-                                    <table class="dash-table admin-table">
-                                        <thead>
-                                            <tr>
-                                                <th>معرّف الطلب</th>
-                                                <th>التبرع</th>
-                                                <th>المتبرع</th>
-                                                <th>الفئة</th>
-                                                <th>الكمية</th>
-                                                <th>الحالة</th>
-                                                <th>المخزن / الموقع</th>
-                                                <th>الوصف</th>
-                                                <th>التاريخ</th>
-                                                <th>حالة الطلب</th>
-                                                <th>إجراءات</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="adminTableBody">
-                                            <!-- rows rendered by admin-requests.js -->
-                                        </tbody>
-                                    </table>
+                            <div id="usersSection" role="tabpanel" hidden>
+                                <div class="admin-toolbar">
+                                    <div class="admin-toolbar-title">
+                                        <i class="fa-solid fa-users"></i>
+                                        <span>إدارة المستخدمين والأدوار</span>
+                                        <span class="admin-pending-badge" id="usersTotalCount">0</span>
+                                    </div>
+
+                                    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                                        <div style="position: relative;">
+                                            <input type="search" id="userSearchInput" placeholder="بحث بالاسم أو البريد…" class="form-control" style="padding-inline-start: 32px; height: 38px; border-radius: 8px; border: 1px solid var(--border); font-size: 0.9rem; min-width: 220px;" />
+                                            <i class="fa-solid fa-magnifying-glass" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none;"></i>
+                                        </div>
+                                        <div class="admin-filter">
+                                            <i class="fa-solid fa-filter" aria-hidden="true"></i>
+                                            <select id="userRoleFilter" aria-label="تصفية الدور">
+                                                <option value="">كل الأدوار</option>
+                                                <option value="admin">مدير (Admin)</option>
+                                                <option value="donor">متبرع (Donor)</option>
+                                                <option value="beneficiary">مستفيد (Beneficiary)</option>
+                                            </select>
+                                        </div>
+                                    </div>
                                 </div>
 
-                                <div class="don-empty admin-empty" id="adminEmpty" hidden>
-                                    <i class="fa-solid fa-inbox"></i>
-                                    <h3>لا توجد طلبات مطابقة</h3>
-                                    <p>عندما يرسل المستخدمون طلبات إضافة تبرع ستظهر هنا.</p>
+                                <div class="ui-state ui-loading" id="usersLoading" role="status" aria-live="polite" aria-busy="true">
+                                    <i class="fa-solid fa-spinner" aria-hidden="true"></i>
+                                    <span data-state-message>جارٍ تحميل بيانات المستخدمين…</span>
+                                </div>
+                                <div class="ui-state ui-error" id="usersError" role="alert" hidden>
+                                    <div class="ui-error-content">
+                                        <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>
+                                        <span data-state-message>تعذر تحميل بيانات المستخدمين.</span>
+                                    </div>
+                                    <button type="button" class="btn btn-outline ui-error-retry" id="usersRetryBtn">إعادة المحاولة</button>
+                                </div>
+
+                                <div class="admin-card">
+                                    <div class="admin-table-wrap">
+                                        <table class="dash-table admin-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>المعرّف</th>
+                                                    <th>الاسم</th>
+                                                    <th>البريد الإلكتروني</th>
+                                                    <th>الهاتف</th>
+                                                    <th>الدور الحالي</th>
+                                                    <th>تغيير الدور</th>
+                                                    <th>إجراء</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="usersTableBody">
+                                                <!-- rows rendered by admin-requests.js -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    <div class="don-empty admin-empty" id="usersEmpty" hidden>
+                                        <i class="fa-solid fa-user-slash"></i>
+                                        <h3>لا يوجد مستخدمون مطابقون</h3>
+                                        <p>جرّب تعديل مصطلح البحث أو فلتر الدور.</p>
+                                    </div>
                                 </div>
                             </div>
 

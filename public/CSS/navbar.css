@@ -121,6 +121,21 @@ body.auth-pending .user-actions {
     pointer-events: none;
 }
 
+/* Role-based navigation visibility */
+[data-role="admin"] {
+    display: none !important;
+}
+
+body.role-admin [data-role="admin"],
+html.role-admin [data-role="admin"] {
+    display: inline-flex !important;
+}
+
+body.role-admin li[data-role="admin"],
+html.role-admin li[data-role="admin"] {
+    display: list-item !important;
+}
+
 .nav-actions {
     display: flex;
     align-items: center;

@@ -197,3 +197,93 @@ export async function markEmailVerified(userId) {
     );
     return result.rows[0] || null;
 }
+
+export async function listAllUsers({ search = "", role = "", limit = 50, offset = 0 } = {}) {
+    const conditions = [];
+    const values = [];
+
+    if (role && ["donor", "beneficiary", "admin"].includes(role)) {
+        values.push(role);
+        conditions.push(`u.role = $${values.length}`);
+    }
+
+    if (search) {
+        values.push(`%${search.trim().toLowerCase()}%`);
+        const param = `$${values.length}`;
+        conditions.push(`(
+            LOWER(COALESCE(u.full_name, u.name, '')) LIKE ${param} OR
+            LOWER(u.email) LIKE ${param} OR
+            COALESCE(u.phone, '') LIKE ${param}
+        )`);
+    }
+
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+    values.push(Math.min(Math.max(Number.parseInt(limit, 10) || 50, 1), 200));
+    const limitParam = `$${values.length}`;
+    values.push(Math.max(Number.parseInt(offset, 10) || 0, 0));
+    const offsetParam = `$${values.length}`;
+
+    const result = await pool.query(
+        `SELECT u.id,
+                COALESCE(NULLIF(u.full_name, ''), NULLIF(u.name, ''), u.email) AS name,
+                u.first_name AS "firstName",
+                u.last_name AS "lastName",
+                u.email,
+                COALESCE(u.phone, '') AS phone,
+                u.role,
+                u.created_at AS "createdAt"
+         FROM users u
+         ${whereClause}
+         ORDER BY u.id ASC
+         LIMIT ${limitParam} OFFSET ${offsetParam}`,
+        values,
+    );
+
+    return result.rows;
+}
+
+export async function updateUserRole(userId, newRole) {
+    const client = await pool.connect();
+    try {
+        await client.query("BEGIN");
+        const result = await client.query(
+            `UPDATE users
+             SET role = $1
+             WHERE id = $2
+             RETURNING id, COALESCE(NULLIF(full_name, ''), NULLIF(name, ''), email) AS name, email, COALESCE(phone, '') AS phone, role`,
+            [newRole, userId],
+        );
+        const user = result.rows[0];
+        if (!user) {
+            await client.query("ROLLBACK");
+            return null;
+        }
+
+        await client.query("UPDATE user_sessions SET role = $1 WHERE user_id = $2", [newRole, userId]);
+
+        if (newRole === "donor") {
+            await client.query(
+                `INSERT INTO donor_profiles (user_id, donor_type)
+                 VALUES ($1, 'individual')
+                 ON CONFLICT (user_id) DO NOTHING`,
+                [userId],
+            );
+        } else if (newRole === "beneficiary") {
+            await client.query(
+                `INSERT INTO beneficiary_profiles (user_id)
+                 VALUES ($1)
+                 ON CONFLICT (user_id) DO NOTHING`,
+                [userId],
+            );
+        }
+
+        await client.query("COMMIT");
+        return user;
+    } catch (error) {
+        await client.query("ROLLBACK").catch(() => {});
+        throw error;
+    } finally {
+        client.release();
+    }
+}
+

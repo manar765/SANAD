@@ -18,6 +18,8 @@ import {
     incrementMfaChallengeAttempts,
     markEmailVerified,
     updateUserProfile,
+    listAllUsers,
+    updateUserRole,
 } from "./user-repository.js";
 
 export async function registerUser(input) {
@@ -93,3 +95,37 @@ export async function verifyEmailToken(tokenHash) {
     if (!userId) return null;
     return markEmailVerified(userId);
 }
+
+export async function getAllUsers(filters) {
+    return listAllUsers(filters);
+}
+
+export async function changeUserRole(targetUserId, newRole, adminUserId, adminUserEmail = "") {
+    if (!["donor", "beneficiary", "admin"].includes(newRole)) {
+        const error = new Error("INVALID_ROLE");
+        error.code = "INVALID_ROLE";
+        throw error;
+    }
+    const targetUser = await findUserById(targetUserId);
+    if (!targetUser) {
+        const error = new Error("USER_NOT_FOUND");
+        error.code = "USER_NOT_FOUND";
+        throw error;
+    }
+    if (newRole !== "admin") {
+        if (adminUserId && Number(targetUserId) === Number(adminUserId)) {
+            const error = new Error("CANNOT_DEMOTE_SELF");
+            error.code = "CANNOT_DEMOTE_SELF";
+            throw error;
+        }
+        if (adminUserEmail && String(targetUser.email).toLowerCase() === String(adminUserEmail).toLowerCase()) {
+            const error = new Error("CANNOT_DEMOTE_SELF");
+            error.code = "CANNOT_DEMOTE_SELF";
+            throw error;
+        }
+    }
+    const updated = await updateUserRole(targetUserId, newRole);
+    return updated;
+}
+
+

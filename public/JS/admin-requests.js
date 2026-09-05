@@ -145,4 +145,166 @@
 
     if (filterSelect) filterSelect.addEventListener("change", render);
     loadRequests();
+
+    // ==========================================================================
+    // Admin Tabs Navigation (Donations <-> Users & Roles)
+    // ==========================================================================
+    const tabDonationsBtn = document.getElementById("tabDonationsBtn");
+    const tabUsersBtn = document.getElementById("tabUsersBtn");
+    const donationsSection = document.getElementById("donationsSection");
+    const usersSection = document.getElementById("usersSection");
+
+    function switchAdminTab(target) {
+        const showUsers = target === "users";
+        if (tabDonationsBtn) {
+            tabDonationsBtn.classList.toggle("active", !showUsers);
+            tabDonationsBtn.setAttribute("aria-selected", !showUsers);
+        }
+        if (tabUsersBtn) {
+            tabUsersBtn.classList.toggle("active", showUsers);
+            tabUsersBtn.setAttribute("aria-selected", showUsers);
+        }
+        if (donationsSection) donationsSection.hidden = showUsers;
+        if (usersSection) usersSection.hidden = !showUsers;
+
+        if (showUsers && users.length === 0) {
+            loadUsers();
+        }
+    }
+
+    if (tabDonationsBtn) tabDonationsBtn.addEventListener("click", () => switchAdminTab("donations"));
+    if (tabUsersBtn) tabUsersBtn.addEventListener("click", () => switchAdminTab("users"));
+
+    // ==========================================================================
+    // Users & Roles Management
+    // ==========================================================================
+    const usersTableBody = document.getElementById("usersTableBody");
+    const usersEmptyState = document.getElementById("usersEmpty");
+    const userSearchInput = document.getElementById("userSearchInput");
+    const userRoleFilter = document.getElementById("userRoleFilter");
+    const usersTotalCount = document.getElementById("usersTotalCount");
+    const usersLoadingState = document.getElementById("usersLoading");
+    const usersErrorState = document.getElementById("usersError");
+    const usersRetryBtn = document.getElementById("usersRetryBtn");
+
+    let users = [];
+
+    const ROLE_LABELS = {
+        admin: { label: "مدير نظام", className: "role-admin" },
+        donor: { label: "متبرع", className: "role-donor" },
+        beneficiary: { label: "مستفيد", className: "role-beneficiary" }
+    };
+
+    function buildUserRow(user) {
+        const tr = document.createElement("tr");
+        const roleMeta = ROLE_LABELS[user.role] || { label: user.role, className: "" };
+        const phone = user.phone || "—";
+
+        tr.innerHTML =
+            '<td class="admin-id">' + escapeHtml(user.id) + '</td>' +
+            '<td><strong>' + escapeHtml(user.name) + '</strong></td>' +
+            '<td>' + escapeHtml(user.email) + '</td>' +
+            '<td>' + escapeHtml(phone) + '</td>' +
+            '<td><span class="role-badge ' + roleMeta.className + '">' + escapeHtml(roleMeta.label) + '</span></td>' +
+            '<td>' +
+                '<select class="role-select" aria-label="تغيير دور ' + escapeHtml(user.name) + '">' +
+                    '<option value="admin"' + (user.role === "admin" ? " selected" : "") + '>مدير (Admin)</option>' +
+                    '<option value="donor"' + (user.role === "donor" ? " selected" : "") + '>متبرع (Donor)</option>' +
+                    '<option value="beneficiary"' + (user.role === "beneficiary" ? " selected" : "") + '>مستفيد (Beneficiary)</option>' +
+                '</select>' +
+            '</td>' +
+            '<td>' +
+                '<button type="button" class="btn btn-sm btn-primary btn-save-role" disabled>' +
+                    '<i class="fa-solid fa-floppy-disk" aria-hidden="true"></i> حفظ' +
+                '</button>' +
+            '</td>';
+
+        const roleSelect = tr.querySelector(".role-select");
+        const saveBtn = tr.querySelector(".btn-save-role");
+
+        roleSelect.addEventListener("change", function () {
+            saveBtn.disabled = roleSelect.value === user.role;
+        });
+
+        saveBtn.addEventListener("click", async function () {
+            const newRole = roleSelect.value;
+            if (newRole === user.role) return;
+
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i> حفظ…';
+
+            try {
+                const csrfRes = await fetch("/api/auth/csrf", { credentials: "same-origin" });
+                if (!csrfRes.ok) throw new Error("تعذر جلب رمز الأمان.");
+                const { csrfToken } = await csrfRes.json();
+
+                const response = await fetch(`/api/admin/users/${encodeURIComponent(user.id)}/role`, {
+                    method: "PATCH",
+                    credentials: "same-origin",
+                    headers: { "Content-Type": "application/json", "X-CSRF-Token": csrfToken },
+                    body: JSON.stringify({ role: newRole })
+                });
+
+                const payload = await response.json().catch(() => ({}));
+                if (!response.ok) {
+                    throw new Error(payload.message || "تعذر تحديث دور المستخدم.");
+                }
+
+                user.role = newRole;
+                showToast("تم تحديث دور المستخدم بنجاح.");
+                renderUsers();
+            } catch (error) {
+                showToast(error.message || "تعذر تحديث دور المستخدم.");
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '<i class="fa-solid fa-floppy-disk" aria-hidden="true"></i> حفظ';
+            }
+        });
+
+        return tr;
+    }
+
+    function renderUsers() {
+        if (!usersTableBody) return;
+        const searchTerm = (userSearchInput ? userSearchInput.value : "").trim().toLowerCase();
+        const roleFilter = userRoleFilter ? userRoleFilter.value : "";
+
+        const visible = users.filter(function (u) {
+            const matchesSearch = !searchTerm ||
+                String(u.name || "").toLowerCase().includes(searchTerm) ||
+                String(u.email || "").toLowerCase().includes(searchTerm) ||
+                String(u.phone || "").toLowerCase().includes(searchTerm);
+            const matchesRole = !roleFilter || u.role === roleFilter;
+            return matchesSearch && matchesRole;
+        });
+
+        usersTableBody.innerHTML = "";
+        visible.forEach(function (u) { usersTableBody.appendChild(buildUserRow(u)); });
+
+        if (usersEmptyState) usersEmptyState.hidden = visible.length !== 0;
+        if (usersTotalCount) usersTotalCount.textContent = users.length;
+    }
+
+    async function loadUsers() {
+        if (!usersTableBody) return;
+        window.SANADUI?.setLoading(usersLoadingState, true, "جارٍ تحميل بيانات المستخدمين…");
+        if (usersErrorState) usersErrorState.hidden = true;
+
+        try {
+            const response = await fetch("/api/admin/users?limit=100", { credentials: "same-origin" });
+            if (!response.ok) throw new Error("تعذر تحميل قائمة المستخدمين.");
+            const payload = await response.json();
+            users = Array.isArray(payload.users) ? payload.users : [];
+            renderUsers();
+        } catch (error) {
+            users = [];
+            renderUsers();
+            window.SANADUI?.setError(usersErrorState, error.message || "تعذر تحميل بيانات المستخدمين.", loadUsers);
+        } finally {
+            window.SANADUI?.setLoading(usersLoadingState, false);
+        }
+    }
+
+    if (userSearchInput) userSearchInput.addEventListener("input", renderUsers);
+    if (userRoleFilter) userRoleFilter.addEventListener("change", renderUsers);
+    if (usersRetryBtn) usersRetryBtn.addEventListener("click", loadUsers);
 })();

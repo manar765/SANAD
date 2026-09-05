@@ -53,6 +53,8 @@ import {
   startMfaChallenge,
   useRecoveryCode,
   verifyEmailToken,
+  changeUserRole,
+  getAllUsers,
 } from "./user-service.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -799,6 +801,50 @@ app.get("/api/admin/audit-logs", requireAdmin, async (req, res) => {
   }
 });
 
+app.get("/api/admin/users", requireAdmin, async (req, res) => {
+  try {
+    const users = await getAllUsers({
+      search: req.query.search,
+      role: req.query.role,
+      limit: req.query.limit,
+      offset: req.query.offset,
+    });
+    return res.json({ users });
+  } catch (error) {
+    console.error("Fetch admin users failed:", error);
+    return res.status(503).json({ message: "Failed to load users." });
+  }
+});
+
+app.patch("/api/admin/users/:id/role", requireAdmin, requireCsrf, async (req, res) => {
+  const targetUserId = Number.parseInt(req.params.id, 10);
+  if (!Number.isInteger(targetUserId)) {
+    return res.status(400).json({ message: "Invalid user ID." });
+  }
+  const role = String(req.body?.role || "").trim().toLowerCase();
+  if (!["donor", "beneficiary", "admin"].includes(role)) {
+    return res.status(400).json({ message: "Please select a valid role (donor, beneficiary, admin)." });
+  }
+  try {
+    const updated = await changeUserRole(targetUserId, role, req.user.id, req.user.email);
+    await recordAuditEvent(req, {
+      userId: req.user.id,
+      action: "user_role_changed",
+      metadata: { targetUserId, newRole: role },
+    });
+    return res.json({ message: "User role updated successfully.", user: updated });
+  } catch (error) {
+    if (error.code === "CANNOT_DEMOTE_SELF") {
+      return res.status(400).json({ message: "You cannot change the role of your own admin account." });
+    }
+    if (error.code === "USER_NOT_FOUND") {
+      return res.status(404).json({ message: "User not found." });
+    }
+    console.error("Change user role failed:", error);
+    return res.status(503).json({ message: "Failed to update user role." });
+  }
+});
+
 app.post("/api/auth/signup", async (req, res) => {
   const signupKey = `signup:${req.ip || "unknown"}`;
   if (isRateLimited(signupAttempts, signupKey, SIGNUP_MAX_ATTEMPTS)) {
@@ -1255,8 +1301,10 @@ app.post("/api/auth/login", async (req, res) => {
 
   if (credentialsMatch(email, password)) {
     clearLoginFailures(attemptKey);
-    await rotateSession(req, res, { role: "admin", email }, rememberMe);
-    await recordAuditEvent(req, { action: "login_success", metadata: { role: "admin" } });
+    const adminRecord = await pool.query("SELECT id FROM users WHERE email = $1", [email]).catch(() => null);
+    const adminId = adminRecord?.rows?.[0]?.id || null;
+    await rotateSession(req, res, { id: adminId, role: "admin", email }, rememberMe);
+    await recordAuditEvent(req, { userId: adminId, action: "login_success", metadata: { role: "admin" } });
     return res.json({ role: "admin" });
   }
 
