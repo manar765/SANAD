@@ -58,6 +58,27 @@
                     <a href="/signup" class="btn btn-primary">إنشاء حساب</a>
                 </div>
                 <div class="user-actions hidden" id="userActions" aria-live="polite">
+                    <div class="nav-notifications-wrapper" id="navNotificationsWrapper">
+                        <button type="button" class="btn btn-outline nav-notification-btn" id="headerNotificationBtn" aria-label="الإشعارات والتنبيهات" aria-expanded="false" title="التنبيهات التشغيلية">
+                            <i class="fa-solid fa-bell" aria-hidden="true"></i>
+                            <span class="notification-badge" id="notificationBadge" hidden>0</span>
+                        </button>
+                        <div class="notification-dropdown" id="headerNotificationDropdown" role="region" aria-label="قائمة التنبيهات التشغيلية" hidden>
+                            <div class="notif-dropdown-header">
+                                <div class="notif-header-title">
+                                    <i class="fa-solid fa-bell" aria-hidden="true"></i>
+                                    <span>التنبيهات التشغيلية</span>
+                                </div>
+                                <button type="button" class="notif-mark-read" id="notifMarkAllRead">تحديد كمقروء</button>
+                            </div>
+                            <div class="notif-dropdown-body" id="notificationsList">
+                                <div class="notif-empty">لا توجد تنبيهات جديدة حالياً</div>
+                            </div>
+                            <div class="notif-dropdown-footer">
+                                <a href="/dashboard" class="notif-footer-link">لوحة البيانات <i class="fa-solid fa-arrow-left" aria-hidden="true"></i></a>
+                            </div>
+                        </div>
+                    </div>
                     <span class="user-greeting">أهلاً، <strong id="homeUserName">صديق سند</strong></span>
                     <a href="/profile" class="btn btn-outline avatar-action" aria-label="فتح الملف الشخصي"
                         title="الملف الشخصي">
@@ -78,4 +99,5 @@
         </button>
     </div>
     <script src="/JS/navbar-auth.js" defer></script>
+    <script src="/JS/header-notifications.js" defer></script>
 </header>

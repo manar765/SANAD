@@ -39,6 +39,9 @@ import {
   getInventory,
   getNeeds,
   searchVerification,
+  getDashboardSummary,
+  getOperationalReports,
+  getOperationalNotifications,
 } from "./operations-service.js";
 import { extractCaseNotes } from "./ai-service.js";
 import {
@@ -919,19 +922,55 @@ app.patch("/api/admin/donations/:id/status", requireAdmin, requireCsrf, async (r
   }
 });
 
+app.get("/api/dashboard/summary", requireAdmin, async (req, res) => {
+  try {
+    const summary = await getDashboardSummary();
+    return res.json(summary);
+  } catch (error) {
+    return operationError(error, res);
+  }
+});
+
+app.get("/api/reports/analytics", requireAdmin, async (req, res) => {
+  try {
+    const { from, to, category } = req.query;
+    const reports = await getOperationalReports({
+      from: from ? String(from).slice(0, 30) : null,
+      to: to ? String(to).slice(0, 30) : null,
+      category: category ? String(category).slice(0, 80) : null,
+    });
+    return res.json(reports);
+  } catch (error) {
+    return operationError(error, res);
+  }
+});
+
+app.get("/api/notifications", requireAuth, async (req, res) => {
+  try {
+    const notifications = await getOperationalNotifications();
+    return res.json(notifications);
+  } catch (error) {
+    return operationError(error, res);
+  }
+});
+
 app.get("/api/admin/audit-logs", requireAdmin, async (req, res) => {
   const requestedLimit = Number.parseInt(req.query.limit, 10);
   const limit = Number.isFinite(requestedLimit) ? Math.min(Math.max(requestedLimit, 1), 100) : 50;
+  const action = req.query.action ? String(req.query.action).trim().slice(0, 80) : null;
   try {
+    const where = action ? "WHERE a.action = $2" : "";
+    const params = action ? [limit, action] : [limit];
     const result = await pool.query(
       `SELECT a.id, a.action, a.success, a.ip_address AS "ipAddress",
               a.created_at AS "createdAt", a.user_id AS "userId",
               COALESCE(NULLIF(u.full_name, ''), NULLIF(u.name, ''), u.email) AS "userName"
        FROM audit_logs a
        LEFT JOIN users u ON u.id = a.user_id
+       ${where}
        ORDER BY a.created_at DESC
        LIMIT $1`,
-      [limit],
+      params,
     );
     return res.json({ logs: result.rows });
   } catch {

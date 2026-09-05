@@ -1017,5 +1017,405 @@ export async function getDistributionStats() {
     };
 }
 
+export const AUDIT_ACTION_LABELS = {
+    login_success: "تسجيل دخول ناجح",
+    login_failed: "فشل تسجيل الدخول",
+    logout_success: "تسجيل خروج",
+    signup_success: "إنشاء حساب جديد",
+    email_verified: "تأكيد البريد الإلكتروني",
+    password_changed: "تغيير كلمة المرور",
+    password_reset_success: "استعادة كلمة المرور",
+    mfa_enabled: "تفعيل التحقق الثنائي (MFA)",
+    mfa_disabled: "تعطيل التحقق الثنائي (MFA)",
+    profile_updated: "تحديث الملف الشخصي",
+    user_role_updated: "تعديل صلاحية مستخدم",
+    donation_submitted: "تسجيل تبرع جديد",
+    inventory_item_created: "إضافة صنف مخزني",
+    inventory_item_updated: "تعديل صنف مخزني",
+    beneficiary_created: "تسجيل مستفيد جديد",
+    beneficiary_updated: "تحديث ملف مستفيد",
+    beneficiary_verified: "اعتماد وتحقق ملف مستفيد",
+    beneficiary_need_created: "إضافة احتياج مستفيد",
+    beneficiary_need_updated: "تحديث احتياج مستفيد",
+    distribution_created: "إنشاء أمر توزيع",
+    distribution_completed: "اكتمال تسليم التوزيع",
+    distribution_status_changed: "تعديل حالة توزيع",
+    "distribution.cancel": "إلغاء أمر توزيع",
+    ai_case_note_extracted: "استخراج ذكي لبيانات الحالة",
+    recommendation_generated: "احتساب توصية الأولوية"
+};
+
+export async function getDashboardSummary() {
+    const [
+        donationStatsRes,
+        inventoryStatsRes,
+        beneficiaryStatsRes,
+        distStats,
+        needsStatsRes,
+        recentDonationsRes,
+        recentDistributionsRes,
+        lowStockRes,
+        surplusRes,
+        urgentNeedsRes,
+        inventoryStatusRes,
+        recentAuditRes
+    ] = await Promise.all([
+        // 1. Donations summary
+        pool.query(`
+            SELECT COUNT(*) AS total_count,
+                   COALESCE(SUM(quantity), 0) AS total_units,
+                   COUNT(*) FILTER (WHERE status = 'pending') AS pending_count,
+                   COUNT(*) FILTER (WHERE status = 'approved') AS approved_count
+            FROM donation_requests
+        `),
+        // 2. Inventory summary
+        pool.query(`
+            SELECT COUNT(*) AS item_count,
+                   COALESCE(SUM(quantity_total), 0) AS total_units,
+                   COALESCE(SUM(quantity_available), 0) AS available_units,
+                   COALESCE(SUM(quantity_reserved), 0) AS reserved_units
+            FROM inventory_items
+        `),
+        // 3. Beneficiaries summary
+        pool.query(`
+            SELECT COUNT(*) AS total_count,
+                   COUNT(*) FILTER (WHERE verification_status = 'verified') AS verified_count,
+                   COUNT(*) FILTER (WHERE verification_status = 'pending') AS pending_count,
+                   COUNT(*) FILTER (WHERE verification_status = 'needs_review') AS review_count
+            FROM beneficiary_profiles
+        `),
+        // 4. Distributions stats
+        getDistributionStats(),
+        // 5. Open needs summary
+        pool.query(`
+            SELECT COUNT(*) AS total_open,
+                   COUNT(*) FILTER (WHERE priority IN ('urgent', 'high')) AS high_priority,
+                   COALESCE(SUM(quantity_requested - quantity_fulfilled), 0) AS units_needed
+            FROM beneficiary_needs
+            WHERE status IN ('open', 'partially_fulfilled')
+        `),
+        // 6. Recent donations (latest 5)
+        pool.query(`
+            SELECT d.id, d.title, d.category, d.quantity, d.unit, d.status,
+                   d.reference_code AS "referenceCode", d.created_at AS "createdAt",
+                   COALESCE(NULLIF(u.full_name, ''), NULLIF(u.name, ''), u.email) AS "donorName"
+            FROM donation_requests d
+            JOIN users u ON u.id = d.donor_id
+            ORDER BY d.created_at DESC
+            LIMIT 5
+        `),
+        // 7. Recent distributions (latest 5)
+        pool.query(`
+            SELECT d.id, d.reference_code AS "referenceCode", d.status,
+                   d.scheduled_at AS "scheduledAt", d.distributed_at AS "distributedAt",
+                   d.created_at AS "createdAt",
+                   COALESCE(NULLIF(u.full_name, ''), NULLIF(u.name, ''), u.email) AS "beneficiaryName",
+                   COUNT(di.inventory_item_id) AS "itemsCount"
+            FROM distributions d
+            JOIN beneficiary_profiles bp ON bp.id = d.beneficiary_id
+            JOIN users u ON u.id = bp.user_id
+            LEFT JOIN distribution_items di ON di.distribution_id = d.id
+            GROUP BY d.id, u.full_name, u.name, u.email
+            ORDER BY d.created_at DESC
+            LIMIT 5
+        `),
+        // 8. Low stock items
+        pool.query(`
+            SELECT id, name, category, quantity_available AS "quantityAvailable",
+                   low_stock_threshold AS "lowStockThreshold", unit, warehouse
+            FROM inventory_items
+            WHERE status = 'low_stock' OR (quantity_available <= low_stock_threshold AND status = 'available')
+            ORDER BY quantity_available ASC
+            LIMIT 6
+        `),
+        // 9. Surplus items
+        pool.query(`
+            SELECT id, name, category, quantity_available AS "quantityAvailable", unit, warehouse
+            FROM inventory_items
+            WHERE status = 'surplus'
+            ORDER BY quantity_available DESC
+            LIMIT 6
+        `),
+        // 10. Urgent needs
+        pool.query(`
+            SELECT n.id, n.title, n.category, n.priority, n.unit,
+                   n.quantity_requested AS "quantityRequested",
+                   n.quantity_fulfilled AS "quantityFulfilled",
+                   COALESCE(NULLIF(u.full_name, ''), NULLIF(u.name, ''), u.email) AS "beneficiaryName"
+            FROM beneficiary_needs n
+            JOIN beneficiary_profiles bp ON bp.id = n.beneficiary_id
+            JOIN users u ON u.id = bp.user_id
+            WHERE n.status IN ('open', 'partially_fulfilled')
+              AND n.priority IN ('urgent', 'high')
+            ORDER BY CASE WHEN n.priority = 'urgent' THEN 1 ELSE 2 END, n.created_at ASC
+            LIMIT 8
+        `),
+        // 11. Inventory status breakdown
+        pool.query(`
+            SELECT status, COUNT(*) AS count
+            FROM inventory_items
+            GROUP BY status
+        `),
+        // 12. Recent audit logs (latest 10)
+        pool.query(`
+            SELECT a.id, a.action, a.success, a.ip_address AS "ipAddress",
+                   a.created_at AS "createdAt",
+                   COALESCE(NULLIF(u.full_name, ''), NULLIF(u.name, ''), u.email, 'النظام') AS "userName"
+            FROM audit_logs a
+            LEFT JOIN users u ON u.id = a.user_id
+            ORDER BY a.created_at DESC
+            LIMIT 10
+        `)
+    ]);
+
+    const donRow = donationStatsRes.rows[0] || {};
+    const invRow = inventoryStatsRes.rows[0] || {};
+    const benRow = beneficiaryStatsRes.rows[0] || {};
+    const needsRow = needsStatsRes.rows[0] || {};
+
+    const activeDists = distStats.total - distStats.cancelled;
+    const distributionRate = activeDists > 0 ? Math.round((distStats.completed / activeDists) * 100) : 0;
+
+    const inventoryStatusCounts = {
+        available: 0,
+        low_stock: 0,
+        in_distribution: 0,
+        out_of_stock: 0,
+        surplus: 0,
+    };
+    for (const r of inventoryStatusRes.rows) {
+        if (inventoryStatusCounts[r.status] !== undefined) {
+            inventoryStatusCounts[r.status] = Number(r.count || 0);
+        }
+    }
+
+    const recentActivity = recentAuditRes.rows.map(log => ({
+        id: log.id,
+        action: log.action,
+        actionLabel: AUDIT_ACTION_LABELS[log.action] || log.action,
+        success: log.success,
+        userName: log.userName,
+        createdAt: log.createdAt,
+    }));
+
+    return {
+        kpis: {
+            totalDonations: Number(donRow.total_count || 0),
+            totalDonationUnits: Number(donRow.total_units || 0),
+            inventoryTotal: Number(invRow.total_units || 0),
+            inventoryAvailable: Number(invRow.available_units || 0),
+            inventoryReserved: Number(invRow.reserved_units || 0),
+            beneficiariesTotal: Number(benRow.total_count || 0),
+            beneficiariesVerified: Number(benRow.verified_count || 0),
+            beneficiariesPending: Number(benRow.pending_count || 0),
+            distributionsTotal: distStats.total,
+            distributionsCompleted: distStats.completed,
+            distributionsPlanned: distStats.planned,
+            distributionsInProgress: distStats.inProgress,
+            distributionsCancelled: distStats.cancelled,
+            distributionRate,
+            openNeedsTotal: Number(needsRow.total_open || 0),
+            openNeedsUrgent: Number(needsRow.high_priority || 0),
+        },
+        recentDonations: recentDonationsRes.rows,
+        recentDistributions: recentDistributionsRes.rows,
+        lowStockItems: lowStockRes.rows,
+        surplusItems: surplusRes.rows,
+        urgentNeeds: urgentNeedsRes.rows,
+        inventoryStatusCounts,
+        recentActivity,
+    };
+}
+
+export async function getOperationalReports({ from = null, to = null, category = null } = {}) {
+    const whereDon = [];
+    const valuesDon = [];
+    if (from) { valuesDon.push(from); whereDon.push(`created_at >= $${valuesDon.length}`); }
+    if (to) { valuesDon.push(to); whereDon.push(`created_at <= $${valuesDon.length}`); }
+    if (category) { valuesDon.push(category); whereDon.push(`category = $${valuesDon.length}`); }
+
+    const whereNeeds = [];
+    const valuesNeeds = [];
+    if (from) { valuesNeeds.push(from); whereNeeds.push(`created_at >= $${valuesNeeds.length}`); }
+    if (to) { valuesNeeds.push(to); whereNeeds.push(`created_at <= $${valuesNeeds.length}`); }
+    if (category) { valuesNeeds.push(category); whereNeeds.push(`category = $${valuesNeeds.length}`); }
+
+    const [
+        donationsByCategoryRes,
+        needsByCategoryRes,
+        beneficiariesByGovRes,
+        distributionsByStatusRes,
+        monthlyTrendRes
+    ] = await Promise.all([
+        // 1. Donations by category
+        pool.query(`
+            SELECT category,
+                   COUNT(*) AS count,
+                   COALESCE(SUM(quantity), 0) AS "totalUnits"
+            FROM donation_requests
+            ${whereDon.length ? `WHERE ${whereDon.join(" AND ")}` : ""}
+            GROUP BY category
+            ORDER BY count DESC
+        `, valuesDon),
+        // 2. Needs by category (anonymized aggregates)
+        pool.query(`
+            SELECT category,
+                   COUNT(*) AS count,
+                   COALESCE(SUM(quantity_requested), 0) AS "requestedUnits",
+                   COALESCE(SUM(quantity_fulfilled), 0) AS "fulfilledUnits"
+            FROM beneficiary_needs
+            ${whereNeeds.length ? `WHERE ${whereNeeds.join(" AND ")}` : ""}
+            GROUP BY category
+            ORDER BY count DESC
+        `, valuesNeeds),
+        // 3. Beneficiaries by governorate (Strictly privacy-safe: governorate + count only, NO PII)
+        pool.query(`
+            SELECT COALESCE(NULLIF(trim(governorate), ''), 'غير محدد') AS governorate,
+                   COUNT(*) AS count
+            FROM beneficiary_profiles
+            GROUP BY governorate
+            ORDER BY count DESC
+        `),
+        // 4. Distributions by status
+        pool.query(`
+            SELECT status, COUNT(*) AS count
+            FROM distributions
+            GROUP BY status
+            ORDER BY count DESC
+        `),
+        // 5. Monthly trend over the past 6 months
+        pool.query(`
+            SELECT TO_CHAR(d.created_at, 'YYYY-MM') AS month,
+                   COUNT(*) AS count
+            FROM distributions d
+            WHERE d.created_at >= NOW() - INTERVAL '6 months'
+            GROUP BY month
+            ORDER BY month ASC
+        `)
+    ]);
+
+    return {
+        donationsByCategory: donationsByCategoryRes.rows.map(r => ({
+            category: r.category,
+            count: Number(r.count),
+            totalUnits: Number(r.totalUnits)
+        })),
+        needsByCategory: needsByCategoryRes.rows.map(r => ({
+            category: r.category,
+            count: Number(r.count),
+            requestedUnits: Number(r.requestedUnits),
+            fulfilledUnits: Number(r.fulfilledUnits)
+        })),
+        beneficiariesByGovernorate: beneficiariesByGovRes.rows.map(r => ({
+            governorate: r.governorate,
+            count: Number(r.count)
+        })),
+        distributionsByStatus: distributionsByStatusRes.rows.map(r => ({
+            status: r.status,
+            count: Number(r.count)
+        })),
+        monthlyTrend: monthlyTrendRes.rows.map(r => ({
+            month: r.month,
+            count: Number(r.count)
+        }))
+    };
+}
+
+export async function getOperationalNotifications() {
+    const notifications = [];
+
+    // 1. Low stock alerts
+    const lowStock = await pool.query(`
+        SELECT id, name, category, quantity_available AS "quantityAvailable",
+               low_stock_threshold AS "lowStockThreshold", unit, warehouse
+        FROM inventory_items
+        WHERE status = 'low_stock' OR (quantity_available <= low_stock_threshold AND status = 'available')
+        ORDER BY quantity_available ASC
+        LIMIT 5
+    `);
+    for (const item of lowStock.rows) {
+        notifications.push({
+            id: `low_stock_${item.id}`,
+            type: "warning",
+            category: "inventory",
+            title: "تنبيه انخفاض مخزون",
+            message: `الصنف «${item.name}» شارف على النفاد (المتاح: ${item.quantityAvailable} ${item.unit || "وحدة"} في ${item.warehouse || "المخزن"})`,
+            link: "/inventory",
+            timestamp: new Date().toISOString()
+        });
+    }
+
+    // 2. Urgent beneficiary needs
+    const urgentNeeds = await pool.query(`
+        SELECT n.id, n.title, n.category, n.quantity_requested AS "quantityRequested", n.unit,
+               COALESCE(NULLIF(u.full_name, ''), NULLIF(u.name, ''), u.email) AS "beneficiaryName"
+        FROM beneficiary_needs n
+        JOIN beneficiary_profiles bp ON bp.id = n.beneficiary_id
+        JOIN users u ON u.id = bp.user_id
+        WHERE n.status IN ('open', 'partially_fulfilled') AND n.priority = 'urgent'
+        ORDER BY n.created_at DESC
+        LIMIT 4
+    `);
+    for (const need of urgentNeeds.rows) {
+        notifications.push({
+            id: `urgent_need_${need.id}`,
+            type: "urgent",
+            category: "needs",
+            title: "احتياج عاجل لمستفيد",
+            message: `احتياج عاجل للمستفيد (${need.beneficiaryName}): «${need.title}» مطلوب ${need.quantityRequested} ${need.unit || ""}`,
+            link: "/verification",
+            timestamp: new Date().toISOString()
+        });
+    }
+
+    // 3. Pending/planned distributions
+    const pendingDists = await pool.query(`
+        SELECT d.id, d.reference_code AS "referenceCode", d.scheduled_at AS "scheduledAt",
+               COALESCE(NULLIF(u.full_name, ''), NULLIF(u.name, ''), u.email) AS "beneficiaryName"
+        FROM distributions d
+        JOIN beneficiary_profiles bp ON bp.id = d.beneficiary_id
+        JOIN users u ON u.id = bp.user_id
+        WHERE d.status IN ('planned', 'in_progress')
+        ORDER BY d.created_at DESC
+        LIMIT 3
+    `);
+    for (const dist of pendingDists.rows) {
+        notifications.push({
+            id: `dist_${dist.id}`,
+            type: "info",
+            category: "distributions",
+            title: "أمر توزيع قيد الانتظار",
+            message: `التوزيع ${dist.referenceCode || `#${dist.id}`} مخصص للمستفيد (${dist.beneficiaryName}) بانتظار التسليم`,
+            link: "/distributions",
+            timestamp: new Date().toISOString()
+        });
+    }
+
+    // 4. Pending verifications
+    const pendingBens = await pool.query(`
+        SELECT COUNT(*) AS count
+        FROM beneficiary_profiles
+        WHERE verification_status = 'pending'
+    `);
+    const pendingCount = Number(pendingBens.rows[0]?.count || 0);
+    if (pendingCount > 0) {
+        notifications.push({
+            id: `pending_bens_count`,
+            type: "info",
+            category: "beneficiaries",
+            title: "طلبات مستفيدين بانتظار الاعتماد",
+            message: `يوجد ${pendingCount} طلب تسجيل مستفيد جديد بحاجة إلى المراجعة والتحقق`,
+            link: "/beneficiaries",
+            timestamp: new Date().toISOString()
+        });
+    }
+
+    return {
+        unreadCount: notifications.length,
+        notifications
+    };
+}
+
+
 
 

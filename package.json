@@ -7,7 +7,7 @@
   "scripts": {
     "start": "node server/app.js",
     "dev": "node --watch server/app.js",
-    "test": "node --test server/auth-protected-routes.test.js && node --test server/site-audit.test.js && node --test server/production-readiness.test.js && node --test server/beneficiaries.test.js && node --test server/user-roles.test.js && node --test server/recommendations-verification.test.js && node --test server/distributions.test.js && node --test server/ai-extraction.test.js"
+    "test": "node --test server/auth-protected-routes.test.js && node --test server/site-audit.test.js && node --test server/production-readiness.test.js && node --test server/beneficiaries.test.js && node --test server/user-roles.test.js && node --test server/recommendations-verification.test.js && node --test server/distributions.test.js && node --test server/ai-extraction.test.js && node --test server/dashboard-reports.test.js"
   },
   "dependencies": {
     "dotenv": "^17.4.2",

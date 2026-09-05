@@ -88,7 +88,7 @@
 
 .dashboard-kpis {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
     gap: 18px;
     margin-bottom: 24px;
 }
@@ -103,22 +103,36 @@
     border-radius: var(--radius-lg);
     background: var(--surface);
     box-shadow: var(--shadow);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.dashboard-kpi:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
 }
 
 .dashboard-kpi div {
     min-width: 0;
     display: grid;
-    gap: 4px;
+    gap: 3px;
 }
 
 .dashboard-kpi strong {
     color: var(--text-dark);
-    font-size: clamp(1.45rem, 3vw, 2rem);
+    font-size: clamp(1.4rem, 2.5vw, 1.85rem);
+    line-height: 1.1;
 }
 
 .dashboard-kpi span:not(.kpi-icon) {
+    color: var(--text-dark);
+    font-size: .88rem;
+    font-weight: 700;
+}
+
+.kpi-subtext {
     color: var(--text-muted);
-    font-size: .85rem;
+    font-size: .75rem;
+    font-weight: 400;
 }
 
 .kpi-icon {
@@ -136,6 +150,11 @@
     color: var(--green);
 }
 
+.kpi-mint {
+    background: #e2f7ef;
+    color: #0f7a59;
+}
+
 .kpi-blue {
     background: var(--blue-tint);
     color: var(--blue);
@@ -149,6 +168,81 @@
 .kpi-coral {
     background: #ffe8e4;
     color: #d65f50;
+}
+
+/* Dashboard Tabs Navigation */
+.dashboard-tabs-nav {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 2px solid var(--border);
+    margin-bottom: 24px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+}
+
+.dash-tab-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    color: var(--text-muted);
+    font-family: inherit;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    margin-bottom: -2px;
+}
+
+.dash-tab-btn:hover {
+    color: var(--green);
+}
+
+.dash-tab-btn.active {
+    color: var(--green-dark);
+    border-bottom-color: var(--green);
+}
+
+.dash-tab-pane {
+    display: block;
+}
+
+.dash-tab-pane[hidden] {
+    display: none;
+}
+
+/* Report bar lists */
+.report-bar-list {
+    display: grid;
+    gap: 14px;
+    padding-top: 10px;
+}
+
+.report-bar-row {
+    display: grid;
+    gap: 6px;
+}
+
+.report-bar-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.86rem;
+    color: var(--text-dark);
+}
+
+.report-bar-label strong {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+}
+
+.print-only-header {
+    display: none;
 }
 
 .dashboard-grid {
@@ -434,5 +528,58 @@
 @media (prefers-reduced-motion: reduce) {
     .chart-fill {
         transition: none;
+    }
+}
+
+/* Print Stylesheet for Reports Export */
+@media print {
+    .navbar,
+    .footer,
+    .dashboard-tabs-nav,
+    .dashboard-head-actions,
+    .dashboard-filters,
+    .skip-link,
+    .btn,
+    .dashboard-refresh {
+        display: none !important;
+    }
+
+    body, .dashboard-page, .dashboard-main {
+        background: #fff !important;
+        color: #000 !important;
+        padding: 0 !important;
+    }
+
+    .dashboard-container {
+        max-width: 100% !important;
+        padding: 0 !important;
+    }
+
+    .print-only-header {
+        display: block !important;
+        margin-bottom: 24px;
+        padding-bottom: 12px;
+        border-bottom: 2px solid #000;
+    }
+
+    .print-only-header h2 {
+        font-size: 1.5rem;
+        margin: 0 0 6px 0;
+    }
+
+    .dash-tab-pane {
+        display: block !important;
+    }
+
+    .dashboard-card {
+        box-shadow: none !important;
+        border: 1px solid #ccc !important;
+        break-inside: avoid;
+        margin-bottom: 20px;
+    }
+
+    .dashboard-kpi {
+        box-shadow: none !important;
+        border: 1px solid #ccc !important;
     }
 }

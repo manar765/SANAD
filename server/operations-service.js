@@ -21,6 +21,9 @@ import {
     getDistributionById,
     cancelDistribution,
     getDistributionStats,
+    getDashboardSummary,
+    getOperationalReports,
+    getOperationalNotifications,
 } from "./operations-repository.js";
 import {
     evaluateBeneficiaryRules,
@@ -357,6 +360,9 @@ export {
     createDistributionService as addDistribution,
     cancelDistributionService as changeDistributionStatus,
     getDistributionDetailService as getDistribution,
+    getDashboardSummary,
+    getOperationalReports,
+    getOperationalNotifications,
 };
 
 
