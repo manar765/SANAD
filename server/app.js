@@ -495,19 +495,19 @@ function isValidDonationInput(input) {
 const operationError = (error, res) => {
   const messages = {
     INVALID_INVENTORY: "يرجى تقديم تفاصيل صحيحة للمخزون.",
-    INVALID_INVENTORY_STATUS: "Please provide a valid inventory status.",
-    INVALID_NEED: "Please provide valid beneficiary-need details.",
-    INVALID_NEED_PRIORITY: "Please provide a valid need priority.",
-    INVALID_NEED_STATUS: "Please provide a valid need status.",
-    INVALID_DISTRIBUTION: "Please provide valid distribution details.",
-    DUPLICATE_DISTRIBUTION_ITEM: "Each inventory item may appear only once in a distribution.",
-    INVALID_DISTRIBUTION_STATUS: "Please provide a valid distribution status.",
-    INVALID_DISTRIBUTION_TRANSITION: "This distribution can no longer change status.",
-    INSUFFICIENT_INVENTORY: "The requested quantity is not available in inventory.",
+    INVALID_INVENTORY_STATUS: "يرجى تقديم حالة مخزون صحيحة.",
+    INVALID_NEED: "يرجى تقديم تفاصيل صحيحة لاحتياجات المستفيد.",
+    INVALID_NEED_PRIORITY: "يرجى تقديم أولوية احتياجات صحيحة.",
+    INVALID_NEED_STATUS: "يرجى تقديم حالة احتياجات صحيحة.",
+    INVALID_DISTRIBUTION: "يرجى تقديم تفاصيل توزيع صحيحة.",
+    DUPLICATE_DISTRIBUTION_ITEM: "يجب أن يظهر كل عنصر من عناصر المخزون مرة واحدة فقط في التوزيع.",
+    INVALID_DISTRIBUTION_STATUS: "يرجى تقديم حالة توزيع صحيحة.",
+    INVALID_DISTRIBUTION_TRANSITION: "لا يمكن تغيير حالة هذا التوزيع بعد الآن.",
+    INSUFFICIENT_INVENTORY: "الكمية المطلوبة غير متوفرة في المخزون.",
     CANNOT_REVERT_DISTRIBUTED_DONATION: "لا يمكن إلغاء أو تعديل تبرع تم توزيع أجزاء منه في المخزون بالفعل.",
-    INVALID_BENEFICIARY_NAME: "Please provide a valid beneficiary name.",
-    INVALID_VERIFICATION_STATUS: "Please provide a valid verification status.",
-    BENEFICIARY_NOT_FOUND: "Beneficiary profile not found.",
+    INVALID_BENEFICIARY_NAME: "يرجى تقديم اسم مستفيد صحيح.",
+    INVALID_VERIFICATION_STATUS: "يرجى تقديم حالة تحقق صحيحة.",
+    BENEFICIARY_NOT_FOUND: "لم يتم العثور على ملف المستفيد.",
   };
   if (error.code === "INSUFFICIENT_STOCK") {
     return res.status(409).json({ message: error.message, details: error.details });
@@ -519,7 +519,7 @@ const operationError = (error, res) => {
   const message = messages[error.message];
   if (message) return res.status(["INSUFFICIENT_INVENTORY", "CANNOT_REVERT_DISTRIBUTED_DONATION"].includes(error.message) ? 409 : 400).json({ message });
   console.error("Operations API failed:", error);
-  return res.status(503).json({ message: "The requested operation is temporarily unavailable." });
+  return res.status(503).json({ message: "العملية المطلوبة غير متاحة مؤقتاً." });
 };
 
 app.get("/api/inventory", requireAuth, async (req, res) => {
@@ -536,10 +536,10 @@ app.post("/api/admin/inventory", requireAdmin, requireCsrf, async (req, res) => 
 
 app.patch("/api/admin/inventory/:id", requireAdmin, requireCsrf, async (req, res) => {
   const id = Number.parseInt(req.params.id, 10);
-  if (!Number.isInteger(id)) return res.status(400).json({ message: "Invalid inventory item." });
+  if (!Number.isInteger(id)) return res.status(400).json({ message: "يرجى تقديم عنصر مخزون صحيح." });
   try {
     const item = await editInventoryItem(id, req.body);
-    if (!item) return res.status(404).json({ message: "Inventory item not found." });
+    if (!item) return res.status(404).json({ message: "لم يتم العثور على عنصر المخزون." });
     await recordAuditEvent(req, { userId: req.user.id, action: "inventory_item_updated", metadata: { inventoryItemId: id } });
     return res.json({ item });
   } catch (error) { return operationError(error, res); }
@@ -558,9 +558,9 @@ app.get("/api/beneficiaries/:id", requireAuth, async (req, res) => {
   try {
     const targetId = req.params.id;
     const beneficiary = await getBeneficiary(targetId);
-    if (!beneficiary) return res.status(404).json({ message: "Beneficiary profile not found." });
+    if (!beneficiary) return res.status(404).json({ message: "لم يتم العثور على ملف المستفيد." });
     if (req.user.role !== "admin" && req.user.id !== beneficiary.userId) {
-      return res.status(403).json({ message: "You are not authorized to view this beneficiary profile." });
+      return res.status(403).json({ message: "غير مصرح لك بعرض هذا الملف الشخصي للمستفيد." });
     }
     return res.json({ beneficiary });
   } catch (error) {
@@ -584,10 +584,10 @@ app.post("/api/beneficiaries", requireAdmin, requireCsrf, async (req, res) => {
 
 app.patch("/api/beneficiaries/:id", requireAdmin, requireCsrf, async (req, res) => {
   const id = Number.parseInt(req.params.id, 10);
-  if (!Number.isInteger(id)) return res.status(400).json({ message: "Invalid beneficiary ID." });
+  if (!Number.isInteger(id)) return res.status(400).json({ message: "يرجى تقديم رقم مستفيد صحيح." });
   try {
     const updated = await editBeneficiary(id, req.body, req.user.id);
-    if (!updated) return res.status(404).json({ message: "Beneficiary profile not found." });
+    if (!updated) return res.status(404).json({ message: "لم يتم العثور على ملف المستفيد." });
     await recordAuditEvent(req, {
       userId: req.user.id,
       action: "beneficiary_updated",
@@ -601,14 +601,14 @@ app.patch("/api/beneficiaries/:id", requireAdmin, requireCsrf, async (req, res) 
 
 app.patch("/api/beneficiaries/:id/verification", requireAdmin, requireCsrf, async (req, res) => {
   const id = Number.parseInt(req.params.id, 10);
-  if (!Number.isInteger(id)) return res.status(400).json({ message: "Invalid beneficiary ID." });
+  if (!Number.isInteger(id)) return res.status(400).json({ message: "يرجى تقديم رقم مستفيد صحيح." });
   const status = String(req.body?.status || "").trim();
   if (!["pending", "verified", "rejected", "needs_review"].includes(status)) {
-    return res.status(400).json({ message: "Invalid verification status." });
+    return res.status(400).json({ message: "يرجى تقديم حالة تحقق صحيحة." });
   }
   try {
     const updated = await editBeneficiary(id, { verificationStatus: status, notes: req.body?.notes }, req.user.id);
-    if (!updated) return res.status(404).json({ message: "Beneficiary profile not found." });
+    if (!updated) return res.status(404).json({ message: "لم يتم العثور على ملف المستفيد." });
     await recordAuditEvent(req, {
       userId: req.user.id,
       action: "beneficiary_verification_changed",
@@ -622,10 +622,10 @@ app.patch("/api/beneficiaries/:id/verification", requireAdmin, requireCsrf, asyn
 
 app.get("/api/beneficiaries/:id/recommendation", requireAdmin, async (req, res) => {
   const id = Number.parseInt(req.params.id, 10);
-  if (!Number.isInteger(id)) return res.status(400).json({ message: "Invalid beneficiary ID." });
+  if (!Number.isInteger(id)) return res.status(400).json({ message: "يرجى تقديم رقم مستفيد صحيح." });
   try {
     const recommendation = await getBeneficiaryRecommendation(id, req.user.id, false);
-    if (!recommendation) return res.status(404).json({ message: "Beneficiary profile not found." });
+    if (!recommendation) return res.status(404).json({ message: "لم يتم العثور على ملف المستفيد." });
     return res.json({ recommendation });
   } catch (error) {
     return operationError(error, res);
@@ -634,7 +634,7 @@ app.get("/api/beneficiaries/:id/recommendation", requireAdmin, async (req, res) 
 
 app.post("/api/beneficiaries/:id/recommendation/refresh", requireAdmin, requireCsrf, async (req, res) => {
   const id = Number.parseInt(req.params.id, 10);
-  if (!Number.isInteger(id)) return res.status(400).json({ message: "Invalid beneficiary ID." });
+  if (!Number.isInteger(id)) return res.status(400).json({ message: "يرجى تقديم رقم مستفيد صحيح." });
   try {
     const recommendation = await evaluateAndSaveRecommendation(id, req.user.id);
     await recordAuditEvent(req, {
@@ -661,10 +661,10 @@ app.get("/api/verification/search", requireAdmin, async (req, res) => {
 
 app.get("/api/verification/:id", requireAdmin, async (req, res) => {
   const id = Number.parseInt(req.params.id, 10);
-  if (!Number.isInteger(id)) return res.status(400).json({ message: "Invalid beneficiary ID." });
+  if (!Number.isInteger(id)) return res.status(400).json({ message: "يرجى تقديم رقم مستفيد صحيح." });
   try {
     const verification = await getBeneficiaryVerification(id, req.user.id);
-    if (!verification) return res.status(404).json({ message: "Beneficiary profile not found." });
+    if (!verification) return res.status(404).json({ message: "لم يتم العثور على ملف المستفيد." });
     return res.json({ verification });
   } catch (error) {
     return operationError(error, res);
@@ -674,22 +674,22 @@ app.get("/api/verification/:id", requireAdmin, async (req, res) => {
 app.get("/api/beneficiary/needs", requireAuth, async (req, res) => {
   try {
     if (req.user.role === "admin") return res.json({ needs: await getNeeds(req.query) });
-    if (req.user.role !== "beneficiary") return res.status(403).json({ message: "Only beneficiaries can access beneficiary needs." });
+    if (req.user.role !== "beneficiary") return res.status(403).json({ message: "المستفيدين فقط هم من يمكنهم الوصول إلى احتياجات المستفيدين." });
     const beneficiaryId = await getBeneficiaryProfileId(req.user.id);
-    if (!beneficiaryId) return res.status(404).json({ message: "Beneficiary profile not found." });
+    if (!beneficiaryId) return res.status(404).json({ message: "لم يتم العثور على ملف المستفيد." });
     return res.json({ needs: await getNeeds({ ...req.query, beneficiaryId }) });
   } catch (error) { return operationError(error, res); }
 });
 
 app.post("/api/beneficiary/needs", requireAuth, requireCsrf, async (req, res) => {
   if (req.user.role !== "beneficiary" && req.user.role !== "admin") {
-    return res.status(403).json({ message: "Only beneficiaries or administrators can create needs." });
+    return res.status(403).json({ message: "المستفيدين فقط هم من يمكنهم إنشاء احتياجات." });
   }
   try {
     const beneficiaryId = req.user.role === "admin"
       ? (Number(req.body?.beneficiaryId) || null)
       : await getBeneficiaryProfileId(req.user.id);
-    if (!beneficiaryId) return res.status(404).json({ message: "Beneficiary profile not found." });
+    if (!beneficiaryId) return res.status(404).json({ message: "لم يتم العثور على ملف المستفيد." });
     const need = await addNeed(req.body, beneficiaryId);
     await recordAuditEvent(req, { userId: req.user.id, action: "beneficiary_need_created", metadata: { needId: need.id } });
     return res.status(201).json({ need });
@@ -698,12 +698,12 @@ app.post("/api/beneficiary/needs", requireAuth, requireCsrf, async (req, res) =>
 
 app.patch("/api/beneficiary/needs/:id", requireAuth, requireCsrf, async (req, res) => {
   const id = Number.parseInt(req.params.id, 10);
-  if (!Number.isInteger(id)) return res.status(400).json({ message: "Invalid beneficiary need." });
+  if (!Number.isInteger(id)) return res.status(400).json({ message: "يرجى تقديم حاجة مستفيد صحيحة." });
   try {
     const beneficiaryId = req.user.role === "admin" ? null : await getBeneficiaryProfileId(req.user.id);
-    if (req.user.role !== "admin" && (!beneficiaryId || req.user.role !== "beneficiary")) return res.status(403).json({ message: "You cannot update this need." });
+    if (req.user.role !== "admin" && (!beneficiaryId || req.user.role !== "beneficiary")) return res.status(403).json({ message: "غير مصرح لك بتحديث هذا الاحتياج." });
     const need = await editNeed(id, req.body, beneficiaryId);
-    if (!need) return res.status(404).json({ message: "Beneficiary need not found." });
+    if (!need) return res.status(404).json({ message: "لم يتم العثور على حاجة المستفيد." });
     await recordAuditEvent(req, { userId: req.user.id, action: "beneficiary_need_updated", metadata: { needId: id } });
     return res.json({ need });
   } catch (error) { return operationError(error, res); }
@@ -724,9 +724,9 @@ app.get("/api/distributions", requireAuth, async (req, res) => {
       const result = await getDistributions(req.query);
       return res.json(result);
     }
-    if (req.user.role !== "beneficiary") return res.status(403).json({ message: "Only beneficiaries can access distributions." });
+    if (req.user.role !== "beneficiary") return res.status(403).json({ message: "المستفيدين فقط هم من يمكنهم الوصول إلى التوزيعات." });
     const beneficiaryId = await getBeneficiaryProfileId(req.user.id);
-    if (!beneficiaryId) return res.status(404).json({ message: "Beneficiary profile not found." });
+    if (!beneficiaryId) return res.status(404).json({ message: "لم يتم العثور على ملف المستفيد." });
     const result = await getDistributions({ ...req.query, beneficiaryId });
     return res.json(result);
   } catch (error) { return operationError(error, res); }
@@ -735,11 +735,11 @@ app.get("/api/distributions", requireAuth, async (req, res) => {
 app.get("/api/distributions/:id", requireAuth, async (req, res) => {
   try {
     const distribution = await getDistribution(req.params.id);
-    if (!distribution) return res.status(404).json({ message: "Distribution not found." });
+    if (!distribution) return res.status(404).json({ message: "لم يتم العثور على التوزيع." });
     if (req.user.role !== "admin") {
       const beneficiaryId = await getBeneficiaryProfileId(req.user.id);
       if (!beneficiaryId || beneficiaryId !== distribution.beneficiaryId) {
-        return res.status(403).json({ message: "You are not authorized to view this distribution." });
+        return res.status(403).json({ message: "غير مصرح لك بعرض هذا التوزيع." });
       }
     }
     return res.json({ distribution });
@@ -760,7 +760,7 @@ app.post(["/api/distributions", "/api/admin/distributions"], requireAdmin, requi
 
 app.post("/api/distributions/:id/cancel", requireAdmin, requireCsrf, async (req, res) => {
   const id = Number.parseInt(req.params.id, 10);
-  if (!Number.isInteger(id)) return res.status(400).json({ message: "Invalid distribution ID." });
+  if (!Number.isInteger(id)) return res.status(400).json({ message: "يرجى تقديم رقم توزيع صحيح." });
   try {
     const distribution = await changeDistributionStatus(id, req.user.id, req.body?.reason || "");
     return res.json({ distribution, message: "تم إلغاء التوزيع بنجاح." });
@@ -769,12 +769,12 @@ app.post("/api/distributions/:id/cancel", requireAdmin, requireCsrf, async (req,
 
 app.patch("/api/admin/distributions/:id/status", requireAdmin, requireCsrf, async (req, res) => {
   const id = Number.parseInt(req.params.id, 10);
-  if (!Number.isInteger(id)) return res.status(400).json({ message: "Invalid distribution." });
+  if (!Number.isInteger(id)) return res.status(400).json({ message: "يرجى تقديم رقم توزيع صحيح." });
   try {
     const updated = await changeDistributionStatus(id, req.user.id, String(req.body?.status || ""));
-    if (updated === null) return res.status(404).json({ message: "Distribution not found." });
+    if (updated === null) return res.status(404).json({ message: "لم يتم العثور على التوزيع." });
     await recordAuditEvent(req, { userId: req.user.id, action: "distribution_status_changed", metadata: { distributionId: id, status: req.body?.status } });
-    return res.json({ message: "Distribution status updated." });
+    return res.json({ message: "تم تحديث حالة التوزيع." });
   } catch (error) { return operationError(error, res); }
 });
 
