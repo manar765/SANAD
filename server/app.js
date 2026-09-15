@@ -24,10 +24,12 @@ import {
   addNeed,
   approveOrRejectDonation,
   changeDistributionStatus,
+  createAssistanceRequestService,
   editBeneficiary,
   editInventoryItem,
   editNeed,
   evaluateAndSaveRecommendation,
+  getAssistanceRequestsService,
   getBeneficiaries,
   getBeneficiary,
   getBeneficiaryProfileId,
@@ -37,7 +39,9 @@ import {
   getDistributions,
   getDistributionStatsService,
   getInventory,
+  getMyAssistanceRequestsService,
   getNeeds,
+  reviewAssistanceRequestService,
   searchVerification,
   getDashboardSummary,
   getOperationalReports,
@@ -363,6 +367,7 @@ const pageRoutes = Object.freeze({
   "/beneficiaries": "beneficiaries",
   "/distributions": "distributions",
   "/verification": "verification",
+  "/request-assistance": "request-assistance",
 });
 
 const app = express();
@@ -458,6 +463,14 @@ const DONATION_STATUS_LABELS = Object.freeze({
   distributed: "تم التوزيع",
 });
 const DONATION_STATUSES = new Set(Object.keys(DONATION_STATUS_LABELS));
+
+const ASSISTANCE_STATUS_LABELS = Object.freeze({
+  pending: "قيد المراجعة",
+  approved: "تمت الموافقة",
+  rejected: "مرفوض",
+  fulfilled: "تم التنفيذ",
+});
+const ASSISTANCE_STATUSES = new Set(Object.keys(ASSISTANCE_STATUS_LABELS));
 
 function normalizeDonationText(value, maxLength) {
   return String(value || "").trim().replace(/\s+/g, " ").slice(0, maxLength);
@@ -841,7 +854,10 @@ app.get("/api/donations", requireAuth, async (req, res) => {
 
 app.post("/api/donations", requireAuth, requireCsrf, async (req, res) => {
   if (req.user.role !== "donor" || !req.user.id) {
-    return res.status(403).json({ message: "Only donors can submit donations." });
+    return res.status(403).json({
+      message: "لا يمكنك تسجيل تبرع لأن حسابك مسجل كمستفيد، وليس كمتبرع.",
+      code: "BENEFICIARY_DONATION_FORBIDDEN",
+    });
   }
   const input = donationInput(req.body);
   if (!isValidDonationInput(input)) {
@@ -918,6 +934,99 @@ app.patch("/api/admin/donations/:id/status", requireAdmin, requireCsrf, async (r
       },
     });
   } catch (error) {
+    return operationError(error, res);
+  }
+});
+
+// ============================================================================
+// Assistance Requests (طلب مساعدة) — beneficiary self-service requests
+// ============================================================================
+
+function mapAssistanceRequest(row) {
+  if (!row) return row;
+  return {
+    ...row,
+    referenceCode: row.referenceCode || `REQ-${String(row.id).padStart(4, "0")}`,
+    statusLabel: ASSISTANCE_STATUS_LABELS[row.status] || row.status,
+    date: row.createdAt ? new Date(row.createdAt).toLocaleDateString("ar-EG") : "—",
+    reviewedDate: row.reviewedAt ? new Date(row.reviewedAt).toLocaleDateString("ar-EG") : null,
+  };
+}
+
+app.get("/api/assistance-requests", requireAdmin, async (req, res) => {
+  try {
+    const requests = await getAssistanceRequestsService({
+      status: req.query?.status,
+      search: req.query?.q,
+    });
+    return res.json({ requests: requests.map(mapAssistanceRequest) });
+  } catch (error) {
+    return operationError(error, res);
+  }
+});
+
+app.get("/api/assistance-requests/my", requireAuth, async (req, res) => {
+  if (req.user.role !== "beneficiary") {
+    return res.status(403).json({ message: "المستفيدين فقط هم من يمكنهم إرسال طلبات المساعدة." });
+  }
+  try {
+    const requests = await getMyAssistanceRequestsService(req.user.id);
+    return res.json({ requests: requests.map(mapAssistanceRequest) });
+  } catch (error) {
+    return operationError(error, res);
+  }
+});
+
+app.post("/api/assistance-requests", requireAuth, requireCsrf, async (req, res) => {
+  if (req.user.role !== "beneficiary") {
+    return res.status(403).json({ message: "المستفيدين فقط هم من يمكنهم إرسال طلبات المساعدة." });
+  }
+  try {
+    const request = await createAssistanceRequestService(req.body, req.user.id);
+    await recordAuditEvent(req, {
+      userId: req.user.id,
+      action: "assistance_request_submitted",
+      metadata: { requestId: request.id, referenceCode: request.referenceCode },
+    });
+    return res.status(201).json({ request: mapAssistanceRequest(request) });
+  } catch (error) {
+    if (error.code === "DUPLICATE_ASSISTANCE_REQUEST") {
+      return res.status(error.statusCode || 409).json({
+        message: error.message,
+        code: error.code,
+        details: error.details,
+      });
+    }
+    if (error.code === "BENEFICIARY_PROFILE_NOT_FOUND" || error.code === "ASSISTANCE_USER_NOT_FOUND") {
+      return res.status(error.statusCode || 404).json({ message: error.message });
+    }
+    if (error.code === "INVALID_ASSISTANCE_REQUEST") {
+      return res.status(error.statusCode || 400).json({ message: error.message });
+    }
+    return operationError(error, res);
+  }
+});
+
+app.patch("/api/admin/assistance-requests/:id/status", requireAdmin, requireCsrf, async (req, res) => {
+  const requestId = Number.parseInt(req.params.id, 10);
+  if (!Number.isInteger(requestId)) return res.status(400).json({ message: "يرجى تقديم رقم طلب مساعدة صحيح." });
+  const status = String(req.body?.status || "").trim();
+  if (!ASSISTANCE_STATUSES.has(status) || status === "pending") {
+    return res.status(400).json({ message: "يرجى تقديم حالة صحيحة لطلب المساعدة." });
+  }
+  try {
+    const updated = await reviewAssistanceRequestService(requestId, status, req.user.id);
+    if (!updated) return res.status(404).json({ message: "لم يتم العثور على طلب المساعدة." });
+    await recordAuditEvent(req, {
+      userId: req.user.id,
+      action: "assistance_request_status_changed",
+      metadata: { requestId, status },
+    });
+    return res.json({ request: mapAssistanceRequest(updated), message: status === "approved" ? "تمت الموافقة على طلب المساعدة." : "تم تحديث حالة طلب المساعدة." });
+  } catch (error) {
+    if (error.code === "INVALID_ASSISTANCE_STATUS" || error.code === "INVALID_ASSISTANCE_TRANSITION") {
+      return res.status(error.statusCode || 400).json({ message: error.message });
+    }
     return operationError(error, res);
   }
 });
@@ -1480,7 +1589,7 @@ app.post("/api/auth/login", async (req, res) => {
     clearLoginFailures(attemptKey);
     const adminRecord = await pool.query("SELECT id FROM users WHERE email = $1", [email]).catch(() => null);
     const adminId = adminRecord?.rows?.[0]?.id || null;
-    await rotateSession(req, res, { id: adminId, role: "admin", email }, rememberMe);
+    await rotateSession(req, res, { id: adminId, role: "admin", email, name: "المشرف" }, rememberMe);
     await recordAuditEvent(req, { userId: adminId, action: "login_success", metadata: { role: "admin" } });
     return res.json({ role: "admin" });
   }
@@ -1549,15 +1658,31 @@ const protectedPages = new Set([
   "/beneficiaries",
   "/distributions",
   "/verification",
+  "/request-assistance",
 ]);
+
+function requireBeneficiary(req, res, next) {
+  return requireAuth(req, res, () => {
+    if (req.user.role !== "beneficiary") {
+      if (req.path.startsWith("/api/"))
+        return res.status(403).json({ message: "صفحة طلب المساعدة متاحة للمستفيدين فقط." });
+      return res.status(403).render("errors/server-error", {
+        message: "صفحة طلب المساعدة متاحة للمستفيدين فقط.",
+      });
+    }
+    return next();
+  });
+}
 
 for (const [route, page] of Object.entries(pageRoutes)) {
   const guard =
-    (route === "/admin-requests" || route === "/verification")
+    route === "/admin-requests" || route === "/verification"
       ? requireAdmin
-      : protectedPages.has(route)
-        ? requireAuth
-        : (_req, _res, next) => next();
+      : route === "/request-assistance"
+        ? requireBeneficiary
+        : protectedPages.has(route)
+          ? requireAuth
+          : (_req, _res, next) => next();
   app.get(route, guard, (_req, res, next) => {
     res.render(`pages/${page}`, { currentPath: route }, (error, html) => {
       if (error) return next(error);

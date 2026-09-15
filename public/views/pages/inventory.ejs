@@ -23,16 +23,16 @@
         <link rel="stylesheet" href="/CSS/style.css" />
     </head>
 
-    <body class="inventory-page">
+    <body class="inventory-page admin-page">
         <a class="skip-link" href="#main-content">تخطي إلى المحتوى الرئيسي</a>
 
         <!-- scroll progress indicator -->
         <div class="progress-bar" id="progressBar" aria-hidden="true"></div>
 
         <!-- ============================================================
-         NAVBAR
+         ADMIN SIDEBAR
     ============================================================ -->
-        <%- include('../partials/navbar', { activePath: '/inventory' }) %>
+        <%- include('../partials/admin-sidebar') %>
 
         <main id="main-content" class="inventory-main">
             <div class="inventory-container">
@@ -295,6 +295,9 @@
             </div>
         </div>
 
+        </div>
+        </div>
+
         <!-- ============================================================
          FOOTER
     ============================================================ -->
@@ -316,6 +319,7 @@
         <script src="/JS/ui-states.js"></script>
         <script src="/JS/inventory.js"></script>
         <script src="/JS/logout.js"></script>
+        <script src="/JS/admin-sidebar.js"></script>
 
         <script src="/JS/preferences.js"></script>
     </body>

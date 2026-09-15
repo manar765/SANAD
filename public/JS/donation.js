@@ -378,6 +378,42 @@
 
     if (!modal || !backdrop) return;
 
+    const BENEFICIARY_BLOCK_MESSAGE = "لا يمكنك تسجيل تبرع لأن حسابك مسجل كمستفيد، وليس كمتبرع.";
+
+    function getCurrentRoleSync() {
+        try {
+            const stored = JSON.parse(localStorage.getItem("sanadUser") || "null");
+            if (stored?.role) return stored.role;
+        } catch { }
+        return null;
+    }
+
+    let currentRole = getCurrentRoleSync();
+
+    async function refreshCurrentRole() {
+        try {
+            const response = await fetch("/api/auth/me", {
+                credentials: "same-origin",
+                headers: { Accept: "application/json" },
+            });
+            if (!response.ok) throw new Error("UNAUTHENTICATED");
+            const payload = await response.json();
+            const user = payload.user || {};
+            currentRole = user.role || null;
+            localStorage.setItem("sanadUser", JSON.stringify({
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+            }));
+        } catch {
+            currentRole = null;
+        }
+        return currentRole;
+    }
+
+    refreshCurrentRole();
+
     function openModal() {
         backdrop.classList.add("active");
         backdrop.setAttribute("aria-hidden", "false");
@@ -405,6 +441,10 @@
     if (openBtn) {
         openBtn.addEventListener("click", function (e) {
             e.preventDefault();
+            if (currentRole === "beneficiary") {
+                showToast(BENEFICIARY_BLOCK_MESSAGE);
+                return;
+            }
             openModal();
         });
     }
@@ -458,6 +498,19 @@
     if (form) {
         form.addEventListener("submit", async function (e) {
             e.preventDefault();
+
+            if (currentRole === "beneficiary") {
+                showToast(BENEFICIARY_BLOCK_MESSAGE);
+                return;
+            }
+
+            if (!currentRole) {
+                await refreshCurrentRole();
+                if (currentRole === "beneficiary") {
+                    showToast(BENEFICIARY_BLOCK_MESSAGE);
+                    return;
+                }
+            }
 
             if (!nameInput || !nameInput.value.trim()) {
                 if (nameInput) nameInput.focus();

@@ -296,6 +296,27 @@
   margin-top: 0.15rem;
 }
 
+/* Needs sourced from an assistance request */
+.ben-need-title-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.ben-request-source-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  width: fit-content;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.15rem 0.5rem;
+  border-radius: 9999px;
+  background-color: #ecfdf5;
+  color: #059669;
+  white-space: nowrap;
+}
+
 /* Status Badges */
 .ben-badge {
   display: inline-flex;
@@ -650,8 +671,67 @@
   background-color: #fafbfc;
 }
 
+/* Verification / Beneficiaries filter bar (shared with verification page) */
+.beneficiaries-filter-card {
+  background: #ffffff;
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 1rem;
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.beneficiaries-filter-grid {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 1rem;
+}
+
+.beneficiaries-filter-grid .filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  flex: 1;
+  min-width: 220px;
+}
+
+.beneficiaries-filter-grid .filter-group label,
+.beneficiaries-filter-grid .filter-group > span,
+.beneficiaries-filter-grid .filter-group .filter-label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-muted, #6f7973);
+}
+
+.beneficiaries-filter-grid .filter-group .form-input {
+  height: 42px;
+  width: 100%;
+}
+
+.beneficiaries-filter-grid .filter-actions-group {
+  flex: 0 0 auto;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
+  .beneficiaries-filter-grid {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .beneficiaries-filter-grid .filter-group,
+  .beneficiaries-filter-grid .filter-actions-group {
+    width: 100%;
+    min-width: 0;
+    flex: none;
+  }
+
+  .beneficiaries-filter-grid .filter-actions-group .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
   .beneficiaries-controls {
     flex-direction: column;
     align-items: stretch;
@@ -673,6 +753,119 @@
 
   .ben-drawer-panel {
     max-width: 100%;
+  }
+
+  .verification-cases-list {
+    max-height: 50vh;
+  }
+}
+
+/* Small tablets & phones */
+@media (max-width: 576px) {
+  .beneficiaries-main {
+    padding-top: 1.5rem;
+    padding-bottom: 3rem;
+  }
+
+  .beneficiaries-container,
+  .beneficiaries-card-header {
+    padding-inline: 0.875rem;
+  }
+
+  .beneficiaries-header-text h1 {
+    font-size: 1.5rem;
+  }
+
+  .beneficiaries-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .beneficiaries-header-actions {
+    width: 100%;
+  }
+
+  .beneficiaries-header-actions .btn {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .beneficiaries-kpis {
+    gap: 0.875rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .beneficiaries-kpi-card {
+    padding: 1rem;
+    gap: 0.875rem;
+  }
+
+  .beneficiaries-kpi-icon {
+    width: 42px;
+    height: 42px;
+    font-size: 1.1rem;
+  }
+
+  .beneficiaries-table {
+    min-width: 720px;
+  }
+
+  /* Drawer tabs scroll horizontally */
+  .ben-drawer-tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .ben-drawer-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .ben-tab-btn {
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .ben-drawer-body,
+  .ben-modal-body {
+    padding: 1.125rem;
+  }
+
+  .ben-verify-actions {
+    flex-direction: column;
+  }
+
+  .ben-verify-actions .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Advisory & warning banners stack */
+  .rec-advisory-banner {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .rec-header-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .rec-meta-box {
+    align-items: flex-start;
+  }
+
+  .dos-id-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .dos-priority-box {
+    align-items: flex-start;
+  }
+
+  .verification-placeholder {
+    padding: 2.5rem 1.25rem;
   }
 }
 
@@ -876,7 +1069,7 @@
 /* Verification Dedicated Page Layout */
 .verification-workspace {
   display: grid;
-  grid-template-columns: 360px 1fr;
+  grid-template-columns: 360px minmax(0, 1fr);
   gap: 1.5rem;
   align-items: start;
 }
@@ -1221,5 +1414,140 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+/* ============================================================
+   Phase: Verification Page — Responsive Hardening
+   Prevent horizontal overflow on any screen size.
+   ============================================================ */
+.verification-cases-sidebar,
+.verification-dossier-panel {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* Advisory banner: let content & actions wrap instead of overflowing */
+.rec-advisory-banner {
+  flex-wrap: wrap;
+}
+
+.rec-advisory-content {
+  min-width: 0;
+}
+
+.rec-advisory-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  min-width: 0;
+}
+
+/* Long English / numeric / code values must never push the layout out */
+.dos-name,
+.dos-tag,
+.ben-info-val,
+.case-card-name,
+.case-card-info,
+.rec-reasons-list li,
+.rec-warning-body p {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* Table cells: allow long unbroken content (phones, IDs, codes) to wrap */
+.beneficiaries-table th,
+.beneficiaries-table td {
+  overflow-wrap: anywhere;
+}
+
+/* Tablets & medium screens: stack dossier header and banners */
+@media (max-width: 768px) {
+  .dos-id-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .dos-priority-box {
+    align-items: flex-start;
+  }
+
+  .rec-card {
+    padding: 1rem;
+  }
+
+  .rec-block-title {
+    font-size: 0.95rem;
+  }
+
+  .rec-advisory-banner {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .rec-advisory-actions {
+    justify-content: stretch;
+  }
+
+  .rec-advisory-actions .btn {
+    flex: 1 1 auto;
+    justify-content: center;
+    padding-inline: 0.875rem;
+    font-size: 0.9rem;
+    white-space: normal;
+  }
+}
+
+/* Small phones: fit everything into the viewport */
+@media (max-width: 480px) {
+  .verification-workspace {
+    gap: 1rem;
+  }
+
+  .verification-cases-header,
+  .verification-case-card {
+    padding-right: 0.875rem;
+    padding-left: 0.875rem;
+  }
+
+  .rec-advisory-actions .btn {
+    flex-basis: 100%;
+  }
+
+  .dos-meta-tags {
+    gap: 0.4rem;
+  }
+
+  .rec-warning-banner {
+    padding: 0.875rem;
+  }
+
+  .rec-reasons-list {
+    padding-right: 1rem;
+  }
+
+  .ben-info-grid {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  }
+}
+
+/* ----------------------------
+   Very narrow screens (< 420px): keep the full-width search results usable
+   ---------------------------- */
+@media (max-width: 420px) {
+  .beneficiaries-container {
+    padding-inline: 0.75rem;
+  }
+
+  .verification-cases-list {
+    max-height: 45vh;
+  }
+
+  .dos-meta-tags .dos-tag {
+    font-size: 0.78rem;
+    padding: 0.2rem 0.5rem;
   }
 }

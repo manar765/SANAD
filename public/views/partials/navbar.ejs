@@ -25,6 +25,7 @@
                     <a href="/dashboard" class="nav-link" data-role="admin">لوحة البيانات</a>
                     <a href="#about" class="nav-link">عن سند</a>
                     <a href="/donations" class="nav-link">التبرعات</a>
+                    <a href="/request-assistance" class="nav-link" data-role="beneficiary">طلب مساعدة</a>
                     <a href="/inventory" class="nav-link" data-role="admin">المخزون</a>
                     <a href="/beneficiaries" class="nav-link" data-role="admin">المستفيدون</a>
                     <a href="/verification" class="nav-link" data-role="admin">التحقق والتوصيات</a>
@@ -37,6 +38,9 @@
                             البيانات</a>
                         <a href="/donations"
                             class="nav-link <%= activePath === '/donations' ? 'active' : '' %>">التبرعات</a>
+                        <a href="/request-assistance"
+                            class="nav-link <%= activePath === '/request-assistance' ? 'active' : '' %>"
+                            data-role="beneficiary">طلب مساعدة</a>
                         <a href="/inventory" class="nav-link <%= activePath === '/inventory' ? 'active' : '' %>"
                             data-role="admin">المخزون</a>
                         <a href="/beneficiaries" class="nav-link <%= activePath === '/beneficiaries' ? 'active' : '' %>"
@@ -58,7 +62,7 @@
                     <a href="/signup" class="btn btn-primary">إنشاء حساب</a>
                 </div>
                 <div class="user-actions hidden" id="userActions" aria-live="polite">
-                    <div class="nav-notifications-wrapper" id="navNotificationsWrapper">
+                    <div class="nav-notifications-wrapper" id="navNotificationsWrapper" data-role="admin">
                         <button type="button" class="btn btn-outline nav-notification-btn" id="headerNotificationBtn" aria-label="الإشعارات والتنبيهات" aria-expanded="false" title="التنبيهات التشغيلية">
                             <i class="fa-solid fa-bell" aria-hidden="true"></i>
                             <span class="notification-badge" id="notificationBadge" hidden>0</span>
@@ -79,7 +83,8 @@
                             </div>
                         </div>
                     </div>
-                    <span class="user-greeting">أهلاً، <strong id="homeUserName">صديق سند</strong></span>
+                    <a href="/profile" class="user-greeting" id="userGreetingLink" title="الملف الشخصي">أهلاً، <strong
+                            id="homeUserName">صديق سند</strong></a>
                     <a href="/profile" class="btn btn-outline avatar-action" aria-label="فتح الملف الشخصي"
                         title="الملف الشخصي">
                         <i class="fa-solid fa-user" aria-hidden="true"></i>

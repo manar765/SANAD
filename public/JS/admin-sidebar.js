@@ -27,13 +27,15 @@
     function closeSidebar() {
         layout.classList.remove("sidebar-open");
         toggle.setAttribute("aria-expanded", "false");
+        document.body.classList.remove("no-scroll");
     }
 
     toggle.addEventListener("click", function () {
         const isOpen = layout.classList.toggle("sidebar-open");
         toggle.setAttribute("aria-expanded", String(isOpen));
+        document.body.classList.toggle("no-scroll", isOpen);
         if (isOpen) {
-            const firstLink = sidebar.querySelector("a");
+            const firstLink = sidebar.querySelector(".admin-sidebar-link");
             if (firstLink) firstLink.focus();
         }
     });

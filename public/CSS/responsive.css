@@ -203,6 +203,10 @@
 }
 
 @media (max-width: 480px) {
+    .container {
+        padding-inline: 14px;
+    }
+
     .hero-actions .btn {
         width: 100%;
     }

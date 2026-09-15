@@ -1,13 +1,18 @@
 import pool from "./database/index.js";
 import {
+    createAssistanceRequest,
     createBeneficiaryNeed,
     createBeneficiaryProfile,
     createDistribution,
     createInventoryItem,
+    getAssistanceRequest,
     getBeneficiaryDetail,
     getBeneficiaryProfileId,
     getBeneficiaryRecommendationHistory,
     getLatestBeneficiaryRecommendation,
+    getPendingDuplicateAssistanceRequest,
+    listAssistanceRequests,
+    listAssistanceRequestsForUser,
     listBeneficiaries,
     listBeneficiaryNeeds,
     listDistributions,
@@ -90,6 +95,130 @@ export async function editNeed(id, body, beneficiaryId = null) {
     if (body?.quantityRequested !== undefined && input.quantityRequested === null) throw new Error("INVALID_NEED");
     if (body?.quantityFulfilled !== undefined && input.quantityFulfilled === null) throw new Error("INVALID_NEED");
     return updateBeneficiaryNeed(id, input, beneficiaryId);
+}
+
+const ASSISTANCE_STATUSES = new Set(["pending", "approved", "rejected", "fulfilled"]);
+
+export async function createAssistanceRequestService(body, userId) {
+    const input = {
+        itemName: text(body?.itemName || body?.item_type || body?.title, 160),
+        category: text(body?.category, 80),
+        description: text(body?.description, 2000),
+        quantity: positiveInt(body?.quantity),
+        unit: text(body?.unit || "قطعة", 40),
+        notes: text(body?.notes, 2000),
+    };
+
+    if (input.itemName.length < 2 || input.category.length < 2 || !input.quantity || !input.unit) {
+        const err = new Error("يرجى تقديم تفاصيل صحيحة لطلب المساعدة.");
+        err.statusCode = 400;
+        err.code = "INVALID_ASSISTANCE_REQUEST";
+        throw err;
+    }
+
+    if (userId == null) {
+        const err = new Error("لم يتم العثور على ملف المستفيد.");
+        err.statusCode = 404;
+        err.code = "ASSISTANCE_USER_NOT_FOUND";
+        throw err;
+    }
+
+    const beneficiaryId = await getBeneficiaryProfileId(userId);
+    if (!beneficiaryId) {
+        const err = new Error("لم يتم العثور على ملف المستفيد. يرجى التواصل مع الإدارة.");
+        err.statusCode = 404;
+        err.code = "BENEFICIARY_PROFILE_NOT_FOUND";
+        throw err;
+    }
+
+    const duplicate = await getPendingDuplicateAssistanceRequest(beneficiaryId, input.itemName, input.category);
+    if (duplicate) {
+        const err = new Error("لديك طلب مساعدة مماثل قيد المراجعة بالفعل.");
+        err.statusCode = 409;
+        err.code = "DUPLICATE_ASSISTANCE_REQUEST";
+        err.details = { referenceCode: duplicate.referenceCode, itemName: duplicate.itemName };
+        throw err;
+    }
+
+    return createAssistanceRequest(input, userId, beneficiaryId);
+}
+
+export async function getAssistanceRequestsService(filters = {}) {
+    return listAssistanceRequests({
+        status: text(filters?.status, 30) || null,
+        search: text(filters?.search, 100) || null,
+    });
+}
+
+export async function getMyAssistanceRequestsService(userId) {
+    return listAssistanceRequestsForUser(userId);
+}
+
+export async function reviewAssistanceRequestService(requestId, status, reviewerId) {
+    if (!ASSISTANCE_STATUSES.has(status)) {
+        const err = new Error("يرجى تقديم حالة صحيحة لطلب المساعدة.");
+        err.statusCode = 400;
+        err.code = "INVALID_ASSISTANCE_STATUS";
+        throw err;
+    }
+    if (status === "pending") {
+        const err = new Error("لا يمكن إعادة طلب المساعدة إلى قيد المراجعة.");
+        err.statusCode = 400;
+        err.code = "INVALID_ASSISTANCE_TRANSITION";
+        throw err;
+    }
+
+    const client = await pool.connect();
+    try {
+        await client.query("BEGIN");
+        const updateRes = await client.query(
+            `UPDATE assistance_requests
+             SET status = $1, reviewed_by = $2, reviewed_at = NOW(), updated_at = NOW()
+             WHERE id = $3
+             RETURNING id, beneficiary_id AS "beneficiaryId", item_name AS "itemName",
+                       category, description, quantity, unit, status`,
+            [status, reviewerId || null, requestId],
+        );
+        const row = updateRes.rows[0];
+        if (!row) {
+            await client.query("ROLLBACK");
+            return null;
+        }
+
+        if (status === "approved") {
+            const existingNeed = await client.query(
+                `SELECT id FROM beneficiary_needs
+                 WHERE assistance_request_id = $1
+                    OR (beneficiary_id = $2 AND LOWER(title) = LOWER($3) AND status IN ('open', 'partially_fulfilled'))
+                 LIMIT 1`,
+                [requestId, row.beneficiaryId, row.itemName],
+            );
+            if (!existingNeed.rows[0]) {
+                await client.query(
+                    `INSERT INTO beneficiary_needs (beneficiary_id, title, description, category, quantity_requested, unit, priority, status, assistance_request_id)
+                     VALUES ($1, $2, $3, $4, $5, $6, 'medium', 'open', $7)`,
+                    [row.beneficiaryId, row.itemName, row.description || "", row.category, row.quantity, row.unit, requestId],
+                );
+            }
+        } else if (status === "rejected" || status === "fulfilled") {
+            await client.query(
+                `UPDATE beneficiary_needs
+                 SET status = $1,
+                     quantity_fulfilled = CASE WHEN $1 = 'fulfilled' THEN quantity_requested ELSE quantity_fulfilled END,
+                     updated_at = NOW()
+                 WHERE assistance_request_id = $2`,
+                [status === "fulfilled" ? "fulfilled" : "cancelled", requestId],
+            );
+        }
+
+        await client.query("COMMIT");
+        return getAssistanceRequest(requestId);
+    } catch (error) {
+        await client.query("ROLLBACK").catch(() => {});
+        throw error;
+    } finally {
+        client.release();
+    }
 }
 
 export async function approveOrRejectDonation(donationId, status, reviewerId) {

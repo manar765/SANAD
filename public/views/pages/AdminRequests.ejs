@@ -25,46 +25,16 @@
         <link rel="stylesheet" href="/CSS/style.css" />
     </head>
 
-    <body>
+    <body class="admin-page">
         <a class="skip-link" href="#main-content">تخطي إلى المحتوى الرئيسي</a>
 
         <!-- scroll progress indicator -->
         <div class="progress-bar" id="progressBar" aria-hidden="true"></div>
 
         <!-- ============================================================
-         NAVBAR
+         ADMIN SIDEBAR
     ============================================================ -->
-        <button type="button" class="btn btn-outline admin-sidebar-toggle" id="adminSidebarToggle" aria-expanded="false"
-            aria-controls="adminSidebar">
-            <i class="fa-solid fa-bars" aria-hidden="true"></i> قائمة الإدارة
-        </button>
-        <div class="admin-layout" id="adminLayout">
-            <aside class="admin-sidebar" id="adminSidebar" aria-label="قائمة الإدارة">
-                <div class="admin-sidebar-title"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i><span>إدارة
-                        سند</span></div>
-                <button type="button" class="admin-sidebar-collapse" id="adminSidebarCollapse"
-                    aria-label="طي القائمة الجانبية" aria-expanded="true">
-                    <i class="fa-solid fa-angles-right" aria-hidden="true"></i><span>طي القائمة</span>
-                </button>
-                <div class="admin-theme-control" data-theme-host aria-label="إعدادات المظهر"></div>
-                <nav class="admin-sidebar-nav" aria-label="روابط لوحة الإدارة">
-                    <a class="admin-sidebar-link" href="/dashboard"><i class="fa-solid fa-gauge-high"
-                            aria-hidden="true"></i><span>لوحة الحساب</span></a>
-                    <a class="admin-sidebar-link active" href="/admin-requests" aria-current="page"><i
-                            class="fa-solid fa-inbox" aria-hidden="true"></i><span>طلبات التبرعات</span></a>
-                    <a class="admin-sidebar-link" href="/donations"><i class="fa-solid fa-hand-holding-heart"
-                            aria-hidden="true"></i><span>التبرعات</span></a>
-                    <a class="admin-sidebar-link" href="/inventory"><i class="fa-solid fa-boxes-stacked"
-                            aria-hidden="true"></i><span>المخزون</span></a>
-                    <a class="admin-sidebar-link" href="/beneficiaries"><i class="fa-solid fa-people-roof"
-                            aria-hidden="true"></i><span>المستفيدون</span></a>
-                    <a class="admin-sidebar-link" href="/distributions"><i class="fa-solid fa-truck-fast"
-                            aria-hidden="true"></i><span>التوزيعات</span></a>
-                </nav>
-            </aside>
-            <button type="button" class="admin-sidebar-overlay" id="adminSidebarOverlay"
-                aria-label="إغلاق قائمة الإدارة"></button>
-            <div class="admin-main">
+        <%- include('../partials/admin-sidebar') %>
                 <main id="main-content">
 
                     <!-- ============================================================
@@ -104,6 +74,9 @@
                                 </button>
                                 <button type="button" class="admin-tab-btn" id="tabUsersBtn" role="tab" aria-selected="false" aria-controls="usersSection">
                                     <i class="fa-solid fa-users-gear" aria-hidden="true"></i> إدارة المستخدمين والأدوار
+                                </button>
+                                <button type="button" class="admin-tab-btn" id="tabAssistanceBtn" role="tab" aria-selected="false" aria-controls="assistanceSection">
+                                    <i class="fa-solid fa-hand-holding-heart" aria-hidden="true"></i> طلبات المساعدة
                                 </button>
                             </div>
 
@@ -236,6 +209,68 @@
                                 </div>
                             </div>
 
+                            <div id="assistanceSection" role="tabpanel" hidden>
+                                <div class="admin-toolbar">
+                                    <div class="admin-toolbar-title">
+                                        <i class="fa-solid fa-hand-holding-heart"></i>
+                                        <span>طلبات المساعدة</span>
+                                        <span class="admin-pending-badge" id="assistancePendingCount">0</span>
+                                    </div>
+
+                                    <div class="admin-filter">
+                                        <i class="fa-solid fa-filter" aria-hidden="true"></i>
+                                        <select id="assistanceFilter" aria-label="تصفية حالة طلب المساعدة">
+                                            <option value="all">كل الطلبات</option>
+                                            <option value="pending">قيد المراجعة</option>
+                                            <option value="approved">تمت الموافقة</option>
+                                            <option value="rejected">مرفوض</option>
+                                            <option value="fulfilled">تم التنفيذ</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="ui-state ui-loading" id="assistanceLoading" role="status" aria-live="polite" aria-busy="true">
+                                    <i class="fa-solid fa-spinner" aria-hidden="true"></i>
+                                    <span data-state-message>جارٍ تحميل طلبات المساعدة…</span>
+                                </div>
+                                <div class="ui-state ui-error" id="assistanceError" role="alert" hidden>
+                                    <div class="ui-error-content">
+                                        <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>
+                                        <span data-state-message>تعذر تحميل طلبات المساعدة.</span>
+                                    </div>
+                                    <button type="button" class="btn btn-outline ui-error-retry" id="assistanceRetryBtn">إعادة المحاولة</button>
+                                </div>
+
+                                <div class="admin-card">
+                                    <div class="admin-table-wrap">
+                                        <table class="dash-table admin-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>معرّف الطلب</th>
+                                                    <th>الاحتياج</th>
+                                                    <th>المستفيد</th>
+                                                    <th>الفئة</th>
+                                                    <th>الكمية</th>
+                                                    <th>الحالة</th>
+                                                    <th>الوصف</th>
+                                                    <th>التاريخ</th>
+                                                    <th>إجراءات</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="assistanceTableBody">
+                                                <!-- rows rendered by admin-requests.js -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    <div class="don-empty admin-empty" id="assistanceEmpty" hidden>
+                                        <i class="fa-solid fa-hand-holding-heart"></i>
+                                        <h3>لا توجد طلبات مساعدة</h3>
+                                        <p>عندما يرسل المستفيدون طلبات مساعدة ستظهر هنا.</p>
+                                    </div>
+                                </div>
+                            </div>
+
                         </div>
                     </section>
 
@@ -246,7 +281,7 @@
         <!-- ============================================================
          FOOTER
     ============================================================ -->
-        <!-- <%- include('../partials/footer') %> -->
+        <%- include('../partials/footer') %>
 
         <!-- toast notification -->
         <div class="toast" id="toast" role="status" aria-live="polite">

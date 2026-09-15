@@ -323,13 +323,20 @@
                 drawerNeedsEmpty.hidden = true;
                 needs.forEach(n => {
                     const pMeta = PRIORITY_META[n.priority] || PRIORITY_META.medium;
+                    const needStatusLabel = n.status === "open" ? "مفتوح"
+                        : n.status === "partially_fulfilled" ? "مكتمل جزئياً"
+                            : n.status === "fulfilled" ? "مكتمل"
+                                : n.status === "cancelled" ? "ملغي" : n.status;
+                    const requestSourceTag = n.assistanceRequestId
+                        ? `<span class="ben-request-source-tag"><i class="fa-solid fa-hand-holding-heart" aria-hidden="true"></i> عبر طلب ${escapeHtml(n.assistanceRequestCode || `REQ-${String(n.assistanceRequestId).padStart(4, "0")}`)}${n.assistanceRequestDate ? ` · ${new Date(n.assistanceRequestDate).toLocaleDateString("ar-EG")}` : ""}</span>`
+                        : "";
                     const row = document.createElement("tr");
                     row.innerHTML =
-                        `<td><strong>${escapeHtml(n.title)}</strong>${n.description ? `<div style="font-size: 0.8rem; color: var(--text-muted);">${escapeHtml(n.description)}</div>` : ""}</td>` +
+                        `<td><div class="ben-need-title-cell"><strong>${escapeHtml(n.title)}</strong>${requestSourceTag}${n.description ? `<div style="font-size: 0.8rem; color: var(--text-muted);">${escapeHtml(n.description)}</div>` : ""}</div></td>` +
                         `<td>${escapeHtml(n.category)}</td>` +
                         `<td>${formatNumber(n.quantityRequested)} ${escapeHtml(n.unit)}</td>` +
                         `<td><span class="pri-badge ${pMeta.cls}">${pMeta.label}</span></td>` +
-                        `<td><span style="font-size: 0.85rem; font-weight: 600;">${escapeHtml(n.status === "open" ? "مفتوح" : n.status === "fulfilled" ? "مكتمل" : n.status)}</span></td>`;
+                        `<td><span style="font-size: 0.85rem; font-weight: 600;">${escapeHtml(needStatusLabel)}</span></td>`;
                     drawerNeedsTbody.appendChild(row);
                 });
             }

@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<% /* EJS page template */ %>
+<html lang="ar" dir="rtl">
+
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>سند | SANAD — طلب مساعدة</title>
+        <meta name="description"
+            content="طلب مساعدة — أرسل طلبك للحصول على المساعدة التي تحتاجها وسيقوم فريق سند بمراجعته." />
+
+        <!-- favicon -->
+        <link rel="icon" type="image/png" href="/assets/images/LogoSANAD.png" />
+
+        <!-- fonts -->
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+        <!-- font awesome -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+
+        <!-- styles -->
+        <link rel="stylesheet" href="/CSS/style.css" />
+    </head>
+
+    <body>
+        <a class="skip-link" href="#main-content">تخطي إلى المحتوى الرئيسي</a>
+
+        <!-- scroll progress indicator -->
+        <div class="progress-bar" id="progressBar" aria-hidden="true"></div>
+
+        <!-- ============================================================
+         NAVBAR
+    ============================================================ -->
+        <%- include('../partials/navbar', { activePath: '/request-assistance' }) %>
+
+        <main id="main-content">
+
+            <!-- ============================================================
+             PAGE HEADER
+        ============================================================ -->
+            <section class="page-hero" id="request-assistance">
+                <div class="hero-blob hero-blob-1" aria-hidden="true"></div>
+                <div class="hero-blob hero-blob-2" aria-hidden="true"></div>
+
+                <div class="container page-hero-grid">
+
+                    <div class="page-hero-content">
+                        <span class="eyebrow reveal"><img src="/assets/images/LogoSANAD.png" alt="logo"
+                                style="width: 50px;">سند لك</span>
+                        <h1 class="page-hero-title reveal">طلب مساعدة</h1>
+                        <p class="page-hero-sub reveal">حدثنا عن احتياجك وسيتولى فريق سند مراجعته والرد عليك.</p>
+                    </div>
+
+                    <!-- <div aria-hidden="true">
+                        <img src="/assets/images/Beneficiaries.png" alt="المستفيدون" />
+                    </div> -->
+                </div>
+            </section>
+
+            <!-- ============================================================
+             REQUEST FORM
+        ============================================================ -->
+            <section class="req-section" aria-label="نموذج طلب المساعدة">
+                <div class="container">
+                    <div class="req-card reveal">
+
+                        <div class="req-card-heading">
+                            <span class="req-card-icon"><i class="fa-solid fa-hand-holding-heart"></i></span>
+                            <div>
+                                <h2>بيانات طلب المساعدة</h2>
+                                <p>املأ النموذج التالي وسيتولى الفريق مراجعة طلبك.</p>
+                            </div>
+                        </div>
+
+                        <form class="req-form" id="assistanceRequestForm" novalidate>
+                            <label class="req-field req-field-full">
+                                <span class="req-field-label">اسم المستفيد</span>
+                                <input id="reqBeneficiaryName" type="text" readonly disabled
+                                    placeholder="جارٍ تحميل بياناتك…" autocomplete="off" />
+                            </label>
+
+                            <label class="req-field">
+                                <span class="req-field-label">الاحتياج / الصنف</span>
+                                <input id="reqItemName" type="text" required maxlength="160"
+                                    placeholder="مثال: شنط مدرسية" autocomplete="off" />
+                            </label>
+
+                            <label class="req-field">
+                                <span class="req-field-label">الفئة</span>
+                                <select id="reqCategory" required>
+                                    <option value="">اختر الفئة…</option>
+                                    <option>شنط مدرسية</option>
+                                    <option>مستلزمات مدرسية</option>
+                                    <option>ملابس</option>
+                                    <option>مواد غذائية</option>
+                                    <option>بطاطين</option>
+                                    <option>مستلزمات طبية</option>
+                                    <option>أخرى</option>
+                                </select>
+                            </label>
+
+                            <label class="req-field">
+                                <span class="req-field-label">الكمية المطلوبة</span>
+                                <input id="reqQuantity" type="number" min="1" max="100000" required placeholder="1"
+                                    autocomplete="off" />
+                            </label>
+
+                            <label class="req-field">
+                                <span class="req-field-label">وحدة القياس</span>
+                                <select id="reqUnit" required>
+                                    <option value="قطعة">قطعة</option>
+                                    <option value="حقيبة">حقيبة</option>
+                                    <option value="صندوق">صندوق</option>
+                                    <option value="كيلوغرام">كيلوغرام</option>
+                                    <option value="طقم">طقم</option>
+                                    <option value="أخرى">أخرى</option>
+                                </select>
+                            </label>
+
+                            <label class="req-field req-field-full">
+                                <span class="req-field-label">وصف الاحتياج</span>
+                                <textarea id="reqDescription" rows="4" maxlength="2000"
+                                    placeholder="اشرح تفاصيل الاحتياج…" autocomplete="off"></textarea>
+                            </label>
+
+                            <label class="req-field req-field-full">
+                                <span class="req-field-label">ملاحظات إضافية <span class="req-optional">(اختياري)</span></span>
+                                <textarea id="reqNotes" rows="2" maxlength="2000"
+                                    placeholder="أي تفاصيل أخرى تساعد فريق سند على فهم الحاجة…" autocomplete="off"></textarea>
+                            </label>
+
+                            <div class="req-submit-row req-field-full">
+                                <button type="submit" class="btn btn-primary btn-lg" id="reqSubmitBtn">
+                                    <i class="fa-solid fa-paper-plane" aria-hidden="true"></i> إرسال طلب المساعدة
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ============================================================
+             MY PREVIOUS REQUESTS
+        ============================================================ -->
+            <section class="req-section" aria-label="طلباتي السابقة">
+                <div class="container">
+                    <div class="req-card reveal">
+
+                        <div class="req-card-heading">
+                            <span class="req-card-icon req-card-icon-green"><i class="fa-solid fa-clock-rotate-left"></i></span>
+                            <div>
+                                <h2>طلباتي السابقة</h2>
+                                <p>راجع حالة الطلبات التي أرسلتها.</p>
+                            </div>
+                        </div>
+
+                        <div class="req-list" id="reqMyRequests">
+                            <div class="req-empty" id="reqMyRequestsEmpty" hidden>
+                                <i class="fa-solid fa-inbox" aria-hidden="true"></i>
+                                <p>لم ترسل أي طلبات بعد.</p>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- ============================================================
+         FOOTER
+    ============================================================ -->
+        <%- include('../partials/footer') %>
+
+        <!-- toast notification -->
+        <div class="toast" id="toast" role="status" aria-live="polite">
+            <i class="fa-solid fa-circle-info"></i>
+            <span></span>
+        </div>
+
+        <!-- back to top -->
+        <button class="back-to-top" id="backToTop" aria-label="العودة إلى الأعلى">
+            <i class="fa-solid fa-arrow-up"></i>
+        </button>
+
+        <!-- scripts -->
+        <script src="/JS/main.js"></script>
+        <script src="/JS/request-assistance.js"></script>
+        <script src="/JS/logout.js"></script>
+
+        <script src="/JS/preferences.js"></script>
+    </body>
+
+</html>

@@ -16,9 +16,9 @@
         rel="stylesheet">
 </head>
 
-<body>
+<body class="admin-page">
     <a class="skip-link" href="#main-content">تخطي إلى المحتوى الرئيسي</a>
-    <%- include('../partials/navbar', { activePath: '/distributions' }) %>
+    <%- include('../partials/admin-sidebar') %>
 
         <main id="main-content" class="dist-page">
             <div class="dist-container">
@@ -220,7 +220,7 @@
                                 <i class="fa-solid fa-clipboard-check"></i> 3. تفاصيل التسليم والملاحظات
                             </div>
 
-                            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1rem; margin-bottom:1rem;">
+                            <div class="dist-exec-grid">
                                 <div>
                                     <label for="distStatusSelect"
                                         style="display:block; font-size:0.875rem; font-weight:600; margin-bottom:0.4rem;">
@@ -360,6 +360,14 @@
         </div>
 
         <!-- Scripts -->
+        </div>
+        </div>
+
+        <!-- ============================================================
+         FOOTER
+    ============================================================ -->
+        <%- include('../partials/footer') %>
+
         <script src="/JS/logout.js"></script>
         <script src="/JS/preferences.js"></script>
         <script src="/JS/admin-sidebar.js"></script>

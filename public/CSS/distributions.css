@@ -431,6 +431,7 @@
 .dist-modal-body {
     padding: 1.75rem;
     overflow-y: auto;
+    overflow-x: auto;
     flex: 1;
 }
 
@@ -524,6 +525,13 @@
     border-radius: 0.5rem;
     font-size: 0.875rem;
     background: #ffffff;
+}
+
+.dist-exec-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
 }
 
 .dist-qty-input {
@@ -739,6 +747,142 @@
 .voucher-sign-box small {
     color: #94a3b8;
     display: block;
+}
+
+/* ==========================================================================
+   Responsive — Distributions Module
+   ========================================================================== */
+
+@media (max-width: 768px) {
+    .dist-hero {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .dist-toolbar {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .dist-toolbar-filters {
+        flex-direction: column;
+        align-items: stretch;
+        width: 100%;
+    }
+
+    .dist-search-input-wrapper {
+        min-width: 0;
+        max-width: none;
+        width: 100%;
+    }
+
+    .dist-select-filter {
+        width: 100%;
+    }
+
+    .dist-exec-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .dist-stats-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.875rem;
+    }
+
+    .dist-stat-card {
+        padding: 1rem;
+        gap: 0.875rem;
+    }
+
+    .dist-stat-icon {
+        width: 42px;
+        height: 42px;
+        font-size: 1.1rem;
+    }
+
+    .dist-stat-info strong {
+        font-size: 1.25rem;
+    }
+
+    .dist-table {
+        min-width: 740px;
+    }
+}
+
+@media (max-width: 576px) {
+    .dist-page {
+        padding-top: 1.5rem;
+    }
+
+    .dist-container {
+        padding-inline: 0.875rem;
+    }
+
+    .dist-hero-title-group h1 {
+        font-size: 1.5rem;
+    }
+
+    .dist-stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .dist-modal-body {
+        padding: 1.25rem;
+    }
+
+    .dist-modal-header,
+    .dist-modal-footer {
+        padding-inline: 1.25rem;
+    }
+
+    .dist-preview-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .dist-items-table {
+        font-size: 0.8rem;
+    }
+
+    .dist-items-table th,
+    .dist-items-table td {
+        padding: 0.4rem 0.3rem;
+    }
+
+    .dist-qty-input {
+        width: 64px;
+    }
+
+    /* Voucher responsive */
+    .dist-voucher {
+        padding: 1.25rem;
+    }
+
+    .voucher-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.85rem;
+    }
+
+    .voucher-meta {
+        text-align: right;
+    }
+
+    .voucher-title {
+        font-size: 1.1rem;
+    }
+
+    .voucher-info-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .voucher-signatures {
+        grid-template-columns: 1fr;
+        gap: 1.75rem;
+    }
+
+    .voucher-table {
+        min-width: 480px;
+    }
 }
 
 /* Print Rules */

@@ -147,33 +147,180 @@
     loadRequests();
 
     // ==========================================================================
-    // Admin Tabs Navigation (Donations <-> Users & Roles)
+    // Admin Tabs Navigation (Donations <-> Users & Roles <-> Assistance)
     // ==========================================================================
     const tabDonationsBtn = document.getElementById("tabDonationsBtn");
     const tabUsersBtn = document.getElementById("tabUsersBtn");
+    const tabAssistanceBtn = document.getElementById("tabAssistanceBtn");
     const donationsSection = document.getElementById("donationsSection");
     const usersSection = document.getElementById("usersSection");
+    const assistanceSection = document.getElementById("assistanceSection");
 
     function switchAdminTab(target) {
+        const showDonations = target === "donations";
         const showUsers = target === "users";
+        const showAssistance = target === "assistance";
         if (tabDonationsBtn) {
-            tabDonationsBtn.classList.toggle("active", !showUsers);
-            tabDonationsBtn.setAttribute("aria-selected", !showUsers);
+            tabDonationsBtn.classList.toggle("active", showDonations);
+            tabDonationsBtn.setAttribute("aria-selected", showDonations);
         }
         if (tabUsersBtn) {
             tabUsersBtn.classList.toggle("active", showUsers);
             tabUsersBtn.setAttribute("aria-selected", showUsers);
         }
-        if (donationsSection) donationsSection.hidden = showUsers;
+        if (tabAssistanceBtn) {
+            tabAssistanceBtn.classList.toggle("active", showAssistance);
+            tabAssistanceBtn.setAttribute("aria-selected", showAssistance);
+        }
+        if (donationsSection) donationsSection.hidden = !showDonations;
         if (usersSection) usersSection.hidden = !showUsers;
+        if (assistanceSection) assistanceSection.hidden = !showAssistance;
 
         if (showUsers && users.length === 0) {
             loadUsers();
+        }
+        if (showAssistance && assistanceLoaded === false) {
+            loadAssistanceRequests();
         }
     }
 
     if (tabDonationsBtn) tabDonationsBtn.addEventListener("click", () => switchAdminTab("donations"));
     if (tabUsersBtn) tabUsersBtn.addEventListener("click", () => switchAdminTab("users"));
+    if (tabAssistanceBtn) tabAssistanceBtn.addEventListener("click", () => switchAdminTab("assistance"));
+
+    // ==========================================================================
+    // Assistance Requests (طلبات المساعدة)
+    // ==========================================================================
+    const assistanceTableBody = document.getElementById("assistanceTableBody");
+    const assistanceEmptyState = document.getElementById("assistanceEmpty");
+    const assistanceFilterSelect = document.getElementById("assistanceFilter");
+    const assistancePendingCount = document.getElementById("assistancePendingCount");
+    const assistanceLoadingState = document.getElementById("assistanceLoading");
+    const assistanceErrorState = document.getElementById("assistanceError");
+    const assistanceRetryBtn = document.getElementById("assistanceRetryBtn");
+
+    let assistanceRequests = [];
+    let assistanceLoaded = false;
+
+    const ASSISTANCE_META = {
+        pending: { label: "قيد المراجعة", className: "st-progress", icon: "fa-hourglass-half" },
+        approved: { label: "تمت الموافقة", className: "st-done", icon: "fa-circle-check" },
+        rejected: { label: "مرفوض", className: "st-rejected", icon: "fa-circle-xmark" },
+        fulfilled: { label: "تم التنفيذ", className: "st-done", icon: "fa-box-open" }
+    };
+    const ASSISTANCE_ORDER = { pending: 0, approved: 1, fulfilled: 2, rejected: 3 };
+    const ASSISTANCE_ACTIONS = {
+        pending: "approve|reject",
+        approved: "fulfill"
+    };
+
+    function buildAssistanceRow(request) {
+        const tr = document.createElement("tr");
+        const meta = ASSISTANCE_META[request.status] || ASSISTANCE_META.pending;
+        const quantity = `${request.quantity || "—"} ${request.unit || ""}`.trim();
+        const date = request.date || "—";
+
+        const allowedActions = ASSISTANCE_ACTIONS[request.status] || "";
+        let actions = '<span class="admin-no-actions">—</span>';
+        if (allowedActions) {
+            actions = '<div class="admin-actions">';
+            if (allowedActions.includes("approve")) {
+                actions += '<button type="button" class="btn btn-sm btn-primary admin-assist-approve-btn"><i class="fa-solid fa-check" aria-hidden="true"></i> موافقة</button>';
+            }
+            if (allowedActions.includes("reject")) {
+                actions += '<button type="button" class="btn btn-sm btn-danger admin-assist-reject-btn"><i class="fa-solid fa-xmark" aria-hidden="true"></i> رفض</button>';
+            }
+            if (allowedActions.includes("fulfill")) {
+                actions += '<button type="button" class="btn btn-sm btn-outline admin-assist-fulfill-btn"><i class="fa-solid fa-box-open" aria-hidden="true"></i> تم التنفيذ</button>';
+            }
+            actions += '</div>';
+        }
+
+        tr.innerHTML =
+            '<td class="admin-id">' + escapeHtml(request.referenceCode || request.id) + '</td>' +
+            '<td><strong>' + escapeHtml(request.itemName) + '</strong></td>' +
+            '<td>' + escapeHtml(request.beneficiaryName || "—") + '</td>' +
+            '<td>' + escapeHtml(request.category) + '</td>' +
+            '<td>' + escapeHtml(quantity) + '</td>' +
+            '<td><span class="status-badge ' + meta.className + '"><i class="fa-solid ' + meta.icon + '" aria-hidden="true"></i> ' + meta.label + '</span></td>' +
+            '<td class="admin-desc-cell" title="' + escapeHtml(request.description) + '">' + escapeHtml(request.description || "—") + '</td>' +
+            '<td>' + escapeHtml(date) + '</td>' +
+            '<td>' + actions + '</td>';
+
+        const updateStatus = async function (status) {
+            const csrfResponse = await fetch("/api/auth/csrf", { credentials: "same-origin" });
+            if (!csrfResponse.ok) throw new Error("تعذر جلب رمز الأمان.");
+            const { csrfToken } = await csrfResponse.json();
+            const response = await fetch(`/api/admin/assistance-requests/${encodeURIComponent(request.id)}/status`, {
+                method: "PATCH",
+                credentials: "same-origin",
+                headers: { "Content-Type": "application/json", "X-CSRF-Token": csrfToken },
+                body: JSON.stringify({ status })
+            });
+            if (!response.ok) {
+                const payload = await response.json().catch(() => ({}));
+                throw new Error(payload.message || "تعذر تحديث حالة طلب المساعدة.");
+            }
+        };
+
+        const bindAction = function (btn, status) {
+            if (!btn) return;
+            btn.addEventListener("click", async function () {
+                btn.disabled = true;
+                try {
+                    await updateStatus(status);
+                    showToast(status === "approved" ? "تمت الموافقة على طلب المساعدة." : "تم تحديث حالة طلب المساعدة.");
+                    await loadAssistanceRequests();
+                } catch (error) {
+                    btn.disabled = false;
+                    showToast(error.message || "تعذر تحديث حالة طلب المساعدة.");
+                }
+            });
+        };
+
+        bindAction(tr.querySelector(".admin-assist-approve-btn"), "approved");
+        bindAction(tr.querySelector(".admin-assist-reject-btn"), "rejected");
+        bindAction(tr.querySelector(".admin-assist-fulfill-btn"), "fulfilled");
+        return tr;
+    }
+
+    function renderAssistanceRequests() {
+        if (!assistanceTableBody) return;
+        const filter = assistanceFilterSelect ? assistanceFilterSelect.value : "all";
+        const visible = assistanceRequests.filter(function (item) {
+            return filter === "all" || item.status === filter;
+        }).sort(function (a, b) {
+            return (ASSISTANCE_ORDER[a.status] ?? 99) - (ASSISTANCE_ORDER[b.status] ?? 99);
+        });
+        assistanceTableBody.innerHTML = "";
+        visible.forEach(function (request) { assistanceTableBody.appendChild(buildAssistanceRow(request)); });
+        if (assistanceEmptyState) assistanceEmptyState.hidden = visible.length !== 0;
+        if (assistancePendingCount) assistancePendingCount.textContent = assistanceRequests.filter(item => item.status === "pending").length;
+    }
+
+    async function loadAssistanceRequests() {
+        if (!assistanceTableBody) return;
+        window.SANADUI?.setLoading(assistanceLoadingState, true, "جارٍ تحميل طلبات المساعدة…");
+        if (assistanceErrorState) assistanceErrorState.hidden = true;
+        try {
+            const response = await fetch("/api/assistance-requests", { credentials: "same-origin" });
+            if (!response.ok) throw new Error("تعذر تحميل طلبات المساعدة.");
+            const payload = await response.json();
+            assistanceRequests = Array.isArray(payload.requests) ? payload.requests : [];
+            assistanceLoaded = true;
+            renderAssistanceRequests();
+        } catch (error) {
+            assistanceRequests = [];
+            renderAssistanceRequests();
+            window.SANADUI?.setError(assistanceErrorState, error.message || "تعذر تحميل طلبات المساعدة.", loadAssistanceRequests);
+        } finally {
+            window.SANADUI?.setLoading(assistanceLoadingState, false);
+        }
+    }
+
+    if (assistanceFilterSelect) assistanceFilterSelect.addEventListener("change", renderAssistanceRequests);
+    if (assistanceRetryBtn) assistanceRetryBtn.addEventListener("click", loadAssistanceRequests);
+    if (tabAssistanceBtn) tabAssistanceBtn.addEventListener("click", () => switchAdminTab("assistance"));
 
     // ==========================================================================
     // Users & Roles Management

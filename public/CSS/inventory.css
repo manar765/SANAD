@@ -482,3 +482,45 @@
     grid-column: span 1;
   }
 }
+
+/* Small tablets & phones */
+@media (max-width: 576px) {
+  .inventory-main {
+    padding-top: 1.5rem;
+    padding-bottom: 3rem;
+  }
+
+  .inventory-container {
+    padding-inline: 0.875rem;
+  }
+
+  .inventory-header-text h1 {
+    font-size: 1.5rem;
+  }
+
+  .inventory-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .inventory-controls label,
+  .inventory-search-group,
+  .inventory-filter-group {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .inventory-reset-btn {
+    align-self: stretch;
+  }
+
+  .inventory-card-header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .inventory-table {
+    min-width: 680px;
+  }
+}

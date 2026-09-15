@@ -55,6 +55,7 @@ const needSelect = `
   SELECT n.id, n.beneficiary_id AS "beneficiaryId", n.title, n.description, n.category,
          n.quantity_requested AS "quantityRequested", n.quantity_fulfilled AS "quantityFulfilled",
          n.unit, n.priority, n.status, n.due_date AS "dueDate", n.created_at AS "createdAt", n.updated_at AS "updatedAt",
+         n.assistance_request_id AS "assistanceRequestId",
          COALESCE(NULLIF(u.full_name, ''), NULLIF(u.name, ''), u.email) AS "beneficiaryName"
   FROM beneficiary_needs n
   JOIN beneficiary_profiles bp ON bp.id = n.beneficiary_id
@@ -102,6 +103,90 @@ export async function updateBeneficiaryNeed(id, input, beneficiaryId = null) {
     if (!result.rows[0]) return null;
     const rows = await pool.query(`${needSelect} WHERE n.id = $1`, [id]);
     return rows.rows[0];
+}
+
+const assistanceRequestSelect = `
+  SELECT ar.id, ar.beneficiary_id AS "beneficiaryId", ar.user_id AS "userId",
+         ar.item_name AS "itemName", ar.category, ar.description, ar.quantity, ar.unit,
+         ar.notes, ar.status, ar.reference_code AS "referenceCode",
+         ar.reviewed_by AS "reviewedBy", ar.reviewed_at AS "reviewedAt",
+         ar.created_at AS "createdAt", ar.updated_at AS "updatedAt",
+         COALESCE(NULLIF(u.full_name, ''), NULLIF(u.name, ''), u.email) AS "beneficiaryName"
+  FROM assistance_requests ar
+  JOIN beneficiary_profiles bp ON bp.id = ar.beneficiary_id
+  JOIN users u ON u.id = bp.user_id
+`;
+
+export async function listAssistanceRequests({ status, search } = {}) {
+    const values = [];
+    const where = [];
+    if (status) { values.push(status); where.push(`ar.status = $${values.length}`); }
+    if (search) {
+        values.push(`%${search.trim().toLowerCase()}%`);
+        const param = `$${values.length}`;
+        where.push(`(
+            LOWER(COALESCE(u.full_name, u.name, '')) LIKE ${param} OR
+            LOWER(ar.item_name) LIKE ${param} OR
+            ar.reference_code LIKE ${param}
+        )`);
+    }
+    const result = await pool.query(
+        `${assistanceRequestSelect} ${where.length ? `WHERE ${where.join(" AND ")}` : ""} ORDER BY ar.created_at DESC`,
+        values,
+    );
+    return result.rows;
+}
+
+export async function listAssistanceRequestsForUser(userId) {
+    const result = await pool.query(
+        `${assistanceRequestSelect} WHERE ar.user_id = $1 ORDER BY ar.created_at DESC`,
+        [userId],
+    );
+    return result.rows;
+}
+
+export async function getAssistanceRequest(id) {
+    const result = await pool.query(`${assistanceRequestSelect} WHERE ar.id = $1`, [id]);
+    return result.rows[0] || null;
+}
+
+export async function getPendingDuplicateAssistanceRequest(beneficiaryId, itemName, category) {
+    const result = await pool.query(
+        `SELECT id, reference_code AS "referenceCode", item_name AS "itemName", created_at AS "createdAt"
+         FROM assistance_requests
+         WHERE beneficiary_id = $1 AND LOWER(item_name) = LOWER($2) AND LOWER(category) = LOWER($3) AND status = 'pending'
+         LIMIT 1`,
+        [beneficiaryId, itemName, category],
+    );
+    return result.rows[0] || null;
+}
+
+export async function createAssistanceRequest(input, userId, beneficiaryId) {
+    const client = await pool.connect();
+    try {
+        await client.query("BEGIN");
+        const result = await client.query(
+            `INSERT INTO assistance_requests (beneficiary_id, user_id, item_name, category, description, quantity, unit, notes)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+             RETURNING id, reference_code AS "referenceCode"`,
+            [beneficiaryId, userId, input.itemName, input.category, input.description, input.quantity, input.unit, input.notes],
+        );
+        const requestId = result.rows[0].id;
+        await client.query(
+            `INSERT INTO beneficiary_needs
+              (beneficiary_id, title, description, category, quantity_requested, unit, priority, status, assistance_request_id)
+             VALUES ($1, $2, $3, $4, $5, $6, 'medium', 'open', $7)`,
+            [beneficiaryId, input.itemName, input.description || "", input.category, input.quantity, input.unit, requestId],
+        );
+        await client.query("COMMIT");
+        const rows = await pool.query(`${assistanceRequestSelect} WHERE ar.id = $1`, [requestId]);
+        return rows.rows[0];
+    } catch (error) {
+        await client.query("ROLLBACK").catch(() => { });
+        throw error;
+    } finally {
+        client.release();
+    }
 }
 
 export async function syncDonationToInventory(client, donationId, status, reviewerId) {
@@ -275,12 +360,16 @@ export async function getBeneficiaryDetail(id) {
     if (!profile) return null;
 
     const needsRes = await pool.query(
-        `SELECT id, title, description, category, quantity_requested AS "quantityRequested",
-                quantity_fulfilled AS "quantityFulfilled", unit, priority, status,
-                due_date AS "dueDate", created_at AS "createdAt"
-         FROM beneficiary_needs
-         WHERE beneficiary_id = $1
-         ORDER BY CASE priority WHEN 'urgent' THEN 1 WHEN 'high' THEN 2 WHEN 'medium' THEN 3 ELSE 4 END, created_at DESC`,
+        `SELECT n.id, n.title, n.description, n.category, n.quantity_requested AS "quantityRequested",
+                n.quantity_fulfilled AS "quantityFulfilled", n.unit, n.priority, n.status,
+                n.due_date AS "dueDate", n.assistance_request_id AS "assistanceRequestId",
+                ar.reference_code AS "assistanceRequestCode",
+                ar.created_at AS "assistanceRequestDate",
+                n.created_at AS "createdAt"
+         FROM beneficiary_needs n
+         LEFT JOIN assistance_requests ar ON ar.id = n.assistance_request_id
+         WHERE n.beneficiary_id = $1
+         ORDER BY CASE n.priority WHEN 'urgent' THEN 1 WHEN 'high' THEN 2 WHEN 'medium' THEN 3 ELSE 4 END, n.created_at DESC`,
         [profile.id],
     );
 

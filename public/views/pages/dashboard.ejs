@@ -10,9 +10,9 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 </head>
 
-<body class="dashboard-page">
+<body class="dashboard-page admin-page">
   <a class="skip-link" href="#main-content">تخطي إلى المحتوى الرئيسي</a>
-  <%- include('../partials/navbar', { activePath: '/dashboard' }) %>
+  <%- include('../partials/admin-sidebar') %>
 
     <main id="main-content" class="dashboard-main">
       <div class="container dashboard-container">
@@ -358,11 +358,15 @@
       </div>
     </main>
 
+      </div>
+      </div>
+
     <%- include('../partials/footer') %>
 
       <!-- Dashboard Controller Scripts -->
       <script src="/JS/dashboard.js"></script>
       <script src="/JS/logout.js"></script>
+      <script src="/JS/admin-sidebar.js"></script>
       <script src="/JS/preferences.js"></script>
 </body>
 

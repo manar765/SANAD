@@ -2,7 +2,9 @@
     const guestActions = document.getElementById("guestActions");
     const userActions = document.getElementById("userActions");
     const userName = document.getElementById("homeUserName");
-    if (!guestActions || !userActions || !userName) return;
+    const adminUserName = document.getElementById("adminUserName");
+    const nameElement = userName || adminUserName;
+    if (!nameElement) return;
 
     const getStoredUser = () => {
         try { return JSON.parse(localStorage.getItem("sanadUser") || "null"); } catch { return null; }
@@ -13,24 +15,39 @@
         const isAdmin = role === "admin";
         document.documentElement.classList.toggle("role-admin", isAdmin);
         document.body.classList.toggle("role-admin", isAdmin);
-        document.querySelectorAll('[data-role="admin"]').forEach(el => {
-            if (isAdmin) {
+        document.documentElement.classList.toggle("role-beneficiary", role === "beneficiary");
+        document.body.classList.toggle("role-beneficiary", role === "beneficiary");
+
+        document.querySelectorAll("[data-role]").forEach(el => {
+            const wanted = el.getAttribute("data-role");
+            const visible = !!wanted && wanted === role;
+            if (visible) {
                 el.removeAttribute("hidden");
+                el.style.display = "";
             } else {
                 el.setAttribute("hidden", "hidden");
+                el.style.display = "none";
             }
         });
     };
 
     const showUser = user => {
-        userName.textContent = displayName(user);
-        guestActions.classList.add("hidden");
-        userActions.classList.remove("hidden");
+        const label = displayName(user);
+        if (adminUserName) {
+            const span = adminUserName.querySelector("span");
+            const adminLabel = user?.role === "admin" ? "المشرف" : label;
+            if (span) span.textContent = adminLabel;
+            else adminUserName.textContent = adminLabel;
+        } else if (nameElement) {
+            nameElement.textContent = label;
+        }
+        if (guestActions) guestActions.classList.add("hidden");
+        if (userActions) userActions.classList.remove("hidden");
         applyRoleVisibility(user?.role);
     };
     const showGuest = () => {
-        guestActions.classList.remove("hidden");
-        userActions.classList.add("hidden");
+        if (guestActions) guestActions.classList.remove("hidden");
+        if (userActions) userActions.classList.add("hidden");
         applyRoleVisibility(null);
     };
 

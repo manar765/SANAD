@@ -213,6 +213,26 @@ export async function migrate() {
     `);
 
       await client.query(`
+      CREATE TABLE IF NOT EXISTS assistance_requests (
+        id BIGSERIAL PRIMARY KEY,
+        beneficiary_id INTEGER NOT NULL REFERENCES beneficiary_profiles(id) ON DELETE CASCADE,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        item_name TEXT NOT NULL CHECK (char_length(trim(item_name)) BETWEEN 2 AND 160),
+        category TEXT NOT NULL CHECK (char_length(trim(category)) BETWEEN 2 AND 80),
+        description TEXT NOT NULL DEFAULT '' CHECK (char_length(description) <= 2000),
+        quantity INTEGER NOT NULL CHECK (quantity > 0 AND quantity <= 100000),
+        unit TEXT NOT NULL CHECK (char_length(trim(unit)) BETWEEN 1 AND 40),
+        notes TEXT NOT NULL DEFAULT '' CHECK (char_length(notes) <= 2000),
+        status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected', 'fulfilled')),
+        reference_code TEXT UNIQUE,
+        reviewed_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        reviewed_at TIMESTAMPTZ,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+    `);
+
+      await client.query(`
       CREATE TABLE IF NOT EXISTS distributions (
         id BIGSERIAL PRIMARY KEY,
         beneficiary_id INTEGER NOT NULL REFERENCES beneficiary_profiles(id) ON DELETE RESTRICT,
@@ -265,6 +285,29 @@ export async function migrate() {
       await client.query(`ALTER TABLE distributions ADD COLUMN IF NOT EXISTS reference_code TEXT`);
       await client.query(`UPDATE distributions SET reference_code = 'DIST-' || LPAD(id::text, 4, '0') WHERE reference_code IS NULL`);
       await client.query(`ALTER TABLE distribution_items ADD COLUMN IF NOT EXISTS need_id BIGINT REFERENCES beneficiary_needs(id) ON DELETE SET NULL`);
+      await client.query(`ALTER TABLE beneficiary_needs ADD COLUMN IF NOT EXISTS assistance_request_id BIGINT REFERENCES assistance_requests(id) ON DELETE SET NULL`);
+      await client.query(`CREATE INDEX IF NOT EXISTS beneficiary_needs_assistance_request_idx ON beneficiary_needs (assistance_request_id) WHERE assistance_request_id IS NOT NULL`);
+      await client.query(`ALTER TABLE assistance_requests ADD COLUMN IF NOT EXISTS reference_code TEXT`);
+      await client.query(`ALTER TABLE assistance_requests ADD COLUMN IF NOT EXISTS beneficiary_id INTEGER`);
+      await client.query(`ALTER TABLE assistance_requests ADD COLUMN IF NOT EXISTS user_id INTEGER`);
+      await client.query(`ALTER TABLE assistance_requests ADD COLUMN IF NOT EXISTS item_name TEXT NOT NULL DEFAULT ''`);
+      await client.query(`ALTER TABLE assistance_requests ADD COLUMN IF NOT EXISTS category TEXT NOT NULL DEFAULT ''`);
+      await client.query(`ALTER TABLE assistance_requests ADD COLUMN IF NOT EXISTS description TEXT NOT NULL DEFAULT ''`);
+      await client.query(`ALTER TABLE assistance_requests ADD COLUMN IF NOT EXISTS quantity INTEGER`);
+      await client.query(`ALTER TABLE assistance_requests ADD COLUMN IF NOT EXISTS unit TEXT NOT NULL DEFAULT 'قطعة'`);
+      await client.query(`ALTER TABLE assistance_requests ADD COLUMN IF NOT EXISTS notes TEXT NOT NULL DEFAULT ''`);
+      await client.query(`ALTER TABLE assistance_requests ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'pending'`);
+      await client.query(`ALTER TABLE assistance_requests ADD COLUMN IF NOT EXISTS reviewed_by INTEGER`);
+      await client.query(`ALTER TABLE assistance_requests ADD COLUMN IF NOT EXISTS reviewed_at TIMESTAMPTZ`);
+      await client.query(`ALTER TABLE assistance_requests ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`);
+      await client.query(`ALTER TABLE assistance_requests ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`);
+      await client.query(`DELETE FROM assistance_requests WHERE user_id IS NULL OR beneficiary_id IS NULL`);
+      await client.query(`ALTER TABLE assistance_requests DROP COLUMN IF EXISTS code`);
+      await client.query(`ALTER TABLE assistance_requests DROP COLUMN IF EXISTS requester_name`);
+      await client.query(`ALTER TABLE assistance_requests DROP COLUMN IF EXISTS type`);
+      await client.query(`DELETE FROM assistance_requests ar WHERE NOT EXISTS (SELECT 1 FROM beneficiary_profiles bp WHERE bp.id = ar.beneficiary_id)`);
+      await client.query(`ALTER TABLE assistance_requests DROP CONSTRAINT IF EXISTS assistance_requests_beneficiary_id_fkey`);
+      await client.query(`ALTER TABLE assistance_requests ADD CONSTRAINT assistance_requests_beneficiary_id_fkey FOREIGN KEY (beneficiary_id) REFERENCES beneficiary_profiles(id) ON DELETE CASCADE`);
 
       await client.query(`
       CREATE OR REPLACE FUNCTION set_distribution_reference_code()
@@ -366,6 +409,32 @@ export async function migrate() {
       END $$;
     `);
 
+      await client.query(`
+      CREATE OR REPLACE FUNCTION set_assistance_request_reference_code()
+      RETURNS TRIGGER AS $$
+      BEGIN
+        IF NEW.reference_code IS NULL OR trim(NEW.reference_code) = '' THEN
+          NEW.reference_code := 'REQ-' || LPAD(NEW.id::text, 4, '0');
+        END IF;
+        RETURN NEW;
+      END;
+      $$ LANGUAGE plpgsql;
+    `);
+
+      await client.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM pg_trigger WHERE tgname = 'trigger_set_assistance_request_reference_code'
+        ) THEN
+          CREATE TRIGGER trigger_set_assistance_request_reference_code
+          BEFORE INSERT ON assistance_requests
+          FOR EACH ROW
+          EXECUTE FUNCTION set_assistance_request_reference_code();
+        END IF;
+      END $$;
+    `);
+
       await client.query(`CREATE UNIQUE INDEX IF NOT EXISTS beneficiary_profiles_reference_code_idx ON beneficiary_profiles (reference_code)`);
       await client.query(`CREATE INDEX IF NOT EXISTS beneficiary_profiles_national_id_idx ON beneficiary_profiles (national_id) WHERE national_id IS NOT NULL`);
       await client.query(`CREATE INDEX IF NOT EXISTS beneficiary_profiles_verification_idx ON beneficiary_profiles (verification_status, updated_at DESC)`);
@@ -383,6 +452,11 @@ export async function migrate() {
       await client.query(`CREATE INDEX IF NOT EXISTS distributions_status_scheduled_idx ON distributions (status, scheduled_at DESC)`);
       await client.query(`CREATE INDEX IF NOT EXISTS distributions_beneficiary_idx ON distributions (beneficiary_id, created_at DESC)`);
       await client.query(`CREATE UNIQUE INDEX IF NOT EXISTS distributions_reference_code_idx ON distributions (reference_code)`);
+      await client.query(`CREATE UNIQUE INDEX IF NOT EXISTS assistance_requests_reference_code_idx ON assistance_requests (reference_code)`);
+      await client.query(`CREATE INDEX IF NOT EXISTS assistance_requests_status_created_at_idx ON assistance_requests (status, created_at DESC)`);
+      await client.query(`CREATE INDEX IF NOT EXISTS assistance_requests_beneficiary_idx ON assistance_requests (beneficiary_id, created_at DESC)`);
+      await client.query(`CREATE INDEX IF NOT EXISTS assistance_requests_user_idx ON assistance_requests (user_id, created_at DESC)`);
+      await client.query(`CREATE INDEX IF NOT EXISTS assistance_requests_duplicate_guard_idx ON assistance_requests (beneficiary_id, LOWER(item_name), LOWER(category)) WHERE status = 'pending'`);
       await client.query(`CREATE INDEX IF NOT EXISTS beneficiary_recommendations_beneficiary_created_idx ON beneficiary_recommendations (beneficiary_id, created_at DESC)`);
       await client.query(`CREATE INDEX IF NOT EXISTS beneficiary_recommendations_priority_idx ON beneficiary_recommendations (priority_level, created_at DESC)`);
       await client.query(`CREATE INDEX IF NOT EXISTS distribution_items_inventory_idx ON distribution_items (inventory_item_id)`);
@@ -402,8 +476,23 @@ export async function migrate() {
       return;
     } catch (error) {
       await client.query("ROLLBACK").catch(() => { });
-      if ((error.code === "40P01" || error.message?.includes("deadlock")) && attempt < 3) {
-        await new Promise(resolve => setTimeout(resolve, 500 * attempt));
+      const transient =
+        error.code === "40P01" ||
+        error.code === "ECONNRESET" ||
+        error.code === "ETIMEDOUT" ||
+        error.code === "EPIPE" ||
+        error.code === "EAI_AGAIN" ||
+        (error.errors && Array.isArray(error.errors)) ||
+        (typeof error.message === "string" && (
+          error.message.includes("deadlock") ||
+          error.message.includes("ECONNRESET") ||
+          error.message.includes("ETIMEDOUT") ||
+          error.message.includes("socket hang up") ||
+          error.message.includes("connection") ||
+          error.message.includes("AggregateError")
+        ));
+      if (transient && attempt < 3) {
+        await new Promise(resolve => setTimeout(resolve, 800 * attempt));
         continue;
       }
       throw error;

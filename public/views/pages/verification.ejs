@@ -24,15 +24,15 @@
         <link rel="stylesheet" href="/CSS/beneficiaries.css" />
     </head>
 
-    <body class="beneficiaries-page verification-page">
+    <body class="beneficiaries-page verification-page admin-page">
         <a class="skip-link" href="#main-content">تخطي إلى المحتوى الرئيسي</a>
 
         <div class="progress-bar" id="progressBar" aria-hidden="true"></div>
 
         <!-- ============================================================
-         NAVBAR
+         ADMIN SIDEBAR
     ============================================================ -->
-        <%- include('../partials/navbar', { activePath: '/verification' }) %>
+        <%- include('../partials/admin-sidebar') %>
 
             <main id="main-content" class="beneficiaries-main">
                 <div class="beneficiaries-container">
@@ -268,6 +268,9 @@
                 </div>
             </main>
 
+            </div>
+            </div>
+
             <!-- ============================================================
          FOOTER
     ============================================================ -->
@@ -289,6 +292,7 @@
                 <script src="/JS/ui-states.js"></script>
                 <script src="/JS/verification.js"></script>
                 <script src="/JS/logout.js"></script>
+                <script src="/JS/admin-sidebar.js"></script>
                 <script src="/JS/preferences.js"></script>
     </body>
 

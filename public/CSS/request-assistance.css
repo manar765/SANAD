@@ -1,0 +1,237 @@
+/* ==========================================================================
+   SANAD — Request Assistance Page (طلب مساعدة)
+   ========================================================================== */
+
+.req-section {
+    padding: 32px 0;
+}
+
+.req-card {
+    max-width: 860px;
+    margin: 0 auto;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    box-shadow: 0 12px 34px rgba(20, 55, 43, 0.07);
+    padding: 26px 28px;
+}
+
+.req-card-heading {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    margin-bottom: 22px;
+}
+
+.req-card-heading h2 {
+    margin: 0;
+    font-size: 1.25rem;
+    color: var(--text-dark);
+}
+
+.req-card-heading p {
+    margin: 4px 0 0;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+.req-card-icon {
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    background: rgba(31, 122, 92, 0.12);
+    color: var(--green-dark);
+    font-size: 1.2rem;
+}
+
+.req-card-icon-green {
+    background: rgba(31, 122, 92, 0.12);
+    color: var(--green-dark);
+}
+
+/* ---------- form ---------- */
+.req-form {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+}
+
+.req-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+}
+
+.req-field-full {
+    grid-column: 1 / -1;
+}
+
+.req-field-label {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-dark);
+}
+
+.req-optional {
+    color: var(--text-muted);
+    font-weight: 400;
+}
+
+.req-field input,
+.req-field select,
+.req-field textarea {
+    width: 100%;
+    padding: 11px 13px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+    color: var(--text-dark);
+    font: inherit;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.req-field input:focus-visible,
+.req-field select:focus-visible,
+.req-field textarea:focus-visible {
+    outline: none;
+    border-color: var(--green);
+    box-shadow: 0 0 0 3px rgba(31, 122, 92, 0.14);
+}
+
+.req-field input:disabled {
+    background: var(--bg-soft);
+    color: var(--text-muted);
+    cursor: not-allowed;
+}
+
+.req-submit-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 4px;
+}
+
+/* ---------- my requests list ---------- */
+.req-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.req-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 28px 16px;
+    text-align: center;
+    color: var(--text-muted);
+    border: 1px dashed var(--border);
+    border-radius: 12px;
+}
+
+.req-empty[hidden] {
+    display: none;
+}
+
+.req-empty i {
+    font-size: 1.8rem;
+    color: var(--border);
+}
+
+.req-item {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 14px;
+    align-items: center;
+    padding: 14px 16px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--bg-soft);
+}
+
+.req-item-icon {
+    width: 42px;
+    height: 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    background: rgba(31, 122, 92, 0.12);
+    color: var(--green-dark);
+}
+
+.req-item-main {
+    min-width: 0;
+}
+
+.req-item-title {
+    font-weight: 700;
+    color: var(--text-dark);
+    margin: 0 0 4px;
+    font-size: 0.98rem;
+}
+
+.req-item-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    color: var(--text-muted);
+    font-size: 0.83rem;
+}
+
+.req-item-code {
+    font-weight: 600;
+    color: var(--green-dark);
+}
+
+.req-item-status {
+    white-space: nowrap;
+}
+
+.req-status-pending {
+    color: var(--orange, #d97706);
+    background: var(--orange-tint, #fef3c7);
+}
+
+.req-status-approved {
+    color: var(--green);
+    background: var(--mint);
+}
+
+.req-status-rejected {
+    color: var(--red, #dc2626);
+    background: rgba(220, 38, 38, 0.12);
+}
+
+.req-status-fulfilled {
+    color: var(--blue);
+    background: var(--blue-tint);
+}
+
+@media (max-width: 640px) {
+    .req-form {
+        grid-template-columns: 1fr;
+    }
+
+    .req-item {
+        grid-template-columns: 1fr;
+        text-align: center;
+    }
+
+    .req-item-icon {
+        margin: 0 auto;
+    }
+
+    .req-submit-row {
+        justify-content: stretch;
+    }
+
+    .req-submit-row .btn {
+        width: 100%;
+    }
+}

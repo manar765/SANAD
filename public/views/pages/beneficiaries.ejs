@@ -23,16 +23,16 @@
         <link rel="stylesheet" href="/CSS/style.css" />
     </head>
 
-    <body class="beneficiaries-page">
+    <body class="beneficiaries-page admin-page">
         <a class="skip-link" href="#main-content">تخطي إلى المحتوى الرئيسي</a>
 
         <!-- scroll progress indicator -->
         <div class="progress-bar" id="progressBar" aria-hidden="true"></div>
 
         <!-- ============================================================
-         NAVBAR
+         ADMIN SIDEBAR
     ============================================================ -->
-        <%- include('../partials/navbar', { activePath: '/beneficiaries' }) %>
+        <%- include('../partials/admin-sidebar') %>
 
             <main id="main-content" class="beneficiaries-main">
                 <div class="beneficiaries-container">
@@ -339,6 +339,8 @@
                             <div class="don-empty" id="drawerNeedsEmpty" hidden>
                                 <i class="fa-solid fa-circle-check text-teal"></i>
                                 <h4>لا توجد احتياجات مسجلة حالياً</h4>
+                                <p>لم يقم هذا المستفيد بإرسال أي طلب مساعدة بعد. عند إرسال طلب جديد، ستظهر الأصناف
+                                    المطلوبة هنا تلقائياً من سجلات الطلبات.</p>
                             </div>
                         </div>
 
@@ -641,6 +643,9 @@
                 </div>
             </div>
 
+            </div>
+            </div>
+
             <!-- ============================================================
          FOOTER
     ============================================================ -->
@@ -662,6 +667,7 @@
                 <script src="/JS/ui-states.js"></script>
                 <script src="/JS/beneficiaries.js"></script>
                 <script src="/JS/logout.js"></script>
+                <script src="/JS/admin-sidebar.js"></script>
                 <script src="/JS/preferences.js"></script>
     </body>
 

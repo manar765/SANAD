@@ -203,6 +203,13 @@
     font-size: 14px;
     font-weight: 500;
     white-space: nowrap;
+    text-decoration: none;
+    transition: color var(--transition, 0.2s ease);
+}
+
+.user-greeting:hover,
+.user-greeting:focus-visible {
+    color: var(--green-dark);
 }
 
 .user-greeting strong {
@@ -229,31 +236,6 @@
 .profile-page {
     min-height: 100vh;
     background: var(--cream);
-}
-
-.profile-topbar {
-    background: rgba(255, 255, 255, 0.96);
-    border-bottom: 1px solid var(--border);
-}
-
-.profile-topbar-inner {
-    min-height: var(--nav-height);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 24px;
-}
-
-.profile-nav {
-    display: flex;
-    align-items: center;
-    gap: 18px;
-    font-weight: 700;
-    color: var(--text-muted);
-}
-
-.profile-nav a:not(.btn):hover {
-    color: var(--green);
 }
 
 .profile-main {
@@ -393,21 +375,6 @@
 }
 
 @media (max-width: 760px) {
-
-    .profile-topbar-inner,
-    .profile-nav {
-        flex-wrap: wrap;
-    }
-
-    .profile-topbar-inner {
-        padding-top: 14px;
-        padding-bottom: 14px;
-    }
-
-    .profile-nav {
-        gap: 10px;
-        font-size: 0.9rem;
-    }
 
     .profile-grid,
     .two-cols {

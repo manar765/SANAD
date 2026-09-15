@@ -18,14 +18,12 @@ html[data-theme="dark"] {
 }
 
 html[data-theme="dark"] body,
-html[data-theme="dark"] .navbar,
-html[data-theme="dark"] .profile-topbar {
+html[data-theme="dark"] .navbar {
     background-color: var(--cream);
     color: var(--text-dark);
 }
 
 html[data-theme="dark"] .navbar,
-html[data-theme="dark"] .profile-topbar,
 html[data-theme="dark"] .search-card,
 html[data-theme="dark"] .don-card,
 html[data-theme="dark"] .profile-card,
