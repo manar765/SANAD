@@ -110,14 +110,41 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const sections = document.querySelectorAll("section[id], footer[id]");
     const navLinks = document.querySelectorAll(".nav-link");
-    if (sections.length && "IntersectionObserver" in window) {
+
+    const setPathActiveLink = () => {
+        const path = (window.location.pathname || "/").replace(/\/+$/, "") || "/";
+        const hash = window.location.hash || "";
+        navLinks.forEach((link) => {
+            const hrefParts = String(link.getAttribute("href") || "").split("#");
+            const linkPath = (hrefParts[0] || "").replace(/\/+$/, "") || "/";
+            const linkHash = hrefParts[1] ? `#${hrefParts[1]}` : "";
+            link.classList.toggle("active", linkPath === path && (linkHash ? linkHash === hash : !hash));
+        });
+    };
+
+    const isHome = ["/", ""].includes((window.location.pathname || "/").replace(/\/+$/, ""));
+    if (isHome && sections.length && "IntersectionObserver" in window) {
         const spyObserver = new IntersectionObserver((entries) => {
             entries.forEach((entry) => {
                 if (!entry.isIntersecting) return;
                 const activeHash = `#${entry.target.id}`;
+                let hashMatched = false;
                 navLinks.forEach((link) => {
-                    link.classList.toggle("active", link.getAttribute("href") === activeHash);
+                    const href = String(link.getAttribute("href") || "");
+                    const hashIndex = href.indexOf("#");
+                    if (hashIndex < 0) return;
+                    const matches = href.slice(hashIndex) === activeHash;
+                    hashMatched = hashMatched || matches;
+                    link.classList.toggle("active", matches);
                 });
+                if (hashMatched) {
+                    navLinks.forEach((link) => {
+                        const href = String(link.getAttribute("href") || "");
+                        if (href.indexOf("#") < 0) link.classList.remove("active");
+                    });
+                } else {
+                    setPathActiveLink();
+                }
             });
         }, { rootMargin: "-45% 0px -50% 0px" });
         sections.forEach((section) => spyObserver.observe(section));

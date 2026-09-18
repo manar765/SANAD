@@ -299,6 +299,23 @@ export async function listBeneficiaries({ search, status, governorate } = {}) {
             COALESCE(NULLIF(u.full_name, ''), NULLIF(u.name, ''), u.email) AS name,
             u.email,
             (SELECT COUNT(*)::int FROM beneficiary_needs bn WHERE bn.beneficiary_id = bp.id AND bn.status IN ('open', 'partially_fulfilled')) AS "activeNeedsCount",
+            COALESCE((
+                SELECT json_agg(json_build_object(
+                    'id', bn.id,
+                    'title', bn.title,
+                    'category', bn.category,
+                    'quantityRequested', bn.quantity_requested,
+                    'unit', bn.unit,
+                    'priority', bn.priority,
+                    'status', bn.status,
+                    'assistanceRequestId', bn.assistance_request_id,
+                    'assistanceRequestCode', ar.reference_code,
+                    'createdAt', bn.created_at
+                ) ORDER BY bn.created_at DESC)
+                FROM beneficiary_needs bn
+                LEFT JOIN assistance_requests ar ON ar.id = bn.assistance_request_id
+                WHERE bn.beneficiary_id = bp.id AND bn.status IN ('open', 'partially_fulfilled')
+            ), '[]'::json) AS "openNeeds",
             (SELECT COUNT(*)::int FROM distributions d WHERE d.beneficiary_id = bp.id AND d.status = 'completed') AS "completedDistributionsCount"
         FROM beneficiary_profiles bp
         JOIN users u ON u.id = bp.user_id
@@ -322,8 +339,8 @@ export async function listBeneficiaries({ search, status, governorate } = {}) {
 
 export async function getBeneficiaryDetail(id) {
     const isIdNumeric = Number.isInteger(Number(id));
-    const profileRes = await pool.query(
-        `SELECT
+    const profileSelect = `
+        SELECT
             bp.id,
             bp.user_id AS "userId",
             bp.reference_code AS "referenceCode",
@@ -352,11 +369,21 @@ export async function getBeneficiaryDetail(id) {
         FROM beneficiary_profiles bp
         JOIN users u ON u.id = bp.user_id
         LEFT JOIN users v ON v.id = bp.verified_by
-        WHERE ${isIdNumeric ? "bp.id = $1 OR bp.user_id = $1 OR bp.reference_code = $2" : "bp.reference_code = $1"}`,
-        isIdNumeric ? [Number(id), String(id)] : [String(id)],
-    );
+    `;
 
-    const profile = profileRes.rows[0];
+    let profile = null;
+    if (isIdNumeric) {
+        const numericId = Number(id);
+        const byProfileRes = await pool.query(`${profileSelect} WHERE bp.id = $1`, [numericId]);
+        profile = byProfileRes.rows[0] || null;
+        if (!profile) {
+            const byUserRes = await pool.query(`${profileSelect} WHERE bp.user_id = $1`, [numericId]);
+            profile = byUserRes.rows[0] || null;
+        }
+    } else {
+        const byCodeRes = await pool.query(`${profileSelect} WHERE bp.reference_code = $1`, [String(id)]);
+        profile = byCodeRes.rows[0] || null;
+    }
     if (!profile) return null;
 
     const needsRes = await pool.query(

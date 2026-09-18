@@ -2,120 +2,10 @@
    Administration Sidebar
    ========================================================================== */
 
-:root {
-    --admin-topbar-height: 56px;
-}
-
 /* Admin pages show the Sidebar and hide the regular Navbar/Header navigation */
 html.role-admin body.admin-page .navbar,
 body.role-admin.admin-page .navbar {
     display: none !important;
-}
-
-/* --------------------------------------------------------------------------
-   Admin Topbar
-   Fixed-height bar shown only for admins; replaces the hidden Navbar area.
-   Brands the page, holds the mobile sidebar toggle (left of the bar) and the
-   Logout action at the physical left edge, which is where the Navbar used to be.
-   -------------------------------------------------------------------------- */
-.admin-topbar {
-    display: none;
-}
-
-html.role-admin body.admin-page .admin-topbar,
-body.role-admin.admin-page .admin-topbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    min-height: var(--admin-topbar-height);
-    padding: 8px 16px;
-    position: sticky;
-    top: 0;
-    z-index: 120;
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    box-shadow: 0 1px 6px rgba(20, 55, 43, 0.06);
-    direction: rtl;
-}
-
-.admin-topbar-start {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    min-width: 0;
-}
-
-.admin-topbar-brand {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    color: var(--green-dark);
-    font-weight: 900;
-    font-size: 1.05rem;
-    white-space: nowrap;
-}
-
-.admin-topbar-brand i {
-    color: var(--green);
-    font-size: 1.15rem;
-}
-
-.admin-topbar-logout {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 16px;
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    background: var(--bg-soft);
-    color: var(--text-dark);
-    font-weight: 700;
-    font-size: 0.92rem;
-    text-decoration: none;
-    white-space: nowrap;
-    transition: var(--transition);
-}
-
-.admin-topbar-logout i {
-    color: var(--red, #e05252);
-}
-
-.admin-topbar-logout:hover,
-.admin-topbar-logout:focus-visible {
-    color: var(--red, #e05252);
-    border-color: var(--red, #e05252);
-    background: rgba(224, 82, 82, 0.08);
-}
-
-.admin-topbar-end {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    min-width: 0;
-}
-
-.admin-topbar-name {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 14px;
-    border-radius: 10px;
-    color: var(--green-dark);
-    font-weight: 700;
-    font-size: 0.92rem;
-    text-decoration: none;
-    white-space: nowrap;
-    transition: var(--transition);
-}
-
-.admin-topbar-name i {
-    color: var(--green);
-}
-
-.admin-topbar-name:hover,
-.admin-topbar-name:focus-visible {
-    background: rgba(31, 122, 92, 0.08);
 }
 
 /* The admin sidebar is for admins only; other roles keep the regular navbar */
@@ -134,7 +24,7 @@ body.role-admin.admin-page .admin-layout > .admin-sidebar {
     display: flex;
     flex-direction: row;
     direction: rtl;
-    min-height: calc(100vh - var(--admin-topbar-height));
+    min-height: 100vh;
     background: var(--bg-soft);
 }
 
@@ -154,10 +44,10 @@ body.role-admin.admin-page .admin-layout > .admin-sidebar {
 
 .admin-sidebar {
     position: sticky;
-    top: var(--admin-topbar-height);
-    height: calc(100vh - var(--admin-topbar-height));
+    top: 0;
+    height: 100vh;
     overflow: hidden auto;
-    padding: 24px 16px;
+    padding: 20px 16px;
     display: flex;
     flex-direction: column;
     background: var(--surface);
@@ -176,6 +66,120 @@ body.role-admin.admin-page .admin-layout > .admin-sidebar {
     border-radius: 999px;
 }
 
+/* --------------------------------------------------------------------------
+   Admin Sidebar Top Actions
+   Elements that previously lived in the top Bar (notifications, profile link,
+   logout) now render at the top of the Sidebar, above the navigation items.
+   -------------------------------------------------------------------------- */
+.admin-sidebar-top-actions {
+    order: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 14px 4px 16px;
+}
+
+.admin-sidebar-top-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.admin-sidebar-top-actions > .admin-sidebar-top-row:last-child {
+    gap: 10px;
+}
+
+.admin-sidebar-top-row > .admin-sidebar-user,
+.admin-sidebar-top-row > .admin-sidebar-collapse,
+.admin-sidebar-top-row > .admin-theme-control {
+    flex: 0 0 auto;
+}
+
+.admin-sidebar-top-row > .nav-notifications-wrapper {
+    flex: 1 1 auto;
+    min-width: 0;
+    align-self: stretch;
+}
+
+.admin-sidebar-top-actions .admin-sidebar-collapse {
+    width: auto;
+    margin-top: 0;
+    padding: 10px 12px;
+}
+
+.admin-sidebar-top-actions .admin-theme-control {
+    margin: 0;
+}
+
+.admin-sidebar-top-actions .nav-notification-btn {
+    width: 100%;
+    height: auto;
+    border-radius: 12px;
+    padding: 10px 14px;
+    justify-content: flex-start;
+    gap: 12px;
+    font-size: 0.95rem;
+    border-color: var(--border);
+    background: var(--bg-soft);
+    color: var(--text-dark);
+}
+
+.admin-sidebar-top-actions .nav-notification-btn:hover,
+.admin-sidebar-top-actions .nav-notification-btn:focus-visible {
+    color: var(--green-dark);
+    border-color: var(--green-soft);
+    background: var(--mint);
+}
+
+.admin-sidebar-top-actions .notification-badge {
+    border-color: var(--surface);
+}
+
+.admin-sidebar-user,
+.admin-sidebar-logout {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 0.92rem;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: var(--transition);
+}
+
+.admin-sidebar-user {
+    color: var(--green-dark);
+}
+
+.admin-sidebar-user i {
+    width: 20px;
+    color: var(--green);
+    text-align: center;
+}
+
+.admin-sidebar-user:hover,
+.admin-sidebar-user:focus-visible {
+    background: rgba(31, 122, 92, 0.08);
+}
+
+.admin-sidebar-logout {
+    color: var(--text-dark);
+}
+
+.admin-sidebar-logout i {
+    width: 20px;
+    color: var(--red, #e05252);
+    text-align: center;
+}
+
+.admin-sidebar-logout:hover,
+.admin-sidebar-logout:focus-visible {
+    color: var(--red, #e05252);
+    background: rgba(224, 82, 82, 0.08);
+}
+
 .admin-sidebar-title {
     display: flex;
     align-items: center;
@@ -192,7 +196,7 @@ body.role-admin.admin-page .admin-layout > .admin-sidebar {
 }
 
 .admin-sidebar-collapse {
-    order: 2;
+    order: 3;
     width: 100%;
     display: flex;
     align-items: center;
@@ -228,13 +232,47 @@ body.role-admin.admin-page .admin-layout > .admin-sidebar {
 
 .admin-layout.sidebar-collapsed .admin-sidebar-title span,
 .admin-layout.sidebar-collapsed .admin-sidebar-collapse span,
-.admin-layout.sidebar-collapsed .admin-sidebar-link span {
+.admin-layout.sidebar-collapsed .admin-sidebar-link span,
+.admin-layout.sidebar-collapsed .admin-sidebar-user span,
+.admin-layout.sidebar-collapsed .admin-sidebar-logout span {
     display: none;
 }
 
 .admin-layout.sidebar-collapsed .admin-sidebar-link,
-.admin-layout.sidebar-collapsed .admin-sidebar-collapse {
+.admin-layout.sidebar-collapsed .admin-sidebar-collapse,
+.admin-layout.sidebar-collapsed .admin-sidebar-user,
+.admin-layout.sidebar-collapsed .admin-sidebar-logout,
+.admin-layout.sidebar-collapsed .admin-sidebar-top-actions .nav-notification-btn {
     justify-content: center;
+}
+
+.admin-layout.sidebar-collapsed .admin-sidebar {
+    padding-inline: 4px;
+}
+
+.admin-layout.sidebar-collapsed .admin-sidebar-top-actions {
+    padding-inline: 0;
+}
+
+.admin-layout.sidebar-collapsed .admin-sidebar-top-row {
+    justify-content: center;
+    gap: 4px;
+}
+
+.admin-layout.sidebar-collapsed .admin-sidebar-top-row > .admin-sidebar-user,
+.admin-layout.sidebar-collapsed .admin-sidebar-top-row > .admin-sidebar-collapse {
+    padding-inline: 0;
+    min-width: 0;
+}
+
+.admin-layout.sidebar-collapsed .admin-sidebar-top-row > .nav-notifications-wrapper {
+    flex: 0 0 auto;
+    align-self: center;
+}
+
+.admin-layout.sidebar-collapsed .admin-sidebar-top-actions .nav-notification-btn {
+    width: auto;
+    padding-inline: 0;
 }
 
 .admin-layout.sidebar-collapsed .admin-sidebar-collapse i {
@@ -248,7 +286,7 @@ body.role-admin.admin-page .admin-layout > .admin-sidebar {
 }
 
 .admin-theme-control {
-    order: 3;
+    order: 4;
     display: flex;
     justify-content: center;
     margin: 14px 0 4px;
@@ -263,11 +301,25 @@ body.role-admin.admin-page .admin-layout > .admin-sidebar {
     height: 40px;
 }
 
+.admin-sidebar-separator {
+    order: 5;
+    width: 100%;
+    border: 0;
+    border-top: 1px solid var(--border-soft);
+    margin: 6px 0 0;
+}
+
 .admin-sidebar-nav {
-    order: 4;
+    order: 6;
     display: grid;
     gap: 6px;
     margin-top: 18px;
+}
+
+.admin-sidebar-logout {
+    order: 7;
+    margin-top: auto;
+    padding-top: 16px;
 }
 
 .admin-sidebar-link {
@@ -299,7 +351,7 @@ body.role-admin.admin-page .admin-layout > .admin-sidebar {
 }
 
 .admin-main > main {
-    min-height: calc(100vh - var(--admin-topbar-height));
+    min-height: 100vh;
 }
 
 .admin-main .container {
@@ -336,10 +388,6 @@ body.role-admin.admin-page .admin-layout > .admin-sidebar {
 }
 
 @media (max-width: 900px) {
-    .admin-topbar-brand {
-        display: none;
-    }
-
     .admin-layout {
         display: block;
     }
@@ -353,6 +401,19 @@ body.role-admin.admin-page .admin-layout > .admin-sidebar {
     html.role-admin body.admin-page .admin-sidebar-toggle,
     body.role-admin.admin-page .admin-sidebar-toggle {
         display: flex;
+        position: fixed;
+        top: 12px;
+        right: 12px;
+        z-index: 150;
+        box-shadow: var(--shadow-md, 0 4px 14px rgba(15, 91, 70, 0.18));
+    }
+
+    .admin-layout.sidebar-open .admin-sidebar-toggle {
+        box-shadow: none;
+    }
+
+    .admin-layout.sidebar-open .admin-sidebar {
+        padding-top: 72px;
     }
 
     .admin-sidebar {
@@ -647,18 +708,10 @@ body.role-admin.admin-page .admin-layout > .admin-sidebar {
 
 /* Small phones */
 @media (max-width: 576px) {
-    /* Topbar: keep brand out, shrink paddings, toggle icon-first */
-    .admin-topbar {
-        padding: 6px 10px;
-        gap: 8px;
-    }
-
-    .admin-topbar-logout {
-        padding: 8px 12px;
-    }
-
     .admin-sidebar-toggle {
         padding: 8px 12px;
+        top: 10px;
+        right: 10px;
     }
 
     /* Tabs become scrollable pills */
@@ -697,11 +750,11 @@ body.role-admin.admin-page .admin-layout > .admin-sidebar {
 
 /* Very narrow phones: icon-only logout button */
 @media (max-width: 400px) {
-    .admin-topbar-logout span {
+    .admin-sidebar-logout span {
         display: none;
     }
 
-    .admin-topbar-logout {
-        padding: 8px 10px;
+    .admin-sidebar-logout {
+        justify-content: flex-start;
     }
-}
+}

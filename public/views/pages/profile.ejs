@@ -14,9 +14,13 @@
             rel="stylesheet">
     </head>
 
-    <body class="profile-page">
+    <body class="profile-page<% if (typeof role !== 'undefined' && role === 'admin') { %> admin-page<% } %>">
         <a class="skip-link" href="#main-content">تخطي إلى المحتوى الرئيسي</a>
-        <%- include('../partials/navbar', { activePath: '/profile' }) %>
+        <% if (typeof role !== 'undefined' && role === 'admin') { %>
+            <%- include('../partials/admin-sidebar') %>
+        <% } else { %>
+            <%- include('../partials/navbar', { activePath: '/profile' }) %>
+        <% } %>
 
         <main id="main-content" class="profile-main">
             <div class="container">
@@ -159,6 +163,10 @@
                 </section>
             </div>
         </main>
+        <% if (typeof role !== 'undefined' && role === 'admin') { %>
+            </div>
+            </div>
+        <% } %>
 
         <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/js/all.min.js"></script>
         <script src="/JS/password-toggle.js"></script>
@@ -166,6 +174,9 @@
         <script src="/JS/mfa.js"></script>
         <script src="/JS/logout.js"></script>
         <script src="/JS/preferences.js"></script>
+        <% if (typeof role !== 'undefined' && role === 'admin') { %>
+            <script src="/JS/admin-sidebar.js"></script>
+        <% } %>
     </body>
 
 </html>

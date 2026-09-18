@@ -1683,8 +1683,8 @@ for (const [route, page] of Object.entries(pageRoutes)) {
         : protectedPages.has(route)
           ? requireAuth
           : (_req, _res, next) => next();
-  app.get(route, guard, (_req, res, next) => {
-    res.render(`pages/${page}`, { currentPath: route }, (error, html) => {
+  app.get(route, guard, (req, res, next) => {
+    res.render(`pages/${page}`, { currentPath: route, role: req.user?.role || null }, (error, html) => {
       if (error) return next(error);
       return res.send(html);
     });

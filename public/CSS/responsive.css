@@ -54,11 +54,6 @@
         border-radius: 12px;
     }
 
-    .nav-link::after {
-        display: none;
-    }
-
-    .nav-link.active,
     .nav-link:hover {
         background: var(--mint);
         color: var(--green);

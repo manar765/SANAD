@@ -159,15 +159,31 @@
     /* ---------------------------------------------------------
        Table Rendering
     --------------------------------------------------------- */
+    function buildOpenNeedsCell(needs) {
+        const list = Array.isArray(needs) ? needs : [];
+        if (list.length === 0) {
+            return `<div class="ben-needs-empty">لا توجد احتياجات مفتوحة</div>`;
+        }
+        const tags = list.map(n => {
+            const title = escapeHtml(n.title || "احتياج");
+            const qty = formatNumber(n.quantityRequested);
+            const unit = escapeHtml(n.unit || "");
+            const qtyText = qty && unit ? `${qty} ${unit}` : (qty ? qty : "");
+            const requestBadge = n.assistanceRequestCode
+                ? `<span class="ben-open-need-req"><i class="fa-solid fa-hand-holding-heart" aria-hidden="true"></i> ${escapeHtml(n.assistanceRequestCode)}</span>`
+                : "";
+            return `<span class="ben-open-need" title="${escapeHtml(n.category || "")}">${title}${qtyText ? ` (${qtyText})` : ""}${requestBadge}</span>`;
+        });
+        return `<div class="ben-needs-cell-list">${tags.join("")}</div>`;
+    }
+
     function buildRow(item) {
         const meta = STATUS_META[item.verificationStatus] || STATUS_META.pending;
         const tr = document.createElement("tr");
 
         const govDistrict = [item.governorate, item.district].filter(Boolean).join(" — ") || item.location || "—";
         const familyInfo = item.familySize ? `${formatNumber(item.familySize)} أفراد` : "—";
-        const needsText = item.activeNeedsCount > 0
-            ? `<span class="badge" style="background: rgba(239, 68, 68, 0.1); color: #dc2626; font-weight: 700; padding: 0.2rem 0.5rem; border-radius: 9999px;">${formatNumber(item.activeNeedsCount)} احتياج</span>`
-            : `<span style="color: var(--text-muted); font-size: 0.85rem;">لا توجد</span>`;
+        const needsText = buildOpenNeedsCell(item.openNeeds);
 
         tr.innerHTML =
             `<td><span class="ben-code-badge">${escapeHtml(item.referenceCode || `BEN-${String(item.id).padStart(4, "0")}`)}</span></td>` +
@@ -176,7 +192,7 @@
             `<td>${escapeHtml(govDistrict)}</td>` +
             `<td>${escapeHtml(familyInfo)}</td>` +
             `<td><span class="ben-badge ${meta.badge}"><i class="${meta.icon}" aria-hidden="true"></i> ${meta.label}</span></td>` +
-            `<td>${needsText}</td>` +
+            `<td class="ben-needs-cell">${needsText}</td>` +
             `<td><div class="ben-actions">` +
             `<button type="button" class="btn btn-sm btn-outline ben-view-btn" data-id="${item.id}" title="عرض وتفاصيل الملف"><i class="fa-solid fa-eye" aria-hidden="true"></i> عرض الملف</button>` +
             (isAdmin ? `<button type="button" class="btn btn-sm btn-outline ben-rec-btn" data-id="${item.id}" title="التحقق والتوصية"><i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> التوصية</button>` : "") +

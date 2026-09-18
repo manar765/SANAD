@@ -109,11 +109,28 @@
         }
     }
 
+    function positionDropdown() {
+        const inSidebar = btn.closest(".admin-sidebar");
+        if (inSidebar) {
+            const rect = btn.getBoundingClientRect();
+            dropdown.style.position = "fixed";
+            dropdown.style.top = (rect.bottom + 10) + "px";
+            dropdown.style.left = "auto";
+            dropdown.style.right = (window.innerWidth - rect.right) + "px";
+        } else {
+            dropdown.style.position = "";
+            dropdown.style.top = "";
+            dropdown.style.left = "";
+            dropdown.style.right = "";
+        }
+    }
+
     function toggleDropdown() {
         const isOpen = dropdown.classList.contains("active");
         if (isOpen) {
             closeDropdown();
         } else {
+            positionDropdown();
             dropdown.classList.add("active");
             dropdown.hidden = false;
             btn.setAttribute("aria-expanded", "true");
