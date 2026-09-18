@@ -64,6 +64,7 @@ export async function addInventoryItem(body, userId) {
 export async function editInventoryItem(id, body) {
     const input = {
         name: text(body?.name, 160) || null, category: text(body?.category, 80) || null, description: text(body?.description, 2000),
+        quantityTotal: body?.quantityTotal === undefined ? null : nonNegativeInt(body.quantityTotal),
         lowStockThreshold: body?.lowStockThreshold === undefined ? null : nonNegativeInt(body.lowStockThreshold),
         status: body?.status === undefined ? null : text(body.status, 30),
         warehouse: text(body?.warehouse, 160) || null, location: text(body?.location, 160) || null,
@@ -72,6 +73,7 @@ export async function editInventoryItem(id, body) {
     };
     if (input.status && !INVENTORY_STATUSES.has(input.status)) throw new Error("INVALID_INVENTORY_STATUS");
     if (body?.lowStockThreshold !== undefined && input.lowStockThreshold === null) throw new Error("INVALID_INVENTORY");
+    if (body?.quantityTotal !== undefined && input.quantityTotal === null) throw new Error("INVALID_INVENTORY");
     return updateInventoryItem(id, input);
 }
 

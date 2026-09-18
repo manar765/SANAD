@@ -1,10 +1,20 @@
 import pool from "./database/index.js";
 
+const inventoryStatusExpr = `
+  CASE
+    WHEN i.status = 'archived' THEN 'archived'
+    WHEN i.quantity_available <= 0 THEN 'out_of_stock'
+    WHEN i.quantity_available <= i.low_stock_threshold THEN 'low_stock'
+    WHEN i.status IN ('surplus', 'in_distribution') THEN i.status
+    ELSE 'available'
+  END
+`;
+
 const inventorySelect = `
   SELECT i.id, i.source_donation_id AS "sourceDonationId", i.name, i.category,
          i.description, i.unit, i.quantity_total AS "quantityTotal",
          i.quantity_available AS "quantityAvailable", i.quantity_reserved AS "quantityReserved",
-         i.low_stock_threshold AS "lowStockThreshold", i.status, i.warehouse, i.location,
+         i.low_stock_threshold AS "lowStockThreshold", ${inventoryStatusExpr} AS status, i.warehouse, i.location,
          i.condition, i.expiration_date AS "expirationDate", i.notes,
          i.created_by AS "createdBy", i.created_at AS "createdAt", i.updated_at AS "updatedAt"
   FROM inventory_items i
@@ -13,13 +23,18 @@ const inventorySelect = `
 export async function listInventory({ status, category } = {}) {
     const values = [];
     const where = [];
-    if (status) { values.push(status); where.push(`i.status = $${values.length}`); }
+    if (status) { values.push(status); where.push(`${inventoryStatusExpr} = $${values.length}`); }
     if (category) { values.push(category); where.push(`i.category = $${values.length}`); }
     const result = await pool.query(`${inventorySelect} ${where.length ? `WHERE ${where.join(" AND ")}` : ""} ORDER BY i.updated_at DESC`, values);
     return result.rows;
 }
 
 export async function createInventoryItem(input, userId) {
+    const statusAtInsert = input.status === "archived" ? "archived"
+        : input.quantityTotal <= 0 ? "out_of_stock"
+        : input.quantityTotal <= input.lowStockThreshold ? "low_stock"
+        : input.status === "surplus" || input.status === "in_distribution" ? input.status
+        : "available";
     const result = await pool.query(
         `INSERT INTO inventory_items
       (source_donation_id, name, category, description, unit, quantity_total, quantity_available,
@@ -27,7 +42,7 @@ export async function createInventoryItem(input, userId) {
      VALUES ($1, $2, $3, $4, $5, $6, $6, 0, $7, $8, $9, $10, $11, $12, $13, $14)
      RETURNING id`,
         [input.sourceDonationId || null, input.name, input.category, input.description, input.unit,
-        input.quantityTotal, input.lowStockThreshold, input.status, input.warehouse, input.location, input.condition,
+        input.quantityTotal, input.lowStockThreshold, statusAtInsert, input.warehouse, input.location, input.condition,
         input.expirationDate || null, input.notes || "", userId || null],
     );
     const rows = await pool.query(`${inventorySelect} WHERE i.id = $1`, [result.rows[0].id]);
@@ -35,16 +50,30 @@ export async function createInventoryItem(input, userId) {
 }
 
 export async function updateInventoryItem(id, input) {
+    const availableExpr = `CASE WHEN $11 IS NOT NULL THEN GREATEST(0, $11 + quantity_available - quantity_total) ELSE quantity_available END`;
     const result = await pool.query(
         `UPDATE inventory_items SET
        name = COALESCE($2, name), category = COALESCE($3, category), description = COALESCE($4, description),
-       low_stock_threshold = COALESCE($5, low_stock_threshold), status = COALESCE($6, status),
+       low_stock_threshold = COALESCE($5, low_stock_threshold),
+       quantity_total = COALESCE($11, quantity_total),
+       quantity_available = ${availableExpr},
+       quantity_reserved = CASE
+                             WHEN $11 IS NOT NULL THEN LEAST(quantity_reserved, $11 - ${availableExpr})
+                             ELSE quantity_reserved
+                           END,
+       status = CASE
+                  WHEN COALESCE($6, status) = 'archived' THEN 'archived'
+                  WHEN ${availableExpr} <= 0 THEN 'out_of_stock'
+                  WHEN ${availableExpr} <= COALESCE($5, low_stock_threshold) THEN 'low_stock'
+                  WHEN COALESCE($6, status) IN ('surplus', 'in_distribution') THEN COALESCE($6, status)
+                  ELSE 'available'
+                END,
        warehouse = COALESCE($7, warehouse), location = COALESCE($8, location),
        expiration_date = COALESCE($9, expiration_date), notes = COALESCE($10, notes),
        updated_at = NOW()
      WHERE id = $1 RETURNING id`,
         [id, input.name ?? null, input.category ?? null, input.description ?? null, input.lowStockThreshold ?? null,
-            input.status ?? null, input.warehouse ?? null, input.location ?? null, input.expirationDate ?? null, input.notes ?? null],
+            input.status ?? null, input.warehouse ?? null, input.location ?? null, input.expirationDate ?? null, input.notes ?? null, input.quantityTotal ?? null],
     );
     if (!result.rows[0]) return null;
     const rows = await pool.query(`${inventorySelect} WHERE i.id = $1`, [id]);
@@ -212,7 +241,13 @@ export async function syncDonationToInventory(client, donationId, status, review
                  SET name = $2, category = $3, description = $4, unit = $5,
                      warehouse = $6, location = $7, condition = $8,
                      expiration_date = $9, notes = $10,
-                     status = CASE WHEN quantity_available = 0 THEN 'out_of_stock' WHEN quantity_available <= low_stock_threshold THEN 'low_stock' ELSE 'available' END,
+                     status = CASE
+                                WHEN status = 'archived' THEN 'archived'
+                                WHEN quantity_available <= 0 THEN 'out_of_stock'
+                                WHEN quantity_available <= low_stock_threshold THEN 'low_stock'
+                                WHEN status IN ('surplus', 'in_distribution') THEN status
+                                ELSE 'available'
+                              END,
                      updated_at = NOW()
                  WHERE id = $1`,
                 [existing.id, donation.title, donation.category, donation.description, donation.unit,
@@ -966,9 +1001,11 @@ export async function createDistribution(input, userId) {
                     `UPDATE inventory_items
                      SET quantity_available = quantity_available - $1,
                          status = CASE
-                             WHEN (quantity_available - $1) = 0 THEN 'out_of_stock'
+                             WHEN status = 'archived' THEN 'archived'
+                             WHEN (quantity_available - $1) <= 0 THEN 'out_of_stock'
                              WHEN (quantity_available - $1) <= low_stock_threshold THEN 'low_stock'
-                             ELSE status
+                             WHEN status IN ('surplus', 'in_distribution') THEN status
+                             ELSE 'available'
                          END,
                          updated_at = NOW()
                      WHERE id = $2`,
@@ -1057,9 +1094,11 @@ export async function cancelDistribution(id, userId, reason = "") {
                     `UPDATE inventory_items
                      SET quantity_available = quantity_available + $1,
                          status = CASE
-                             WHEN (quantity_available + $1) > low_stock_threshold THEN 'available'
-                             WHEN (quantity_available + $1) > 0 THEN 'low_stock'
-                             ELSE status
+                             WHEN status = 'archived' THEN 'archived'
+                             WHEN (quantity_available + $1) <= 0 THEN 'out_of_stock'
+                             WHEN (quantity_available + $1) <= low_stock_threshold THEN 'low_stock'
+                             WHEN status IN ('surplus', 'in_distribution') THEN status
+                             ELSE 'available'
                          END,
                          updated_at = NOW()
                      WHERE id = $2`,

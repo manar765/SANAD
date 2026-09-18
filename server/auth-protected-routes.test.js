@@ -471,7 +471,12 @@ test("stores donation requests securely and enforces donor/admin workflow", asyn
 
     const donorList = await request("/api/donations", { headers: { Cookie: donor.cookie } });
     const userDonations = (await donorList.json()).donations;
-    assert.ok(userDonations.some(item => item.id === donation.id && /^DON-\d{4,}$/.test(item.referenceCode)));
+    assert.ok(!userDonations.some(item => item.id === donation.id), "pending donation must be hidden from the donor dashboard");
+
+    const myDonations = await request("/api/donations/my", { headers: { Cookie: donor.cookie } });
+    assert.equal(myDonations.status, 200);
+    const ownDonations = (await myDonations.json()).donations;
+    assert.ok(ownDonations.some(item => item.id === donation.id && item.statusKey === "pending" && item.status === "قيد المراجعة" && /^DON-\d{4,}$/.test(item.referenceCode)), "donor sees own pending donation in My Donations");
 
     const beneficiary = await signup({
         role: "beneficiary",
@@ -520,6 +525,12 @@ test("stores donation requests securely and enforces donor/admin workflow", asyn
 
     const visibleAfterApproval = await request("/api/donations", { headers: { Cookie: beneficiary.cookie } });
     assert.ok((await visibleAfterApproval.json()).donations.some(item => item.id === donation.id));
+
+    const donorDashboardAfterApproval = await request("/api/donations", { headers: { Cookie: donor.cookie } });
+    assert.ok((await donorDashboardAfterApproval.json()).donations.some(item => item.id === donation.id));
+    const myAfterApproval = await request("/api/donations/my", { headers: { Cookie: donor.cookie } });
+    const ownAfterApproval = (await myAfterApproval.json()).donations;
+    assert.ok(ownAfterApproval.some(item => item.id === donation.id && item.statusKey === "approved" && item.status === "مقبول"));
     await logout(donor.cookie);
     await logout(beneficiary.cookie);
     await logout(adminCookie);

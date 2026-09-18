@@ -201,7 +201,6 @@
             $("#invCategory").value = item.category || "";
             $("#invUnit").value = item.unit || "";
             $("#invQuantityTotal").value = item.quantityTotal ?? "";
-            $("#invQuantityTotal").disabled = true;
             $("#invLowStockThreshold").value = item.lowStockThreshold ?? 1;
             $("#invWarehouse").value = item.warehouse || "";
             $("#invLocation").value = item.location || "";

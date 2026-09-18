@@ -465,6 +465,17 @@ const DONATION_STATUS_LABELS = Object.freeze({
 });
 const DONATION_STATUSES = new Set(Object.keys(DONATION_STATUS_LABELS));
 
+// Donor-facing labels for the "My Donations" view. These mirror the actual
+// database status (pending/approved/rejected/...) so the donor always sees the
+// real review outcome from the admin.
+const MY_DONATION_STATUS_LABELS = Object.freeze({
+  pending: "قيد المراجعة",
+  approved: "مقبول",
+  rejected: "مرفوض",
+  in_progress: "قيد التوزيع",
+  distributed: "تم التوزيع",
+});
+
 const ASSISTANCE_STATUS_LABELS = Object.freeze({
   pending: "قيد المراجعة",
   approved: "تمت الموافقة",
@@ -833,9 +844,8 @@ app.get("/api/donations", requireAuth, async (req, res) => {
               COALESCE(NULLIF(u.full_name, ''), NULLIF(u.name, ''), u.email) AS donor
        FROM donation_requests d
        JOIN users u ON u.id = d.donor_id
-       WHERE d.status IN ('approved', 'in_progress', 'distributed') OR d.donor_id = $1
+       WHERE d.status IN ('approved', 'in_progress', 'distributed')
        ORDER BY d.created_at DESC`,
-      [req.user.id || 0],
     );
     return res.json({
       donations: result.rows.map(donation => ({
@@ -843,6 +853,38 @@ app.get("/api/donations", requireAuth, async (req, res) => {
         referenceCode: donation.referenceCode || `DON-${String(donation.id).padStart(4, "0")}`,
         status: DONATION_STATUS_LABELS[donation.status] || donation.status,
         qty: `${donation.qty} ${donation.unit}`,
+        date: new Date(donation.createdAt).toLocaleDateString("ar-EG"),
+        receivedDate: donation.receivedAt ? new Date(donation.receivedAt).toLocaleDateString("ar-EG") : null,
+        expirationDate: donation.expirationDate || null,
+      })),
+    });
+  } catch {
+    return res.status(503).json({ message: "Donations are temporarily unavailable." });
+  }
+});
+
+app.get("/api/donations/my", requireAuth, async (req, res) => {
+  if (req.user.role !== "donor") {
+    return res.status(403).json({ message: "المتبرعين فقط هم من يمكنهم عرض تبرعاتهم." });
+  }
+  try {
+    const result = await pool.query(
+      `SELECT d.id, d.reference_code AS "referenceCode", d.title, d.description AS "desc", d.category,
+              d.quantity AS qty, d.unit, d.item_condition AS condition, d.warehouse, d.location,
+              d.status, d.notes, d.received_at AS "receivedAt", d.expiration_date AS "expirationDate",
+              d.created_at AS "createdAt"
+       FROM donation_requests d
+       WHERE d.donor_id = $1
+       ORDER BY d.created_at DESC`,
+      [req.user.id],
+    );
+    return res.json({
+      donations: result.rows.map(donation => ({
+        ...donation,
+        referenceCode: donation.referenceCode || `DON-${String(donation.id).padStart(4, "0")}`,
+        statusKey: donation.status,
+        status: MY_DONATION_STATUS_LABELS[donation.status] || donation.status,
+        qtyLabel: `${donation.qty} ${donation.unit}`,
         date: new Date(donation.createdAt).toLocaleDateString("ar-EG"),
         receivedDate: donation.receivedAt ? new Date(donation.receivedAt).toLocaleDateString("ar-EG") : null,
         expirationDate: donation.expirationDate || null,

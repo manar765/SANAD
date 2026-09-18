@@ -104,6 +104,33 @@
                     </section>
                 </div>
 
+                <section class="profile-card my-donations-card" id="myDonationsSection" aria-labelledby="myDonationsTitle" hidden>
+                    <div class="profile-card-heading">
+                        <div class="profile-icon"><i class="fa-solid fa-boxes-packing"></i></div>
+                        <div>
+                            <h2 id="myDonationsTitle">تبرعاتي</h2>
+                            <p>راجع حالة التبرعات التي أرسلتها.</p>
+                        </div>
+                    </div>
+                    <div class="req-list" id="myDonationsList">
+                        <div class="ui-state ui-loading" id="myDonationsLoading" role="status" aria-live="polite" aria-busy="true">
+                            <i class="fa-solid fa-spinner" aria-hidden="true"></i>
+                            <span data-state-message>جارٍ تحميل تبرعاتك…</span>
+                        </div>
+                        <div class="req-empty" id="myDonationsEmpty" hidden>
+                            <i class="fa-solid fa-inbox" aria-hidden="true"></i>
+                            <p>لم ترسل أي تبرعات بعد.</p>
+                        </div>
+                        <div class="ui-state ui-error" id="myDonationsError" role="alert" hidden>
+                            <div class="ui-error-content">
+                                <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>
+                                <span data-state-message>تعذر تحميل تبرعاتك.</span>
+                            </div>
+                            <button type="button" class="btn btn-outline ui-error-retry" id="myDonationsRetryBtn">إعادة المحاولة</button>
+                        </div>
+                    </div>
+                </section>
+
                 <section class="profile-card mfa-card" aria-labelledby="mfaTitle">
                     <div class="profile-card-heading">
                         <div class="profile-icon profile-icon-blue"><i class="fa-solid fa-mobile-screen-button"></i>
@@ -174,6 +201,7 @@
         <script src="/JS/mfa.js"></script>
         <script src="/JS/logout.js"></script>
         <script src="/JS/preferences.js"></script>
+        <script src="/JS/my-donations.js"></script>
         <% if (typeof role !== 'undefined' && role === 'admin') { %>
             <script src="/JS/admin-sidebar.js"></script>
         <% } %>
