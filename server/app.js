@@ -74,6 +74,7 @@ import {
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.join(__dirname, "..");
 const port = Number(process.env.PORT) || 3000;
+const host = process.env.HOST || "0.0.0.0";
 const adminEmail = (process.env.ADMIN_EMAIL || "admin@sanad.com")
   .trim()
   .toLowerCase();
@@ -1733,7 +1734,7 @@ async function start() {
     return;
   }
 
-  httpServer = app.listen(port, () => {
+  httpServer = app.listen(port, host, () => {
     console.log(`SANAD running at http://localhost:${port}`);
   });
 }
