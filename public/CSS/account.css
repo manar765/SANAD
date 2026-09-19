@@ -219,16 +219,15 @@
 
 @media (max-width: 900px) {
 
-    .guest-actions,
-    .user-actions {
-        flex-direction: column;
-        align-items: stretch;
-        width: 100%;
+    .nav-actions .guest-actions,
+    .nav-actions .user-actions {
+        flex-direction: row;
+        align-items: center;
+        width: auto;
     }
 
     .user-greeting {
-        text-align: center;
-        padding: 6px 0;
+        display: none;
     }
 }
 
@@ -421,6 +420,14 @@
     font-weight: 700;
 }
 
+.mfa-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-top: 1rem;
+}
+
 /* ---------- active sessions ---------- */
 .sessions-card {
     margin-top: 24px;
@@ -430,7 +437,7 @@
     align-items: flex-start;
 }
 
-.sessions-heading > div:nth-child(2) {
+.sessions-heading>div:nth-child(2) {
     flex: 1;
 }
 

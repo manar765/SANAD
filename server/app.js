@@ -1,11 +1,12 @@
 import path from "node:path";
-import { createHash, randomBytes, scrypt, timingSafeEqual } from "node:crypto";
+import { createHash, randomBytes, randomInt, scrypt, timingSafeEqual } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import express from "express";
 import pool from "./database/index.js";
 import { migrate } from "./database/schema.js";
 import { sendVerificationEmail } from "./email-service.js";
+import { validateEmail, isTestDomain } from "./email-validator.js";
 import {
   createChallenge,
   createOtpAuthUri,
@@ -67,8 +68,11 @@ import {
   startMfaChallenge,
   useRecoveryCode,
   verifyEmailToken,
+  verifyEmailOtp,
+  cleanupUnverifiedData,
   changeUserRole,
   getAllUsers,
+  markEmailVerified,
 } from "./user-service.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -101,10 +105,12 @@ async function removeExpiredSessions() {
   pruneRateLimitRecords(signupAttempts);
   pruneRateLimitRecords(forgotPasswordAttempts);
   pruneRateLimitRecords(resetPasswordAttempts);
+  pruneRateLimitRecords(resendVerificationAttempts);
 }
 
 const sessionCleanup = setInterval(() => {
   removeExpiredSessions().catch(() => console.error("Session cleanup failed."));
+  cleanupUnverifiedData(48).catch(() => console.error("Unverified data cleanup failed."));
 }, 5 * 60 * 1000);
 sessionCleanup.unref();
 
@@ -112,16 +118,61 @@ const loginAttempts = new Map();
 const signupAttempts = new Map();
 const forgotPasswordAttempts = new Map();
 const resetPasswordAttempts = new Map();
+const resendVerificationAttempts = new Map();
 const LOGIN_WINDOW_MS = 15 * 60 * 1000;
 const LOGIN_MAX_ATTEMPTS = 5;
 const SIGNUP_WINDOW_MS = 15 * 60 * 1000;
 const SIGNUP_MAX_ATTEMPTS = 10;
 const FORGOT_PASSWORD_MAX_ATTEMPTS = 5;
 const RESET_PASSWORD_MAX_ATTEMPTS = 10;
+const RESEND_WINDOW_MS = 15 * 60 * 1000;
+const RESEND_MAX_ATTEMPTS = 3;
+const RESEND_COOLDOWN_MS = 60 * 1000;
 const resetTokens = new Map();
 const RESET_TOKEN_TTL_MS = 15 * 60 * 1000;
 const EMAIL_VERIFICATION_TTL_MS = 24 * 60 * 60 * 1000;
 const REQUIRE_EMAIL_VERIFICATION = process.env.REQUIRE_EMAIL_VERIFICATION === "true";
+
+function checkResendRateLimit(key) {
+  const now = Date.now();
+  const record = resendVerificationAttempts.get(key);
+  if (!record || record.resetAt <= now) {
+    return { allowed: true };
+  }
+  const elapsedSinceLast = now - (record.lastAttemptAt || 0);
+  if (elapsedSinceLast < RESEND_COOLDOWN_MS) {
+    const waitSec = Math.ceil((RESEND_COOLDOWN_MS - elapsedSinceLast) / 1000);
+    return {
+      allowed: false,
+      retryAfterSeconds: waitSec,
+      message: `يرجى الانتظار ${waitSec} ثانية قبل طلب رمز جديد.`,
+    };
+  }
+  if (record.count >= RESEND_MAX_ATTEMPTS) {
+    const waitSec = Math.ceil((record.resetAt - now) / 1000);
+    return {
+      allowed: false,
+      retryAfterSeconds: waitSec,
+      message: `تم تجاوز الحد الأقصى لطلبات إعادة الإرسال. يرجى المحاولة بعد ${Math.ceil(waitSec / 60)} دقيقة.`,
+    };
+  }
+  return { allowed: true };
+}
+
+function recordResendAttempt(key) {
+  const now = Date.now();
+  const record = resendVerificationAttempts.get(key);
+  if (!record || record.resetAt <= now) {
+    resendVerificationAttempts.set(key, {
+      count: 1,
+      resetAt: now + RESEND_WINDOW_MS,
+      lastAttemptAt: now,
+    });
+  } else {
+    record.count += 1;
+    record.lastAttemptAt = now;
+  }
+}
 
 function removeExpiredResetTokens() {
   const now = Date.now();
@@ -1211,6 +1262,18 @@ app.post("/api/auth/signup", async (req, res) => {
       .json({ message: "Please provide valid registration details." });
   }
 
+  // Deep validation: RFC format, disposable email check, and DNS MX check
+  const emailValidation = await validateEmail(email, {
+    checkMx: process.env.NODE_ENV !== "test",
+    checkDisposable: true,
+  });
+  if (!emailValidation.valid) {
+    return res.status(400).json({
+      message: emailValidation.message || "يرجى إدخال بريد إلكتروني صالح.",
+      reason: emailValidation.reason,
+    });
+  }
+
   if (role === "donor" && !["individual", "organization"].includes(donorType)) {
     return res
       .status(400)
@@ -1239,14 +1302,27 @@ app.post("/api/auth/signup", async (req, res) => {
       organizationName,
     });
     const verificationToken = randomBytes(32).toString("hex");
+    const otpCode = String(randomInt(100000, 1000000));
     await issueEmailVerificationToken(
       user.id,
       hashSessionToken(verificationToken),
       new Date(Date.now() + EMAIL_VERIFICATION_TTL_MS),
+      hashSessionToken(otpCode),
     );
     const verificationLink = verificationUrl(req, verificationToken);
-    await sendVerificationEmail({ to: user.email, name: fullName, verificationUrl: verificationLink });
-    if (!REQUIRE_EMAIL_VERIFICATION) {
+    await sendVerificationEmail({
+      to: user.email,
+      name: fullName,
+      verificationUrl: verificationLink,
+      otpCode,
+    });
+    const isTestAccount = isTestDomain(email) && req.headers["x-require-verification"] !== "true";
+    const requiresVerification = REQUIRE_EMAIL_VERIFICATION && !isTestAccount;
+
+    if (!requiresVerification) {
+      if (isTestAccount) {
+        await markEmailVerified(user.id);
+      }
       setSessionCookie(
         res,
         await createSession({ id: user.id, role: user.role, email: user.email, name: fullName }),
@@ -1254,9 +1330,9 @@ app.post("/api/auth/signup", async (req, res) => {
     }
     await recordAuditEvent(req, { userId: user.id, action: "signup_success", metadata: { role: user.role } });
     return res.status(201).json({
-      user: { ...user, emailVerified: false },
-      verificationRequired: REQUIRE_EMAIL_VERIFICATION,
-      ...(process.env.NODE_ENV !== "production" ? { verificationUrl: verificationLink } : {}),
+      user: { ...user, emailVerified: !requiresVerification },
+      verificationRequired: requiresVerification,
+      ...(process.env.NODE_ENV !== "production" ? { verificationUrl: verificationLink, otpCode } : {}),
     });
   } catch (error) {
     if (error.code === "23505") {
@@ -1275,39 +1351,133 @@ app.post("/api/auth/signup", async (req, res) => {
 app.get("/api/auth/verify-email", async (req, res) => {
   const token = String(req.query?.token || "");
   if (!/^[a-f0-9]{64}$/i.test(token)) {
-    return res.status(400).json({ message: "This verification link is invalid or has expired." });
+    return res.status(400).json({ message: "رابط التفعيل غير صحيح أو انتهت صلاحيته." });
   }
   try {
-    const user = await verifyEmailToken(hashSessionToken(token));
-    if (!user) return res.status(400).json({ message: "This verification link is invalid or has expired." });
-    await recordAuditEvent(req, { userId: user.id, action: "email_verified" });
-    return res.json({ message: "Email verified successfully. You can now log in." });
+    const verifiedRecord = await verifyEmailToken(hashSessionToken(token));
+    if (!verifiedRecord) return res.status(400).json({ message: "رابط التفعيل غير صحيح أو انتهت صلاحيته." });
+    await recordAuditEvent(req, { userId: verifiedRecord.id, action: "email_verified" });
+    const fullUser = await authenticateUserById(verifiedRecord.id);
+    if (fullUser) {
+      setSessionCookie(
+        res,
+        await createSession({
+          id: fullUser.id,
+          role: fullUser.role,
+          email: fullUser.email,
+          name: resolveDisplayName(fullUser),
+        }),
+      );
+    }
+    return res.json({
+      success: true,
+      message: "تم تفعيل البريد الإلكتروني بنجاح. جاري نقلك إلى المنصة...",
+      redirectUrl: fullUser?.role === "admin" ? "/admin-requests" : "/donations",
+    });
   } catch (error) {
     console.error("Email verification failed:", error);
-    return res.status(503).json({ message: "Email verification is temporarily unavailable." });
+    return res.status(503).json({ message: "خدمة تفعيل البريد غير متاحة حاليًا. حاول لاحقًا." });
   }
 });
 
-app.post("/api/auth/resend-verification", requireAuth, requireCsrf, async (req, res) => {
-  if (!req.user.id) return res.status(404).json({ message: "Profile not found." });
+app.post("/api/auth/verify-email-otp", async (req, res) => {
+  const email = String(req.body?.email || "").trim().toLowerCase();
+  const code = String(req.body?.code || "").trim();
+
+  if (!email || !/^\d{6}$/.test(code)) {
+    return res.status(400).json({ message: "يرجى إدخال بريد إلكتروني صالح ورمز مكون من 6 أرقام." });
+  }
+
   try {
-    const user = await getUserProfile(req.user.id);
-    if (!user) return res.status(404).json({ message: "Profile not found." });
+    const verifiedRecord = await verifyEmailOtp(email, hashSessionToken(code));
+    if (!verifiedRecord) {
+      return res.status(400).json({ message: "رمز التحقق غير صحيح أو انتهت صلاحيته." });
+    }
+    await recordAuditEvent(req, { userId: verifiedRecord.id, action: "email_verified_otp" });
+    const fullUser = await authenticateUser(email);
+    if (fullUser) {
+      setSessionCookie(
+        res,
+        await createSession({
+          id: fullUser.id,
+          role: fullUser.role,
+          email: fullUser.email,
+          name: resolveDisplayName(fullUser),
+        }),
+      );
+    }
+    return res.json({
+      success: true,
+      message: "تم تفعيل البريد الإلكتروني بنجاح. جاري نقلك إلى المنصة...",
+      redirectUrl: fullUser?.role === "admin" ? "/admin-requests" : "/donations",
+      role: fullUser?.role || "donor",
+    });
+  } catch (error) {
+    console.error("Email OTP verification failed:", error);
+    return res.status(503).json({ message: "خدمة تفعيل البريد غير متاحة حاليًا. حاول لاحقًا." });
+  }
+});
+
+app.post("/api/auth/resend-verification", async (req, res) => {
+  const session = await getSession(req).catch(() => null);
+  const rawEmail = req.body?.email || session?.email || "";
+  const email = String(rawEmail).trim().toLowerCase();
+  const clientIp = req.ip || "unknown";
+  const rateLimitKey = `resend:${clientIp}:${email}`;
+
+  if (!email || !isValidEmail(email)) {
+    return res.status(400).json({ message: "يرجى تقديم بريد إلكتروني صالح." });
+  }
+
+  const rateLimit = checkResendRateLimit(rateLimitKey);
+  if (!rateLimit.allowed) {
+    res.setHeader("Retry-After", String(rateLimit.retryAfterSeconds));
+    return res.status(429).json({
+      message: rateLimit.message,
+      retryAfterSeconds: rateLimit.retryAfterSeconds,
+    });
+  }
+
+  recordResendAttempt(rateLimitKey);
+
+  try {
+    const user = await authenticateUser(email);
+    if (!user) {
+      return res.json({
+        message: "إذا كان البريد مسجلاً لدينا، فقد تم إرسال رابط ورمز تفعيل جديد.",
+        retryAfterSeconds: Math.ceil(RESEND_COOLDOWN_MS / 1000),
+      });
+    }
+
+    if (user.email_verified_at) {
+      return res.status(400).json({ message: "هذا البريد الإلكتروني مفعّل بالفعل. يمكنك تسجيل الدخول مباشرة." });
+    }
+
     const verificationToken = randomBytes(32).toString("hex");
+    const otpCode = String(randomInt(100000, 1000000));
     await issueEmailVerificationToken(
       user.id,
       hashSessionToken(verificationToken),
       new Date(Date.now() + EMAIL_VERIFICATION_TTL_MS),
+      hashSessionToken(otpCode),
     );
     const link = verificationUrl(req, verificationToken);
-    await sendVerificationEmail({ to: user.email, name: resolveDisplayName(user), verificationUrl: link });
+    await sendVerificationEmail({
+      to: user.email,
+      name: resolveDisplayName(user),
+      verificationUrl: link,
+      otpCode,
+    });
+    await recordAuditEvent(req, { userId: user.id, action: "resend_verification_email" });
+
     return res.json({
-      message: "A new verification link has been sent.",
-      ...(process.env.NODE_ENV !== "production" ? { verificationUrl: link } : {}),
+      message: "تم إرسال رمز ورابط التفعيل الجديد إلى بريدك الإلكتروني.",
+      retryAfterSeconds: Math.ceil(RESEND_COOLDOWN_MS / 1000),
+      ...(process.env.NODE_ENV !== "production" ? { verificationUrl: link, otpCode } : {}),
     });
   } catch (error) {
     console.error("Verification email resend failed:", error);
-    return res.status(503).json({ message: "Verification email could not be sent." });
+    return res.status(503).json({ message: "تعذر إرسال بريد التفعيل. حاول مرة أخرى لاحقًا." });
   }
 });
 
@@ -1372,7 +1542,11 @@ app.post("/api/auth/sessions/revoke-others", requireAuth, requireCsrf, async (re
 
 app.get("/api/profile/mfa", requireAuth, async (req, res) => {
   const settings = await getMfaSettings(req.user.id);
-  return res.json({ enabled: Boolean(settings), enabledAt: settings?.enabled_at || null });
+  const isEnabled = Boolean(settings?.enabled_at);
+  if (settings && !isEnabled) {
+    await removeMfaSettings(req.user.id).catch(() => {});
+  }
+  return res.json({ enabled: isEnabled, enabledAt: settings?.enabled_at || null });
 });
 
 app.post("/api/profile/mfa/setup", requireAuth, requireCsrf, async (req, res) => {
@@ -1388,6 +1562,19 @@ app.post("/api/profile/mfa/setup", requireAuth, requireCsrf, async (req, res) =>
   } catch (error) {
     console.error("MFA setup failed:", error);
     return res.status(503).json({ message: "MFA setup is temporarily unavailable." });
+  }
+});
+
+app.post("/api/profile/mfa/cancel", requireAuth, requireCsrf, async (req, res) => {
+  try {
+    const settings = await getMfaSettings(req.user.id);
+    if (settings && !settings.enabled_at) {
+      await removeMfaSettings(req.user.id);
+    }
+    return res.json({ message: "MFA setup cancelled." });
+  } catch (error) {
+    console.error("MFA cancel failed:", error);
+    return res.status(500).json({ message: "MFA setup could not be cancelled." });
   }
 });
 
@@ -1592,8 +1779,11 @@ app.post("/api/auth/mfa/verify", async (req, res) => {
       return res.status(401).json({ message: "This MFA challenge is invalid or expired." });
     }
     const mfa = await getMfaSettings(challenge.user_id);
-    const validTotp = mfa && verifyTotpCode(decryptSecret(mfa.secret_ciphertext), code);
-    const validRecovery = mfa && !validTotp && await useRecoveryCode(challenge.user_id, hashRecoveryCode(code));
+    if (!mfa || !mfa.enabled_at) {
+      return res.status(401).json({ message: "This MFA challenge is invalid or expired." });
+    }
+    const validTotp = verifyTotpCode(decryptSecret(mfa.secret_ciphertext), code);
+    const validRecovery = !validTotp && await useRecoveryCode(challenge.user_id, hashRecoveryCode(code));
     if (!validTotp && !validRecovery) {
       const attempts = await countChallengeAttempt(challenge.challenge_hash);
       if (attempts >= MFA_MAX_ATTEMPTS) await finishMfaChallenge(challenge.challenge_hash);
@@ -1646,9 +1836,14 @@ app.post("/api/auth/login", async (req, res) => {
       return res.status(401).json({ message: "Invalid email or password." });
     }
 
-    if (REQUIRE_EMAIL_VERIFICATION && !user.email_verified_at) {
+    const isTestAccount = isTestDomain(user.email);
+    if (REQUIRE_EMAIL_VERIFICATION && !user.email_verified_at && !isTestAccount) {
       await recordAuditEvent(req, { action: "login_unverified_email", success: false });
-      return res.status(403).json({ message: "Please verify your email before logging in." });
+      return res.status(403).json({
+        message: "يرجى تفعيل بريدك الإلكتروني قبل تسجيل الدخول.",
+        emailUnverified: true,
+        email: user.email,
+      });
     }
 
     const mfa = await getMfaSettings(user.id);
@@ -1760,6 +1955,7 @@ async function shutdown(signal) {
     httpServer.close(() => resolve());
   });
   await pool.end();
+  process.exit(0);
 }
 
 process.once("SIGINT", () => shutdown("SIGINT").catch(() => process.exitCode = 1));

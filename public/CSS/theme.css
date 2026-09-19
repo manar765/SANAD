@@ -106,6 +106,8 @@ html[data-theme="dark"] .brand-text {
     order: 99;
     margin-inline-start: 4px;
     margin-inline-end: 0;
+    display: inline-flex;
+    align-items: center;
 }
 
 .preference-btn {
@@ -115,6 +117,7 @@ html[data-theme="dark"] .brand-text {
     padding: 0;
     justify-content: center;
     border-radius: 50%;
+    cursor: pointer;
 }
 
 .preference-btn .preference-label {
@@ -125,13 +128,19 @@ html[data-theme="dark"] .brand-text {
     font-size: 1rem;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 992px) {
     .preference-controls {
         width: auto;
-        margin: 4px 0 4px 4px;
+        margin: 0;
+        order: 10;
+        display: inline-flex;
+        align-items: center;
     }
 
     .preference-btn {
-        flex: 0 0 38px;
+        width: 36px;
+        height: 36px;
+        min-height: 36px;
+        flex: 0 0 36px;
     }
 }

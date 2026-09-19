@@ -110,18 +110,29 @@
     }
 
     function positionDropdown() {
+        const rect = btn.getBoundingClientRect();
+        const isMobile = window.innerWidth <= 992;
         const inSidebar = btn.closest(".admin-sidebar");
-        if (inSidebar) {
-            const rect = btn.getBoundingClientRect();
+
+        if (isMobile) {
+            dropdown.style.position = "fixed";
+            dropdown.style.top = (rect.bottom + 8) + "px";
+            const rightOffset = Math.max(10, Math.min(window.innerWidth - rect.right, window.innerWidth - 320));
+            dropdown.style.right = rightOffset + "px";
+            dropdown.style.left = "auto";
+            dropdown.style.maxWidth = "calc(100vw - 20px)";
+        } else if (inSidebar) {
             dropdown.style.position = "fixed";
             dropdown.style.top = (rect.bottom + 10) + "px";
             dropdown.style.left = "auto";
-            dropdown.style.right = (window.innerWidth - rect.right) + "px";
+            dropdown.style.right = Math.max(12, window.innerWidth - rect.right) + "px";
+            dropdown.style.maxWidth = "330px";
         } else {
-            dropdown.style.position = "";
-            dropdown.style.top = "";
-            dropdown.style.left = "";
-            dropdown.style.right = "";
+            dropdown.style.position = "absolute";
+            dropdown.style.top = "calc(100% + 10px)";
+            dropdown.style.right = "0";
+            dropdown.style.left = "auto";
+            dropdown.style.maxWidth = "330px";
         }
     }
 
@@ -130,6 +141,22 @@
         if (isOpen) {
             closeDropdown();
         } else {
+            // Close mobile navbar or admin sidebar if open
+            const nav = document.getElementById("navbar");
+            if (nav && nav.classList.contains("open")) {
+                nav.classList.remove("open");
+                const navToggle = document.getElementById("navToggle");
+                if (navToggle) navToggle.setAttribute("aria-expanded", "false");
+                document.body.classList.remove("no-scroll");
+            }
+            const adminLayout = document.getElementById("adminLayout");
+            if (adminLayout && adminLayout.classList.contains("sidebar-open")) {
+                adminLayout.classList.remove("sidebar-open");
+                const adminToggle = document.getElementById("adminSidebarToggle");
+                if (adminToggle) adminToggle.setAttribute("aria-expanded", "false");
+                document.body.classList.remove("no-scroll");
+            }
+
             positionDropdown();
             dropdown.classList.add("active");
             dropdown.hidden = false;

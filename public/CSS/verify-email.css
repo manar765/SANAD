@@ -1,0 +1,231 @@
+html,
+body {
+  width: 100%;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+
+body.verify-body,
+body:has(.verify-page) {
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  align-items: center !important;
+  min-height: 100vh !important;
+  width: 100% !important;
+  background: linear-gradient(135deg, #FAF7F1 0%, #E7F1EB 100%) !important;
+}
+
+.verify-page {
+  width: 100% !important;
+  min-height: 100vh !important;
+  flex: 1 1 auto;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 2rem 1rem;
+  background: transparent !important;
+  margin: 0 auto !important;
+}
+
+.verify-card {
+  width: 100%;
+  max-width: 32rem;
+  margin: auto !important;
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 2.5rem 2rem;
+  box-shadow: 0 10px 30px -5px rgba(18, 70, 58, 0.08);
+  border: 1px solid var(--border, #EDEDED);
+  text-align: center;
+}
+
+.verify-logo {
+  width: 72px;
+  height: 72px;
+  margin: 0 auto 1.5rem;
+  border-radius: 18px;
+  background: var(--green-light, #E7F1EB);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--green, #12463A);
+}
+
+.verify-logo img {
+  width: 54px;
+  height: auto;
+}
+
+.verify-card h1 {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--green, #12463A);
+  margin-bottom: 0.5rem;
+}
+
+.verify-card p.subtitle {
+  color: #667085;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin-bottom: 1.75rem;
+}
+
+.dev-otp-banner {
+  display: none;
+  background: #FEF3C7;
+  border: 1px dashed #D97706;
+  padding: 0.6rem 1rem;
+  border-radius: 10px;
+  margin-bottom: 1.25rem;
+  font-size: 0.85rem;
+  color: #92400E;
+  text-align: center;
+}
+
+.dev-otp-value {
+  font-family: monospace;
+  font-size: 1.2rem;
+  letter-spacing: 3px;
+  color: #78350F;
+}
+
+.dev-otp-btn {
+  margin-inline-start: 8px;
+  background: #D97706;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: opacity 0.2s;
+}
+
+.dev-otp-btn:hover {
+  opacity: 0.9;
+}
+
+.otp-container {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  direction: ltr;
+  margin: 1.5rem 0;
+}
+
+.otp-box {
+  width: 48px;
+  height: 56px;
+  border: 2px solid #D0D5DD;
+  border-radius: 12px;
+  text-align: center;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--green, #12463A);
+  font-family: monospace;
+  transition: all 0.2s ease;
+  background: #FAFBF9;
+}
+
+.otp-box:focus {
+  border-color: var(--green-med, #1E6B4F);
+  background: #ffffff;
+  box-shadow: 0 0 0 4px rgba(30, 107, 79, 0.15);
+  outline: none;
+}
+
+.otp-box.filled {
+  border-color: var(--green-med, #1E6B4F);
+  background: #ffffff;
+}
+
+.alert-box {
+  display: none;
+  padding: 0.85rem 1rem;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  margin: 1rem 0;
+  text-align: start;
+}
+
+.alert-box.show {
+  display: block;
+}
+
+.alert-box.error {
+  background: var(--red-bg, #FCE9E9);
+  color: var(--red, #B03A3A);
+  border: 1px solid #F5C6C6;
+}
+
+.alert-box.success {
+  background: #EDFDF5;
+  color: #166534;
+  border: 1px solid #BBF7D0;
+}
+
+.resend-section {
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid #F2F4F7;
+  font-size: 0.9rem;
+  color: #475467;
+}
+
+.btn-resend {
+  background: none;
+  border: none;
+  color: var(--green-med, #1E6B4F);
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+
+.btn-resend:hover:not(:disabled) {
+  background: var(--green-light, #E7F1EB);
+}
+
+.btn-resend:disabled {
+  color: #98A2B3;
+  cursor: not-allowed;
+}
+
+.login-redirect-btn {
+  margin-top: 1rem;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.state-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1rem;
+}
+
+.state-icon.success {
+  background: #DCFCE7;
+  color: #16A34A;
+}
+
+.state-icon.error {
+  background: #FEE2E2;
+  color: #DC2626;
+}
+
+.state-icon.loading {
+  background: #E0F2FE;
+  color: #0284C7;
+}

@@ -42,12 +42,12 @@
             nameElement.textContent = label;
         }
         if (guestActions) guestActions.classList.add("hidden");
-        if (userActions) userActions.classList.remove("hidden");
+        document.querySelectorAll(".user-actions").forEach(el => el.classList.remove("hidden"));
         applyRoleVisibility(user?.role);
     };
     const showGuest = () => {
         if (guestActions) guestActions.classList.remove("hidden");
-        if (userActions) userActions.classList.add("hidden");
+        document.querySelectorAll(".user-actions").forEach(el => el.classList.add("hidden"));
         applyRoleVisibility(null);
     };
 

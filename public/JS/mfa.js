@@ -17,7 +17,7 @@
         try {
             const response = await fetch("/api/profile/mfa", { credentials: "same-origin", headers: { Accept: "application/json" } });
             const payload = await response.json();
-            show(payload.enabled ? "enabled" : "disabled");
+            show(Boolean(payload.enabled && payload.enabledAt) ? "enabled" : "disabled");
         } catch { setStatus("تعذر تحميل حالة المصادقة الثنائية.", "error"); }
     };
     document.getElementById("startMfaSetup")?.addEventListener("click", async () => {
@@ -28,15 +28,28 @@
             document.getElementById("mfaUri").value = payload.otpauthUri;
             document.getElementById("mfaRecoveryCodes").textContent = payload.recoveryCodes.join("\n");
             document.getElementById("mfaSetupToken").value = payload.setupToken;
+            document.getElementById("mfaCode").value = "";
             show("setup"); setStatus("أدخل رمز التطبيق لتأكيد الإعداد.");
         } catch (error) { setStatus(error.message, "error"); }
+    });
+    document.getElementById("cancelMfaSetup")?.addEventListener("click", async () => {
+        try {
+            await request("/api/profile/mfa/cancel", { method: "POST" });
+        } catch {}
+        show("disabled");
+        setStatus("تم إلغاء إعداد المصادقة الثنائية.");
+        document.getElementById("mfaEnableForm")?.reset();
     });
     document.getElementById("mfaEnableForm")?.addEventListener("submit", async event => {
         event.preventDefault();
         try {
             const payload = await request("/api/profile/mfa/enable", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code: document.getElementById("mfaCode").value, setupToken: document.getElementById("mfaSetupToken").value }) });
             show("enabled"); setStatus(payload.message, "success");
-        } catch (error) { setStatus(error.message, "error"); }
+        } catch (error) {
+            setStatus(error.message, "error");
+            const codeInput = document.getElementById("mfaCode");
+            if (codeInput) { codeInput.value = ""; codeInput.focus(); }
+        }
     });
     document.getElementById("mfaDisableForm")?.addEventListener("submit", async event => {
         event.preventDefault();

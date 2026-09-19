@@ -26,6 +26,7 @@
 
 /* brand */
 .brand {
+    order: 1;
     display: flex;
     align-items: center;
     gap: 10px;
@@ -61,6 +62,7 @@
 
 /* menu */
 .nav-menu {
+    order: 2;
     flex: 1;
     display: flex;
     align-items: center;
@@ -132,6 +134,7 @@ html.role-admin li[data-role="admin"] {
 }
 
 .nav-actions {
+    order: 3;
     display: flex;
     align-items: center;
     gap: 10px;
@@ -140,6 +143,10 @@ html.role-admin li[data-role="admin"] {
 
 .nav-actions .btn {
     padding: 10px 20px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
 }
 
 .nav-actions .avatar-action {
@@ -206,6 +213,7 @@ html.role-admin li[data-role="admin"] {
     left: 0;
     width: 330px;
     max-width: 90vw;
+    max-height: min(480px, calc(100vh - 75px));
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
@@ -225,8 +233,15 @@ html.role-admin li[data-role="admin"] {
 }
 
 @keyframes notifFadeIn {
-    from { opacity: 0; transform: translateY(-8px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .notif-dropdown-header {
@@ -268,7 +283,7 @@ html.role-admin li[data-role="admin"] {
 }
 
 .notif-dropdown-body {
-    max-height: 340px;
+    max-height: min(340px, calc(100vh - 180px));
     overflow-y: auto;
 }
 
@@ -304,9 +319,17 @@ html.role-admin li[data-role="admin"] {
     background: var(--mint-soft);
 }
 
-.notif-icon .icon-urgent { color: var(--red, #e05252); }
-.notif-icon .icon-warning { color: var(--orange, #e08b2d); }
-.notif-icon .icon-info { color: var(--blue, #2d7ae0); }
+.notif-icon .icon-urgent {
+    color: var(--red, #e05252);
+}
+
+.notif-icon .icon-warning {
+    color: var(--orange, #e08b2d);
+}
+
+.notif-icon .icon-info {
+    color: var(--blue, #2d7ae0);
+}
 
 .notif-content {
     flex: 1;
@@ -383,6 +406,8 @@ html.role-admin li[data-role="admin"] {
     align-items: center;
     justify-content: center;
     gap: 5px;
+    cursor: pointer;
+    transition: var(--transition);
 }
 
 .nav-toggle .bar {
@@ -403,4 +428,8 @@ html.role-admin li[data-role="admin"] {
 
 .navbar.open .nav-toggle .bar:nth-child(3) {
     transform: translateY(-7px) rotate(-45deg);
+}
+
+.nav-menu-logout-wrapper {
+    display: none;
 }

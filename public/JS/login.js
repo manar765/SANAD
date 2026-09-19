@@ -85,6 +85,42 @@ form.addEventListener('submit', async (e) => {
         }
 
         if (!response.ok) {
+            const unverifiedBox = document.getElementById('unverifiedAlert');
+            const unverifiedMsg = document.getElementById('unverifiedMsg');
+            const goToVerifyBtn = document.getElementById('goToVerifyBtn');
+            const loginResendBtn = document.getElementById('loginResendBtn');
+
+            if (payload.emailUnverified) {
+                if (unverifiedBox) {
+                    unverifiedBox.style.display = 'block';
+                    if (unverifiedMsg) unverifiedMsg.textContent = payload.message || 'بريدك الإلكتروني بحاجة إلى تفعيل قبل تسجيل الدخول.';
+                    const targetEmail = payload.email || email.value.trim();
+                    if (goToVerifyBtn) goToVerifyBtn.href = `/verify-email?email=${encodeURIComponent(targetEmail)}`;
+
+                    if (loginResendBtn) {
+                        loginResendBtn.onclick = async () => {
+                            loginResendBtn.disabled = true;
+                            loginResendBtn.textContent = 'جارٍ الإرسال...';
+                            try {
+                                const res = await fetch('/api/auth/resend-verification', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ email: targetEmail })
+                                });
+                                const resData = await res.json();
+                                alert(resData.message || 'تم إرسال رمز التفعيل الجديد إلى بريدك.');
+                            } catch {
+                                alert('تعذر الاتصال بالخادم لإعادة الإرسال.');
+                            } finally {
+                                loginResendBtn.textContent = 'إعادة إرسال الرمز';
+                                loginResendBtn.disabled = false;
+                            }
+                        };
+                    }
+                }
+                return;
+            }
+
             password.classList.add('error');
             passwordError.textContent = payload.message || 'البريد الإلكتروني أو كلمة المرور غير صحيحة.';
             passwordError.classList.add('show');

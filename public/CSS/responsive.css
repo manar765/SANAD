@@ -19,8 +19,125 @@
 @media (max-width: 992px) {
 
     /* mobile navigation */
-    .nav-toggle {
+    .navbar .container {
+        padding-inline: 14px;
+    }
+
+    .nav-inner {
         display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        height: var(--nav-height);
+        position: relative;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .brand {
+        order: 1;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .brand-logo {
+        height: 38px;
+        max-width: 38px;
+    }
+
+    .brand-en {
+        display: none;
+    }
+
+    .nav-actions {
+        order: 2;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 6px;
+        margin: 0;
+        flex-shrink: 0;
+    }
+
+    .nav-actions .guest-actions,
+    .nav-actions .user-actions {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 6px;
+        width: auto;
+    }
+
+    .nav-actions .btn {
+        width: auto;
+        padding: 6px 12px;
+        font-size: 0.82rem;
+        min-height: 36px;
+        height: 36px;
+        border-radius: 10px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    .nav-actions .avatar-action {
+        width: 36px;
+        height: 36px;
+        min-height: 36px;
+        flex: 0 0 36px;
+        padding: 0;
+        border-radius: 10px;
+    }
+
+    .nav-actions .nav-notification-btn {
+        width: 36px;
+        height: 36px;
+        min-height: 36px;
+        padding: 0;
+        border-radius: 10px;
+    }
+
+    .nav-actions .user-greeting {
+        display: none;
+    }
+
+    /* Collapsed navbar toggle: ALWAYS flex, positioned at far left in RTL */
+    .nav-toggle {
+        order: 3;
+        display: flex !important;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        width: 38px;
+        height: 38px;
+        min-width: 38px;
+        min-height: 38px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: var(--surface);
+        margin-inline-start: auto !important;
+        margin-right: auto !important;
+        margin-left: 0 !important;
+        flex-shrink: 0;
+        cursor: pointer;
+        z-index: 105;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    .nav-toggle .bar {
+        width: 20px;
+        height: 2px;
+        border-radius: 2px;
+        background: var(--text-dark, #1f2937);
+        transition: var(--transition);
+        display: block;
     }
 
     .nav-menu {
@@ -37,6 +154,7 @@
         padding: 18px 24px 24px;
         max-height: calc(100vh - var(--nav-height));
         overflow-y: auto;
+        z-index: 99;
     }
 
     .navbar.open .nav-menu {
@@ -59,20 +177,41 @@
         color: var(--green);
     }
 
-    .nav-actions {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 10px;
-    }
-
-    .nav-actions .btn {
+    .nav-menu-logout-wrapper:not(.hidden) {
+        display: block;
         width: 100%;
+        margin-top: 8px;
+        padding-top: 14px;
+        border-top: 1px solid var(--border);
     }
 
-    .nav-actions .avatar-action {
-        width: 42px;
-        flex: 0 0 42px;
-        align-self: center;
+    .nav-menu-logout-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        width: 100%;
+        padding: 12px 16px;
+        border-radius: 12px;
+        background: rgba(224, 82, 82, 0.08);
+        border: 1px solid rgba(224, 82, 82, 0.22);
+        color: var(--red, #e05252);
+        font-weight: 700;
+        font-size: 0.95rem;
+        text-decoration: none;
+        transition: var(--transition);
+        box-sizing: border-box;
+    }
+
+    .nav-menu-logout-btn:hover,
+    .nav-menu-logout-btn:focus-visible {
+        background: rgba(224, 82, 82, 0.16);
+        border-color: var(--red, #e05252);
+        color: #c92a2a;
+    }
+
+    .nav-menu-separator {
+        display: none;
     }
 
     body.no-scroll {
@@ -126,7 +265,7 @@
         padding: 32px 14px;
     }
 
-    .stat + .stat::before {
+    .stat+.stat::before {
         display: none;
     }
 
@@ -187,7 +326,7 @@
         padding: 36px 14px;
     }
 
-    .benefit + .benefit::before {
+    .benefit+.benefit::before {
         display: none;
     }
 
@@ -200,6 +339,49 @@
 @media (max-width: 480px) {
     .container {
         padding-inline: 14px;
+    }
+
+    /* Compact navbar elements for mobile screens */
+    .nav-inner {
+        gap: 6px;
+    }
+
+    .brand-logo {
+        height: 36px;
+        max-width: 36px;
+    }
+
+    .brand-ar {
+        font-size: 1.15rem;
+    }
+
+    .brand-en {
+        display: none;
+    }
+
+    .nav-actions {
+        gap: 5px;
+    }
+
+    .nav-actions .guest-actions,
+    .nav-actions .user-actions {
+        gap: 5px;
+    }
+
+    .nav-actions .btn {
+        padding: 5px 10px;
+        font-size: 0.78rem;
+        height: 34px;
+        min-height: 34px;
+    }
+
+    .nav-actions .avatar-action,
+    .nav-actions .nav-notification-btn,
+    .preference-btn,
+    .nav-toggle {
+        width: 36px;
+        height: 36px;
+        min-height: 36px;
     }
 
     .hero-actions .btn {
@@ -285,5 +467,45 @@
     .float-chip {
         padding: 10px 12px;
         font-size: 0.78rem;
+    }
+}
+
+@media (max-width: 400px) {
+    .nav-inner {
+        gap: 4px;
+    }
+
+    .nav-actions {
+        gap: 4px;
+    }
+
+    .nav-actions .guest-actions,
+    .nav-actions .user-actions {
+        gap: 4px;
+    }
+
+    .nav-actions .btn .btn-text {
+        display: none;
+    }
+
+    .nav-actions .btn {
+        width: 34px;
+        height: 34px;
+        min-height: 34px;
+        padding: 0;
+        border-radius: 50%;
+        justify-content: center;
+    }
+
+    .nav-actions .btn i {
+        margin: 0;
+        font-size: 0.88rem;
+    }
+
+    .preference-btn,
+    .nav-toggle {
+        width: 34px;
+        height: 34px;
+        min-height: 34px;
     }
 }

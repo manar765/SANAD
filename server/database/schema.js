@@ -464,6 +464,8 @@ export async function migrate() {
       await client.query(`CREATE INDEX IF NOT EXISTS mfa_challenges_user_expires_idx ON mfa_challenges (user_id, expires_at)`);
       await client.query(`CREATE INDEX IF NOT EXISTS email_verification_tokens_user_idx ON email_verification_tokens (user_id, expires_at)`);
       await client.query(`CREATE INDEX IF NOT EXISTS email_verification_tokens_expires_at_idx ON email_verification_tokens (expires_at)`);
+      await client.query(`ALTER TABLE email_verification_tokens ADD COLUMN IF NOT EXISTS otp_hash TEXT`);
+      await client.query(`CREATE INDEX IF NOT EXISTS email_verification_tokens_otp_idx ON email_verification_tokens (otp_hash) WHERE used_at IS NULL`);
       await client.query(`CREATE INDEX IF NOT EXISTS user_sessions_expires_at_idx ON user_sessions (expires_at)`);
       await client.query(`CREATE INDEX IF NOT EXISTS user_sessions_last_seen_at_idx ON user_sessions (last_seen_at)`);
       await client.query(`CREATE INDEX IF NOT EXISTS user_sessions_user_id_idx ON user_sessions (user_id)`);

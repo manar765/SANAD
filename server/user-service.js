@@ -1,5 +1,8 @@
 import {
     consumeEmailVerificationToken,
+    consumeEmailVerificationOtp,
+    cleanupExpiredVerificationTokens,
+    cleanupUnverifiedAccounts,
     consumeRecoveryCode,
     createMfaChallenge,
     deleteMfaChallenge,
@@ -54,8 +57,8 @@ export async function changeUserPassword(userId, passwordHash) {
     return updateUserPassword(userId, passwordHash);
 }
 
-export async function issueEmailVerificationToken(userId, tokenHash, expiresAt) {
-    return createEmailVerificationToken(userId, tokenHash, expiresAt);
+export async function issueEmailVerificationToken(userId, tokenHash, expiresAt, otpHash = null) {
+    return createEmailVerificationToken(userId, tokenHash, expiresAt, otpHash);
 }
 
 export async function getMfaSettings(userId) {
@@ -96,6 +99,18 @@ export async function verifyEmailToken(tokenHash) {
     return markEmailVerified(userId);
 }
 
+export async function verifyEmailOtp(email, otpHash) {
+    const record = await consumeEmailVerificationOtp(email, otpHash);
+    if (!record?.user_id) return null;
+    return markEmailVerified(record.user_id);
+}
+
+export async function cleanupUnverifiedData(olderThanHours = 48) {
+    const deletedTokens = await cleanupExpiredVerificationTokens();
+    const deletedUsers = await cleanupUnverifiedAccounts(olderThanHours);
+    return { deletedTokens, deletedUsers };
+}
+
 export async function getAllUsers(filters) {
     return listAllUsers(filters);
 }
@@ -127,5 +142,7 @@ export async function changeUserRole(targetUserId, newRole, adminUserId, adminUs
     const updated = await updateUserRole(targetUserId, newRole);
     return updated;
 }
+
+export { markEmailVerified };
 
 

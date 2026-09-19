@@ -103,12 +103,12 @@ export async function updateUserPassword(userId, passwordHash) {
     return result.rows[0] || null;
 }
 
-export async function createEmailVerificationToken(userId, tokenHash, expiresAt) {
+export async function createEmailVerificationToken(userId, tokenHash, expiresAt, otpHash = null) {
     await pool.query("DELETE FROM email_verification_tokens WHERE user_id = $1 AND used_at IS NULL", [userId]);
     await pool.query(
-        `INSERT INTO email_verification_tokens (user_id, token_hash, expires_at)
-     VALUES ($1, $2, $3)`,
-        [userId, tokenHash, expiresAt],
+        `INSERT INTO email_verification_tokens (user_id, token_hash, otp_hash, expires_at)
+     VALUES ($1, $2, $3, $4)`,
+        [userId, tokenHash, otpHash, expiresAt],
     );
 }
 
@@ -121,6 +121,58 @@ export async function consumeEmailVerificationToken(tokenHash) {
         [tokenHash],
     );
     return result.rows[0]?.user_id || null;
+}
+
+export async function consumeEmailVerificationOtp(email, otpHash) {
+    const normalizedEmail = String(email || "").trim().toLowerCase();
+    const result = await pool.query(
+        `UPDATE email_verification_tokens evt
+     SET used_at = NOW()
+     FROM users u
+     WHERE evt.user_id = u.id
+       AND LOWER(u.email) = $1
+       AND evt.otp_hash = $2
+       AND evt.used_at IS NULL
+       AND evt.expires_at > NOW()
+     RETURNING evt.user_id, u.email`,
+        [normalizedEmail, otpHash],
+    );
+    return result.rows[0] || null;
+}
+
+export async function cleanupExpiredVerificationTokens() {
+    const result = await pool.query(
+        `DELETE FROM email_verification_tokens
+     WHERE expires_at < NOW() - INTERVAL '1 day'
+        OR (used_at IS NOT NULL AND used_at < NOW() - INTERVAL '7 days')`,
+    );
+    return result.rowCount;
+}
+
+export async function cleanupUnverifiedAccounts(olderThanHours = 48) {
+    const hours = Math.max(1, Number(olderThanHours) || 48);
+    const candidates = await pool.query(
+        `SELECT id FROM users
+         WHERE email_verified_at IS NULL
+           AND role != 'admin'
+           AND created_at < NOW() - ($1 || ' hours')::INTERVAL
+         LIMIT 100`,
+        [hours],
+    );
+
+    let deletedCount = 0;
+    for (const row of candidates.rows) {
+        try {
+            const res = await pool.query("DELETE FROM users WHERE id = $1", [row.id]);
+            deletedCount += (res.rowCount || 0);
+        } catch (err) {
+            // Skip user if referenced by foreign key or restrict constraint (e.g. donations, distributions)
+            if (!["23503", "23001", "23000"].includes(err.code) && !err.code?.startsWith("23")) {
+                throw err;
+            }
+        }
+    }
+    return deletedCount;
 }
 
 export async function getUserMfa(userId) {
@@ -280,7 +332,7 @@ export async function updateUserRole(userId, newRole) {
         await client.query("COMMIT");
         return user;
     } catch (error) {
-        await client.query("ROLLBACK").catch(() => {});
+        await client.query("ROLLBACK").catch(() => { });
         throw error;
     } finally {
         client.release();

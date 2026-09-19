@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <% /* EJS page template */ %>
-<html lang="ar" dir="rtl">
+    <html lang="ar" dir="rtl">
 
     <head>
         <meta charset="UTF-8">
@@ -81,6 +81,22 @@
                             <a class="forgot-link" href="/forgot-password">نسيت كلمة المرور؟</a>
                         </div>
 
+                        <div class="unverified-alert" id="unverifiedAlert"
+                            style="display: none; margin: 1rem 0; padding: 0.85rem; border-radius: 10px; background: #FFFBEB; border: 1px solid #FDE68A; text-align: start;">
+                            <p style="color: #92400E; font-size: 0.9rem; font-weight: 700; margin-bottom: 0.5rem;"
+                                id="unverifiedMsg">
+                                بريدك الإلكتروني بحاجة إلى تفعيل قبل تسجيل الدخول.
+                            </p>
+                            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                                <a id="goToVerifyBtn" href="/verify-email" class="btn btn-primary"
+                                    style="font-size: 0.85rem; padding: 0.4rem 0.8rem; text-decoration: none; border-radius: 6px;">تفعيل
+                                    الحساب الآن</a>
+                                <button type="button" id="loginResendBtn" class="btn"
+                                    style="font-size: 0.85rem; padding: 0.4rem 0.8rem; background: #fff; border: 1px solid #D97706; color: #B45309; border-radius: 6px; cursor: pointer;">إعادة
+                                    إرسال الرمز</button>
+                            </div>
+                        </div>
+
                         <button type="submit" class="btn btn-primary" id="submitBtn">
                             <span class="btn-text">تسجيل الدخول</span>
                             <span class="spinner"></span>
@@ -108,4 +124,4 @@
         <script src="/JS/preferences.js"></script>
     </body>
 
-</html>
+    </html>

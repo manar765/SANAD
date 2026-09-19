@@ -31,6 +31,14 @@
     }
 
     toggle.addEventListener("click", function () {
+        const notifDropdown = document.getElementById("headerNotificationDropdown");
+        if (notifDropdown && notifDropdown.classList.contains("active")) {
+            const notifBtn = document.getElementById("headerNotificationBtn");
+            notifDropdown.classList.remove("active");
+            notifDropdown.hidden = true;
+            if (notifBtn) notifBtn.setAttribute("aria-expanded", "false");
+        }
+
         const isOpen = layout.classList.toggle("sidebar-open");
         toggle.setAttribute("aria-expanded", String(isOpen));
         document.body.classList.toggle("no-scroll", isOpen);

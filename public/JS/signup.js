@@ -9,10 +9,40 @@ const submitBtn = document.getElementById("submitBtn");
 const formError = document.getElementById("formError");
 let selectedRole = "";
 
+const DISPOSABLE_CLIENT_DOMAINS = new Set([
+  "mailinator.com", "tempmail.com", "temp-mail.org", "10minutemail.com",
+  "guerrillamail.com", "sharklasers.com", "yopmail.com", "throwawaymail.com",
+  "fakeinbox.com", "getairmail.com", "dispostable.com", "mohmal.com",
+  "dropmail.me", "maildrop.cc", "trashmail.com"
+]);
+
+function isClientValidEmail(value) {
+  const trimmed = value.trim();
+  if (trimmed.length < 5 || trimmed.length > 254) return false;
+  const regex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
+  if (!regex.test(trimmed)) return false;
+  const domain = trimmed.split("@")[1]?.toLowerCase();
+  return !DISPOSABLE_CLIENT_DOMAINS.has(domain);
+}
+
 const fieldRules = [
   { input: document.getElementById("firstName"), error: document.getElementById("firstNameError"), valid: value => value.trim().length >= 2 },
   { input: document.getElementById("lastName"), error: document.getElementById("lastNameError"), valid: value => value.trim().length >= 2 },
-  { input: document.getElementById("email"), error: document.getElementById("emailError"), valid: value => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim()) },
+  {
+    input: document.getElementById("email"),
+    error: document.getElementById("emailError"),
+    valid: value => {
+      const emailErr = document.getElementById("emailError");
+      const trimmed = value.trim();
+      const domain = trimmed.split("@")[1]?.toLowerCase();
+      if (DISPOSABLE_CLIENT_DOMAINS.has(domain)) {
+        emailErr.textContent = "عناوين البريد المؤقتة غير مسموحة.";
+        return false;
+      }
+      emailErr.textContent = "أدخل بريدًا إلكترونيًا صحيحًا.";
+      return isClientValidEmail(value);
+    }
+  },
   { input: document.getElementById("phone"), error: document.getElementById("phoneError"), valid: value => /^[+\d][\d\s()-]{7,19}$/.test(value.trim()) },
   { input: document.getElementById("password"), error: document.getElementById("passwordError"), valid: value => value.length >= 8 },
   { input: document.getElementById("confirmPassword"), error: document.getElementById("confirmPasswordError"), valid: value => value === document.getElementById("password").value && value.length > 0 },
@@ -116,10 +146,12 @@ form.addEventListener("submit", async event => {
       formError.classList.add("show");
       return;
     }
+    const userEmail = document.getElementById("email").value.trim();
     if (payload.verificationRequired) {
-      const preview = payload.verificationUrl ? `\n\nرابط التطوير: ${payload.verificationUrl}` : "";
-      window.alert(`تم إنشاء الحساب. تحقق من بريدك الإلكتروني لتفعيل الحساب.${preview}`);
-      window.location.assign("/login");
+      if (payload.otpCode) {
+        sessionStorage.setItem("devOtpCode", payload.otpCode);
+      }
+      window.location.assign(`/verify-email?email=${encodeURIComponent(userEmail)}`);
     } else {
       window.location.assign("/donations");
     }

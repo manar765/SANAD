@@ -38,13 +38,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         window.scrollTo({ top: 0, behavior: "smooth" });
     });
 
-    navToggle?.addEventListener("click", () => {
-        if (!navbar) return;
-        const isOpen = navbar.classList.toggle("open");
-        navToggle.setAttribute("aria-expanded", String(isOpen));
-        document.body.classList.toggle("no-scroll", isOpen);
-    });
-
     document.querySelectorAll('a[href^="#"]').forEach((link) => {
         link.addEventListener("click", (event) => {
             const selector = link.getAttribute("href");

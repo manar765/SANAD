@@ -157,7 +157,10 @@
                             <label>رمز التطبيق<input id="mfaCode" inputmode="numeric" autocomplete="one-time-code"
                                     maxlength="6" required></label>
                             <input type="hidden" id="mfaSetupToken">
-                            <button class="btn btn-primary" type="submit">تأكيد وتفعيل المصادقة الثنائية</button>
+                            <div class="mfa-actions">
+                                <button class="btn btn-primary" type="submit">تأكيد وتفعيل المصادقة الثنائية</button>
+                                <button class="btn btn-outline" id="cancelMfaSetup" type="button">إلغاء</button>
+                            </div>
                         </form>
                     </div>
                     <div id="mfaEnabledState" hidden>

@@ -1,43 +1,101 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ar" dir="rtl">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>سند — تفعيل البريد الإلكتروني</title>
-    <link rel="icon" type="image/png" href="/assets/images/LogoSANAD.png" />
-    <link rel="stylesheet" href="/CSS/login.css" />
-    <style>
-      .auth-message-page { min-height: 100vh; display: grid; place-items: center; padding: 1.5rem; background: var(--page-bg, #f6faf8); }
-      .auth-message-box { width: min(100%, 30rem); max-width: 30rem; text-align: center; padding: 2.5rem 2rem; }
-      .auth-message-logo { width: 6rem; height: auto; margin: 0 auto 1.5rem; }
-      .auth-message-box h1 { margin-bottom: .75rem; }
-      .auth-message-box p { margin-bottom: 1.5rem; color: var(--muted-text, #667085); }
-      .auth-message-box .btn { display: inline-flex; justify-content: center; }
-    </style>
-  </head>
-  <body>
-    <main class="auth-message-page" aria-live="polite">
-      <div class="form-box auth-message-box">
-        <img class="auth-message-logo" src="/assets/images/LogoSANAD.png" alt="شعار سند" />
-        <h1 id="verificationTitle">جارٍ تفعيل البريد الإلكتروني</h1>
-        <p id="verificationMessage">يرجى الانتظار لحظات...</p>
-        <a class="btn btn-primary" href="/login">الانتقال إلى تسجيل الدخول</a>
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>سند — تفعيل البريد الإلكتروني</title>
+  <link rel="icon" type="image/png" href="/assets/images/LogoSANAD.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="/CSS/login.css" />
+  <link rel="stylesheet" href="/CSS/verify-email.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/feather-icons/4.29.0/feather.min.js"></script>
+</head>
+
+<body class="verify-body">
+  <main class="verify-page">
+    <div class="verify-card">
+      <div class="verify-logo">
+        <img src="/assets/images/LogoSANAD.png" alt="شعار سند" />
       </div>
-    </main>
-    <script>
-      const title = document.getElementById("verificationTitle");
-      const message = document.getElementById("verificationMessage");
-      const token = new URLSearchParams(window.location.search).get("token") || "";
-      fetch(`/api/auth/verify-email?token=${encodeURIComponent(token)}`)
-        .then(async response => ({ ok: response.ok, payload: await response.json() }))
-        .then(({ ok, payload }) => {
-          title.textContent = ok ? "تم تفعيل البريد الإلكتروني" : "تعذر تفعيل البريد الإلكتروني";
-          message.textContent = payload.message || "انتهت صلاحية رابط التفعيل أو أصبح غير صالح.";
-        })
-        .catch(() => {
-          title.textContent = "تعذر الاتصال بالخادم";
-          message.textContent = "حاول مرة أخرى لاحقًا.";
-        });
-    </script>
-  </body>
+
+      <section id="tokenSection" class="hidden">
+        <div id="tokenLoadingState">
+          <div class="state-icon loading">
+            <span class="spinner"
+              style="display:inline-block; border-color: #0284C7; border-top-color: transparent;"></span>
+          </div>
+          <h1>جارٍ التحقق من الرابط...</h1>
+          <p class="subtitle">يرجى الانتظار لحظات لتفعيل بريدك الإلكتروني.</p>
+        </div>
+
+        <div id="tokenResultState" class="hidden">
+          <div id="tokenIcon" class="state-icon success">
+            <svg data-feather="check"></svg>
+          </div>
+          <h1 id="tokenTitle">تم تفعيل الحساب بنجاح</h1>
+          <p id="tokenMessage" class="subtitle">يمكنك الآن تسجيل الدخول والاستفادة من جميع خدمات سند.</p>
+          <a href="/login" class="btn btn-primary" style="display: inline-flex; justify-content: center;">الانتقال إلى
+            تسجيل الدخول</a>
+          <div id="tokenFallbackOtp" class="hidden" style="margin-top: 1.5rem;">
+            <button type="button" id="switchToOtpBtn" class="btn-resend">أو يمكنك إدخال رمز التحقق (OTP) يدويًا</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="otpSection">
+        <h1>تأكيد البريد الإلكتروني</h1>
+        <p class="subtitle" id="otpSubtitle">
+          أرسلنا رمز تحقق (OTP) مكون من 6 أرقام ورابط تفعيل إلى بريدك الإلكتروني. أدخل الرمز أدناه لتأكيد حسابك.
+        </p>
+
+        <div id="devOtpBanner" class="dev-otp-banner">
+          <span>رمز التحقق (OTP) للاختبار: </span>
+          <strong id="devOtpValue" class="dev-otp-value"></strong>
+          <button type="button" id="autoFillOtpBtn" class="dev-otp-btn">تعبئة الرمز</button>
+        </div>
+
+        <form id="otpForm" novalidate>
+          <div class="field-group" style="text-align: start; margin-bottom: 1rem;">
+            <label class="field-label" for="verifyEmail">البريد الإلكتروني</label>
+            <input class="field" id="verifyEmail" name="email" type="email" placeholder="name@example.com"
+              autocomplete="email" required />
+          </div>
+
+          <label class="field-label" style="display: block; text-align: start;">رمز التحقق (OTP)</label>
+          <div class="otp-container" id="otpBoxes">
+            <input class="otp-box" type="text" inputmode="numeric" maxlength="1" data-index="0" autofocus />
+            <input class="otp-box" type="text" inputmode="numeric" maxlength="1" data-index="1" />
+            <input class="otp-box" type="text" inputmode="numeric" maxlength="1" data-index="2" />
+            <input class="otp-box" type="text" inputmode="numeric" maxlength="1" data-index="3" />
+            <input class="otp-box" type="text" inputmode="numeric" maxlength="1" data-index="4" />
+            <input class="otp-box" type="text" inputmode="numeric" maxlength="1" data-index="5" />
+          </div>
+
+          <div id="otpAlert" class="alert-box" role="alert"></div>
+
+          <button type="submit" class="btn btn-primary" id="verifyOtpBtn" style="width: 100%;">
+            <span class="btn-text">تأكيد الرمز وتفعيل الحساب</span>
+            <span class="spinner"></span>
+          </button>
+        </form>
+
+        <div class="resend-section">
+          <span>لم يصلك الرمز؟ </span>
+          <button type="button" id="resendBtn" class="btn-resend">إعادة إرسال الرمز</button>
+          <span id="countdownTimer" style="display: none; color: #98A2B3; font-size: 0.85rem;">(متاح بعد 60
+            ثانية)</span>
+        </div>
+
+        <p class="signup-line" style="margin-top: 1.5rem;">
+          العودة إلى <a href="/login">تسجيل الدخول</a>
+        </p>
+      </section>
+    </div>
+  </main>
+
+  <script src="/JS/verify-email.js"></script>
+</body>
+
 </html>
