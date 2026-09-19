@@ -1045,8 +1045,42 @@ body.role-admin.admin-page .admin-layout>.admin-sidebar {
 }
 
 .selective-item:hover {
-    background: var(--bg-surface, #fff) !important;
-    border-color: var(--primary, #059669) !important;
+    background: var(--mint) !important;
+    border-color: var(--green) !important;
+}
+
+.full-wipe-card {
+    background: #FFFDF9;
+    border: 1.5px solid #FED7AA;
+}
+
+.full-wipe-alert {
+    background: rgba(254, 226, 226, 0.6);
+    border: 1px solid #FCA5A5;
+    color: #991B1B;
+}
+
+.access-denied-alert {
+    background: #FFFBEB;
+    border: 1px solid #FEF3C7;
+    color: #92400E;
+}
+
+html[data-theme="dark"] .full-wipe-card {
+    background: #251414 !important;
+    border-color: #6B2121 !important;
+}
+
+html[data-theme="dark"] .full-wipe-alert {
+    background: rgba(239, 68, 68, 0.14) !important;
+    border-color: rgba(239, 68, 68, 0.35) !important;
+    color: #FCA5A5 !important;
+}
+
+html[data-theme="dark"] .access-denied-alert {
+    background: rgba(245, 158, 11, 0.12) !important;
+    border-color: rgba(245, 158, 11, 0.3) !important;
+    color: #FCD34D !important;
 }
 
 .can-clear-db-toggle {

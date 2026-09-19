@@ -1,3 +1,6 @@
+@import url("./tokens.css");
+@import url("./theme.css");
+
 :root {
     --green: #12463A;
     --green-med: #1E6B4F;
@@ -466,7 +469,7 @@ input.field.error:focus {
     font-size: 17px;
 }
 
-.role-card > span:last-child {
+.role-card>span:last-child {
     color: #888;
     font-size: 12px;
 }
@@ -755,4 +758,69 @@ html[data-theme="dark"] .password-toggle:focus-visible {
     text-align: center;
     letter-spacing: .18em;
     font-variant-numeric: tabular-nums;
+}
+
+/* Auth Pages Dark Theme Specifics */
+html[data-theme="dark"] body {
+    background: var(--cream) !important;
+    color: var(--text-dark) !important;
+}
+
+html[data-theme="dark"] .form-panel {
+    background: var(--surface) !important;
+    color: var(--text-dark) !important;
+}
+
+html[data-theme="dark"] .form-title,
+html[data-theme="dark"] .role-title,
+html[data-theme="dark"] .step-title,
+html[data-theme="dark"] h1,
+html[data-theme="dark"] h2,
+html[data-theme="dark"] h3 {
+    color: var(--text-dark) !important;
+}
+
+html[data-theme="dark"] .form-subtitle,
+html[data-theme="dark"] .field-label,
+html[data-theme="dark"] .role-desc,
+html[data-theme="dark"] .form-footer,
+html[data-theme="dark"] .form-footer a {
+    color: var(--text-muted) !important;
+}
+
+html[data-theme="dark"] .form-footer a:hover {
+    color: var(--green-dark) !important;
+}
+
+html[data-theme="dark"] .field,
+html[data-theme="dark"] .form-input,
+html[data-theme="dark"] .role-selector,
+html[data-theme="dark"] .role-card {
+    background: var(--surface) !important;
+    border-color: var(--border) !important;
+    color: var(--text-dark) !important;
+}
+
+html[data-theme="dark"] .role-card:hover,
+html[data-theme="dark"] .role-card[aria-pressed="true"] {
+    background: var(--mint) !important;
+    border-color: var(--green) !important;
+}
+
+html[data-theme="dark"] .role-card .role-icon {
+    background: var(--mint) !important;
+    color: var(--green-dark) !important;
+}
+
+html[data-theme="dark"] .forgot-link {
+    color: var(--green-dark) !important;
+}
+
+html[data-theme="dark"] .field:focus {
+    border-color: var(--green) !important;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.18) !important;
+}
+
+html[data-theme="dark"] .mfa-login-form {
+    border-top-color: var(--border) !important;
 }

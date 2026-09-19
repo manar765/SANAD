@@ -322,8 +322,8 @@
                                     المحاولة</button>
                             </div>
 
-                            <div id="dbAccessDenied" class="alert alert-warning"
-                                style="display: none; background: #fffbeb; border: 1px solid #fef3c7; color: #92400e; padding: 18px 22px; border-radius: 12px; margin-bottom: 24px;">
+                            <div id="dbAccessDenied" class="access-denied-alert"
+                                style="display: none; padding: 18px 22px; border-radius: 12px; margin-bottom: 24px;">
                                 <div style="display: flex; gap: 14px; align-items: flex-start;">
                                     <i class="fa-solid fa-shield-halved"
                                         style="font-size: 1.6rem; color: #d97706; margin-top: 2px;"></i>
@@ -333,7 +333,8 @@
                                         <p style="margin: 0; font-size: 0.95rem; line-height: 1.6;">أنت مسجل كمشرف
                                             (Admin)، ولكن لم يتم منحك صلاحية مسح قاعدة البيانات بعد. يمكن فقط
                                             <strong>للأدمن الأعلى (Super Admin)</strong> تفعيل هذه الصلاحية لحسابك من
-                                            تبويب "إدارة المستخدمين والأدوار".</p>
+                                            تبويب "إدارة المستخدمين والأدوار".
+                                        </p>
                                     </div>
                                 </div>
                             </div>
@@ -349,12 +350,12 @@
                                     style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 24px;">
                                     <!-- Selective Purge Card -->
                                     <div class="admin-card"
-                                        style="padding: 24px; border: 1px solid var(--border); border-radius: 14px; background: var(--bg-surface, #fff);">
+                                        style="padding: 24px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface);">
                                         <div
                                             style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
                                             <h3
-                                                style="margin: 0; font-size: 1.15rem; display: flex; align-items: center; gap: 10px; color: var(--text-primary);">
-                                                <i class="fa-solid fa-list-check" style="color: var(--primary);"></i>
+                                                style="margin: 0; font-size: 1.15rem; display: flex; align-items: center; gap: 10px; color: var(--text-dark);">
+                                                <i class="fa-solid fa-list-check" style="color: var(--green);"></i>
                                                 مسح مخصص / انتقائي
                                             </h3>
                                             <div style="display: flex; gap: 8px;">
@@ -376,98 +377,105 @@
                                         <div class="selective-targets-list"
                                             style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 22px;">
                                             <label class="selective-item"
-                                                style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--bg-surface-soft, #f8fafc); border: 1px solid var(--border); border-radius: 8px; cursor: pointer;">
+                                                style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--bg-surface-soft); border: 1px solid var(--border); border-radius: 8px; cursor: pointer;">
                                                 <span
-                                                    style="display: flex; align-items: center; gap: 10px; font-size: 0.92rem;">
+                                                    style="display: flex; align-items: center; gap: 10px; font-size: 0.92rem; color: var(--text-dark);">
                                                     <input type="checkbox" name="purgeTarget" value="donations"
                                                         class="target-checkbox">
                                                     <i class="fa-solid fa-inbox"
-                                                        style="color: #64748b; width: 16px;"></i> طلبات التبرعات
+                                                        style="color: var(--text-muted); width: 16px;"></i> طلبات
+                                                    التبرعات
                                                 </span>
                                                 <span class="badge" id="badgeCountDonations"
-                                                    style="font-size: 0.8rem; background: rgba(0,0,0,0.05); padding: 2px 8px; border-radius: 12px;">0</span>
+                                                    style="font-size: 0.8rem; background: var(--mint); color: var(--green-dark); padding: 2px 8px; border-radius: 12px; border: 1px solid var(--border);">0</span>
                                             </label>
 
                                             <label class="selective-item"
-                                                style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--bg-surface-soft, #f8fafc); border: 1px solid var(--border); border-radius: 8px; cursor: pointer;">
+                                                style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--bg-surface-soft); border: 1px solid var(--border); border-radius: 8px; cursor: pointer;">
                                                 <span
-                                                    style="display: flex; align-items: center; gap: 10px; font-size: 0.92rem;">
+                                                    style="display: flex; align-items: center; gap: 10px; font-size: 0.92rem; color: var(--text-dark);">
                                                     <input type="checkbox" name="purgeTarget" value="inventory"
                                                         class="target-checkbox">
                                                     <i class="fa-solid fa-boxes-stacked"
-                                                        style="color: #64748b; width: 16px;"></i> أصناف المخزون
+                                                        style="color: var(--text-muted); width: 16px;"></i> أصناف
+                                                    المخزون
                                                 </span>
                                                 <span class="badge" id="badgeCountInventory"
-                                                    style="font-size: 0.8rem; background: rgba(0,0,0,0.05); padding: 2px 8px; border-radius: 12px;">0</span>
+                                                    style="font-size: 0.8rem; background: var(--mint); color: var(--green-dark); padding: 2px 8px; border-radius: 12px; border: 1px solid var(--border);">0</span>
                                             </label>
 
                                             <label class="selective-item"
-                                                style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--bg-surface-soft, #f8fafc); border: 1px solid var(--border); border-radius: 8px; cursor: pointer;">
+                                                style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--bg-surface-soft); border: 1px solid var(--border); border-radius: 8px; cursor: pointer;">
                                                 <span
-                                                    style="display: flex; align-items: center; gap: 10px; font-size: 0.92rem;">
+                                                    style="display: flex; align-items: center; gap: 10px; font-size: 0.92rem; color: var(--text-dark);">
                                                     <input type="checkbox" name="purgeTarget" value="distributions"
                                                         class="target-checkbox">
                                                     <i class="fa-solid fa-truck-fast"
-                                                        style="color: #64748b; width: 16px;"></i> التوزيعات وعمليات
+                                                        style="color: var(--text-muted); width: 16px;"></i> التوزيعات
+                                                    وعمليات
                                                     الصرف
                                                 </span>
                                                 <span class="badge" id="badgeCountDistributions"
-                                                    style="font-size: 0.8rem; background: rgba(0,0,0,0.05); padding: 2px 8px; border-radius: 12px;">0</span>
+                                                    style="font-size: 0.8rem; background: var(--mint); color: var(--green-dark); padding: 2px 8px; border-radius: 12px; border: 1px solid var(--border);">0</span>
                                             </label>
 
                                             <label class="selective-item"
-                                                style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--bg-surface-soft, #f8fafc); border: 1px solid var(--border); border-radius: 8px; cursor: pointer;">
+                                                style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--bg-surface-soft); border: 1px solid var(--border); border-radius: 8px; cursor: pointer;">
                                                 <span
-                                                    style="display: flex; align-items: center; gap: 10px; font-size: 0.92rem;">
+                                                    style="display: flex; align-items: center; gap: 10px; font-size: 0.92rem; color: var(--text-dark);">
                                                     <input type="checkbox" name="purgeTarget"
                                                         value="assistance_requests" class="target-checkbox">
                                                     <i class="fa-solid fa-hand-holding-heart"
-                                                        style="color: #64748b; width: 16px;"></i> طلبات المساعدة
+                                                        style="color: var(--text-muted); width: 16px;"></i> طلبات
+                                                    المساعدة
                                                 </span>
                                                 <span class="badge" id="badgeCountAssistance"
-                                                    style="font-size: 0.8rem; background: rgba(0,0,0,0.05); padding: 2px 8px; border-radius: 12px;">0</span>
+                                                    style="font-size: 0.8rem; background: var(--mint); color: var(--green-dark); padding: 2px 8px; border-radius: 12px; border: 1px solid var(--border);">0</span>
                                             </label>
 
                                             <label class="selective-item"
-                                                style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--bg-surface-soft, #f8fafc); border: 1px solid var(--border); border-radius: 8px; cursor: pointer;">
+                                                style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--bg-surface-soft); border: 1px solid var(--border); border-radius: 8px; cursor: pointer;">
                                                 <span
-                                                    style="display: flex; align-items: center; gap: 10px; font-size: 0.92rem;">
+                                                    style="display: flex; align-items: center; gap: 10px; font-size: 0.92rem; color: var(--text-dark);">
                                                     <input type="checkbox" name="purgeTarget" value="beneficiaries"
                                                         class="target-checkbox">
                                                     <i class="fa-solid fa-people-roof"
-                                                        style="color: #64748b; width: 16px;"></i> المستفيدون والاحتياجات
+                                                        style="color: var(--text-muted); width: 16px;"></i> المستفيدون
+                                                    والاحتياجات
                                                     والتوصيات
                                                 </span>
                                                 <span class="badge" id="badgeCountBeneficiaries"
-                                                    style="font-size: 0.8rem; background: rgba(0,0,0,0.05); padding: 2px 8px; border-radius: 12px;">0</span>
+                                                    style="font-size: 0.8rem; background: var(--mint); color: var(--green-dark); padding: 2px 8px; border-radius: 12px; border: 1px solid var(--border);">0</span>
                                             </label>
 
                                             <label class="selective-item"
-                                                style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--bg-surface-soft, #f8fafc); border: 1px solid var(--border); border-radius: 8px; cursor: pointer;">
+                                                style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--bg-surface-soft); border: 1px solid var(--border); border-radius: 8px; cursor: pointer;">
                                                 <span
-                                                    style="display: flex; align-items: center; gap: 10px; font-size: 0.92rem;">
+                                                    style="display: flex; align-items: center; gap: 10px; font-size: 0.92rem; color: var(--text-dark);">
                                                     <input type="checkbox" name="purgeTarget" value="donors"
                                                         class="target-checkbox">
                                                     <i class="fa-solid fa-user-heart"
-                                                        style="color: #64748b; width: 16px;"></i> ملفات وحسابات
+                                                        style="color: var(--text-muted); width: 16px;"></i> ملفات
+                                                    وحسابات
                                                     المتبرعين
                                                 </span>
                                                 <span class="badge" id="badgeCountDonors"
-                                                    style="font-size: 0.8rem; background: rgba(0,0,0,0.05); padding: 2px 8px; border-radius: 12px;">0</span>
+                                                    style="font-size: 0.8rem; background: var(--mint); color: var(--green-dark); padding: 2px 8px; border-radius: 12px; border: 1px solid var(--border);">0</span>
                                             </label>
 
                                             <label class="selective-item"
-                                                style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--bg-surface-soft, #f8fafc); border: 1px solid var(--border); border-radius: 8px; cursor: pointer;">
+                                                style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--bg-surface-soft); border: 1px solid var(--border); border-radius: 8px; cursor: pointer;">
                                                 <span
-                                                    style="display: flex; align-items: center; gap: 10px; font-size: 0.92rem;">
+                                                    style="display: flex; align-items: center; gap: 10px; font-size: 0.92rem; color: var(--text-dark);">
                                                     <input type="checkbox" name="purgeTarget" value="audit_logs"
                                                         class="target-checkbox">
                                                     <i class="fa-solid fa-clock-rotate-left"
-                                                        style="color: #64748b; width: 16px;"></i> سجلات الرقابة والتدقيق
+                                                        style="color: var(--text-muted); width: 16px;"></i> سجلات
+                                                    الرقابة والتدقيق
                                                     (Audit Logs)
                                                 </span>
                                                 <span class="badge" id="badgeCountAudit"
-                                                    style="font-size: 0.8rem; background: rgba(0,0,0,0.05); padding: 2px 8px; border-radius: 12px;">0</span>
+                                                    style="font-size: 0.8rem; background: var(--mint); color: var(--green-dark); padding: 2px 8px; border-radius: 12px; border: 1px solid var(--border);">0</span>
                                             </label>
                                         </div>
 
@@ -479,24 +487,23 @@
                                     </div>
 
                                     <!-- Full Wipe Card -->
-                                    <div class="admin-card"
-                                        style="padding: 24px; border: 1px solid #fecaca; border-radius: 14px; background: #fffaf0;">
+                                    <div class="admin-card full-wipe-card" style="padding: 24px; border-radius: 14px;">
                                         <div
                                             style="display: flex; align-items: center; gap: 10px; margin-bottom: 14px;">
                                             <div
-                                                style="width: 40px; height: 40px; border-radius: 10px; background: #fee2e2; display: flex; align-items: center; justify-content: center; color: #ef4444; font-size: 1.2rem;">
+                                                style="width: 40px; height: 40px; border-radius: 10px; background: rgba(239, 68, 68, 0.16); display: flex; align-items: center; justify-content: center; color: var(--red); font-size: 1.2rem;">
                                                 <i class="fa-solid fa-triangle-exclamation"></i>
                                             </div>
                                             <div>
-                                                <h3 style="margin: 0; font-size: 1.15rem; color: #991b1b;">مسح شامل
+                                                <h3 style="margin: 0; font-size: 1.15rem; color: var(--red);">مسح شامل
                                                     لقاعدة البيانات</h3>
-                                                <small style="color: #b91c1c;">إعادة تعيين بيانات المنظومة
+                                                <small style="color: var(--text-muted);">إعادة تعيين بيانات المنظومة
                                                     بالكامل</small>
                                             </div>
                                         </div>
 
-                                        <div
-                                            style="background: rgba(254, 226, 226, 0.5); border: 1px solid #fca5a5; border-radius: 10px; padding: 14px; margin-bottom: 18px; font-size: 0.88rem; color: #7f1d1d; line-height: 1.6;">
+                                        <div class="full-wipe-alert"
+                                            style="border-radius: 10px; padding: 14px; margin-bottom: 18px; font-size: 0.88rem; line-height: 1.6;">
                                             <div style="font-weight: 700; margin-bottom: 6px;">ماذا سيحدث عند المسح
                                                 الشامل؟</div>
                                             <ul style="margin: 0; padding-inline-start: 20px;">
@@ -509,13 +516,13 @@
                                         </div>
 
                                         <label
-                                            style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px; font-size: 0.9rem; cursor: pointer; color: #374151;">
+                                            style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px; font-size: 0.9rem; cursor: pointer; color: var(--text-dark);">
                                             <input type="checkbox" id="fullPurgeKeepAudit" checked>
                                             <span>الاحتفاظ بسجلات التدقيق والرقابة (مستحسن للتوثيق الأمني)</span>
                                         </label>
 
                                         <button type="button" class="btn btn-danger" id="btnInitiateFullPurge"
-                                            style="width: 100%; justify-content: center; font-weight: 700; background: #dc2626; border-color: #dc2626; color: #fff;">
+                                            style="width: 100%; justify-content: center; font-weight: 700;">
                                             <i class="fa-solid fa-radiation" aria-hidden="true"></i>
                                             بدء إجراء المسح الشامل
                                         </button>
@@ -537,14 +544,14 @@
             <div class="modal-overlay" id="purgeConfirmModal"
                 style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.65); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center; padding: 20px;">
                 <div class="modal-card"
-                    style="background: var(--bg-surface, #fff); border-radius: 16px; max-width: 500px; width: 100%; padding: 28px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); border: 1px solid var(--border); direction: rtl;">
+                    style="background: var(--surface); border-radius: 16px; max-width: 500px; width: 100%; padding: 28px; box-shadow: var(--shadow-lg); border: 1px solid var(--border); direction: rtl; color: var(--text-dark);">
                     <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 16px;">
                         <div
-                            style="width: 48px; height: 48px; border-radius: 12px; background: #fee2e2; display: flex; align-items: center; justify-content: center; color: #dc2626; font-size: 1.4rem; flex-shrink: 0;">
+                            style="width: 48px; height: 48px; border-radius: 12px; background: rgba(239, 68, 68, 0.16); display: flex; align-items: center; justify-content: center; color: var(--red); font-size: 1.4rem; flex-shrink: 0;">
                             <i class="fa-solid fa-triangle-exclamation"></i>
                         </div>
                         <div>
-                            <h3 id="modalPurgeTitle" style="margin: 0; font-size: 1.25rem; color: #991b1b;">تأكيد مسح
+                            <h3 id="modalPurgeTitle" style="margin: 0; font-size: 1.25rem; color: var(--red);">تأكيد مسح
                                 البيانات</h3>
                             <span id="modalPurgeSubtitle" style="font-size: 0.88rem; color: var(--text-muted);">إجراء
                                 حرج لا يمكن التراجع عنه</span>
@@ -552,26 +559,27 @@
                     </div>
 
                     <div id="modalPurgeSummary"
-                        style="background: var(--bg-surface-soft, #f8fafc); border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin-bottom: 18px; font-size: 0.9rem; line-height: 1.6;">
+                        style="background: var(--bg-surface-soft); border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin-bottom: 18px; font-size: 0.9rem; line-height: 1.6; color: var(--text-dark);">
                         <!-- dynamic summary -->
                     </div>
 
                     <div style="margin-bottom: 22px;">
                         <label for="purgeConfirmationInput"
-                            style="display: block; font-size: 0.92rem; font-weight: 600; margin-bottom: 8px; color: var(--text-primary);">
+                            style="display: block; font-size: 0.92rem; font-weight: 600; margin-bottom: 8px; color: var(--text-dark);">
                             لتأكيد العملية، يرجى كتابة <span
-                                style="color: #dc2626; font-weight: 700; user-select: all;">مسح البيانات</span> في الحقل
+                                style="color: var(--red); font-weight: 700; user-select: all;">مسح البيانات</span> في
+                            الحقل
                             أدناه:
                         </label>
                         <input type="text" id="purgeConfirmationInput" class="form-control" placeholder="مسح البيانات"
-                            style="width: 100%; height: 42px; border-radius: 8px; border: 2px solid var(--border); padding: 0 12px; font-size: 1rem; text-align: center;">
+                            style="width: 100%; height: 42px; border-radius: 8px; border: 2px solid var(--border); padding: 0 12px; font-size: 1rem; text-align: center; background: var(--surface); color: var(--text-dark);">
                     </div>
 
                     <div style="display: flex; gap: 12px; justify-content: flex-end;">
                         <button type="button" class="btn btn-outline" id="btnCancelPurgeModal"
                             style="flex: 1;">إلغاء</button>
                         <button type="button" class="btn btn-danger" id="btnExecutePurgeConfirmed" disabled
-                            style="flex: 1; background: #dc2626; border-color: #dc2626; font-weight: 700;">
+                            style="flex: 1; font-weight: 700;">
                             <i class="fa-solid fa-check"></i> تأكيد وحذف الآن
                         </button>
                     </div>

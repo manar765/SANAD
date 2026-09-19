@@ -1,54 +1,877 @@
-/* ---------- language and theme preferences ---------- */
+/* ==========================================================================
+   SANAD Design System — Theme Engine (Light & Dark Mode)
+   Centralized dark mode overrides and high-contrast color primitives.
+   ========================================================================== */
+
+/* ---------- Dark Theme Tokens ---------- */
 html[data-theme="dark"] {
     --cream: #101817;
     --surface: #182321;
     --text-dark: #F1F7F4;
     --text-muted: #B5C7C0;
     --border: #2B4039;
-    --border-soft: #263831;
-    --mint: #203A32;
-    --mint-soft: #1B302A;
-    --orange-tint: #4A3518;
-    --red-tint: #4B2423;
-    --blue-tint: #20324E;
-    --purple-tint: #332D4A;
-    --shadow-sm: 0 2px 12px rgba(0, 0, 0, 0.22);
-    --shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
-    --shadow-lg: 0 24px 60px rgba(0, 0, 0, 0.38);
+    --border-soft: #20312B;
+    --mint: #1E3730;
+    --mint-soft: #162B25;
+
+    /* High-contrast brand greens for dark backgrounds */
+    --green: #10B981;
+    --green-dark: #6EE7B7;
+    --green-soft: #34D399;
+
+    /* Semantic aliases */
+    --bg-surface: var(--surface);
+    --bg-surface-soft: #141F1D;
+    --bg-soft: #101817;
+    --text-color: var(--text-dark);
+    --text-primary: var(--text-dark);
+    --border-color: var(--border);
+    --primary: var(--green);
+
+    /* Accents in dark theme */
+    --orange: #FBBF24;
+    --orange-tint: #3B280E;
+    --coral: #F87171;
+    --coral-tint: #3C1C1B;
+    --red: #EF4444;
+    --red-tint: #3A1817;
+    --blue: #60A5FA;
+    --blue-tint: #15263F;
+    --purple: #A78BFA;
+    --purple-tint: #26203D;
+
+    /* Footer & Elevation */
+    --footer-bg: #0C1412;
+    --footer-text: #B5C7C0;
+    --footer-muted: #7E968D;
+    --shadow-sm: 0 2px 12px rgba(0, 0, 0, 0.35);
+    --shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+    --shadow-lg: 0 24px 60px rgba(0, 0, 0, 0.55);
 }
 
-html[data-theme="dark"] body,
-html[data-theme="dark"] .navbar {
+/* ---------- Global Dark Mode Rules ---------- */
+html[data-theme="dark"] body {
     background-color: var(--cream);
     color: var(--text-dark);
 }
 
-html[data-theme="dark"] .navbar,
-html[data-theme="dark"] .search-card,
-html[data-theme="dark"] .don-card,
-html[data-theme="dark"] .profile-card,
-html[data-theme="dark"] .dash-card,
-html[data-theme="dark"] .feature-card,
-html[data-theme="dark"] .benefits-card,
-html[data-theme="dark"] input,
-html[data-theme="dark"] select {
-    background-color: var(--surface);
-    color: var(--text-dark);
-    border-color: var(--border);
+html[data-theme="dark"] a:not(.btn) {
+    color: inherit;
 }
 
-html[data-theme="dark"] a:not(.btn),
 html[data-theme="dark"] h1,
 html[data-theme="dark"] h2,
 html[data-theme="dark"] h3,
 html[data-theme="dark"] h4,
-html[data-theme="dark"] .nav-link,
-html[data-theme="dark"] .brand-text {
+html[data-theme="dark"] h5,
+html[data-theme="dark"] h6,
+html[data-theme="dark"] strong,
+html[data-theme="dark"] b {
     color: var(--text-dark);
 }
 
+html[data-theme="dark"] p,
+html[data-theme="dark"] span:not(.badge):not(.status-badge):not(.role-badge) {
+    color: inherit;
+}
+
+html[data-theme="dark"] ::selection {
+    background: var(--green);
+    color: #0C1412;
+}
+
+/* Text & Accents */
+html[data-theme="dark"] .text-accent {
+    color: var(--green-dark) !important;
+}
+
+html[data-theme="dark"] .eyebrow {
+    background: var(--mint) !important;
+    color: var(--green-dark) !important;
+    border: 1px solid var(--border) !important;
+}
+
+/* ---------- Inputs, Forms & Selects ---------- */
+html[data-theme="dark"] input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]),
+html[data-theme="dark"] select,
+html[data-theme="dark"] textarea,
+html[data-theme="dark"] .form-control,
+html[data-theme="dark"] .form-input,
+html[data-theme="dark"] .role-select {
+    background-color: var(--surface) !important;
+    color: var(--text-dark) !important;
+    border-color: var(--border) !important;
+}
+
+html[data-theme="dark"] input::placeholder,
+html[data-theme="dark"] textarea::placeholder {
+    color: var(--text-muted) !important;
+    opacity: 0.85;
+}
+
+html[data-theme="dark"] select option {
+    background-color: var(--surface);
+    color: var(--text-dark);
+}
+
+/* ---------- Buttons & Interactive Elements ---------- */
+html[data-theme="dark"] .btn-primary {
+    background: linear-gradient(135deg, #10B981, #059669) !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 4px 16px rgba(16, 185, 129, 0.25) !important;
+}
+
+html[data-theme="dark"] .btn-primary:hover {
+    background: linear-gradient(135deg, #059669, #047857) !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35) !important;
+}
+
+html[data-theme="dark"] .btn-outline {
+    background: transparent !important;
+    border-color: var(--border) !important;
+    color: var(--text-dark) !important;
+}
+
+html[data-theme="dark"] .btn-outline:hover,
+html[data-theme="dark"] .btn-outline:focus-visible {
+    background: var(--mint) !important;
+    border-color: var(--green) !important;
+    color: var(--green-dark) !important;
+}
+
+html[data-theme="dark"] .btn-danger {
+    background: #DC2626 !important;
+    border-color: #DC2626 !important;
+    color: #FFFFFF !important;
+}
+
+html[data-theme="dark"] .btn-danger:hover {
+    background: #B91C1C !important;
+    border-color: #B91C1C !important;
+    color: #FFFFFF !important;
+}
+
+html[data-theme="dark"] .btn-warning {
+    background: #D97706 !important;
+    border-color: #B45309 !important;
+    color: #FFFFFF !important;
+}
+
+html[data-theme="dark"] .btn-warning:hover {
+    background: #B45309 !important;
+    border-color: #92400E !important;
+    color: #FFFFFF !important;
+}
+
+html[data-theme="dark"] .btn-light {
+    background: var(--surface) !important;
+    border: 1px solid var(--border) !important;
+    color: var(--text-dark) !important;
+}
+
+html[data-theme="dark"] .btn-light:hover {
+    background: var(--mint) !important;
+    border-color: var(--green) !important;
+    color: var(--green-dark) !important;
+}
+
+html[data-theme="dark"] .btn-logout {
+    background: transparent !important;
+    border-color: var(--border) !important;
+    color: var(--text-dark) !important;
+}
+
+html[data-theme="dark"] .btn-logout:hover {
+    background: var(--red-tint) !important;
+    border-color: #EF4444 !important;
+    color: #F87171 !important;
+}
+
+/* Preference Button */
+html[data-theme="dark"] .preference-btn {
+    background: var(--surface) !important;
+    border-color: var(--border) !important;
+    color: var(--text-dark) !important;
+}
+
+html[data-theme="dark"] .preference-btn:hover,
+html[data-theme="dark"] .preference-btn:focus-visible {
+    border-color: var(--green) !important;
+    color: var(--green-dark) !important;
+}
+
+/* Standalone Preferences (floating in Auth pages) */
+.standalone-preferences {
+    position: fixed;
+    top: 20px;
+    inset-inline-start: 20px;
+    z-index: 9999;
+}
+
+.standalone-preferences .preference-btn {
+    width: 44px;
+    height: 44px;
+    min-height: 44px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+    backdrop-filter: blur(8px);
+}
+
+/* ---------- Admin Layout & Sidebar ---------- */
+html[data-theme="dark"] .admin-layout {
+    background: var(--cream) !important;
+}
+
+html[data-theme="dark"] .admin-sidebar,
+html[data-theme="dark"] .admin-sidebar-drawer {
+    background: var(--surface) !important;
+    border-color: var(--border) !important;
+}
+
+html[data-theme="dark"] .admin-sidebar-toggle {
+    background: var(--surface) !important;
+    border-color: var(--border) !important;
+    color: var(--text-dark) !important;
+}
+
+html[data-theme="dark"] .admin-sidebar-toggle:hover {
+    background: var(--mint) !important;
+    border-color: var(--green) !important;
+    color: var(--green-dark) !important;
+}
+
+html[data-theme="dark"] .admin-sidebar-user {
+    background: var(--surface) !important;
+    border-color: var(--border) !important;
+    color: var(--green-dark) !important;
+}
+
+html[data-theme="dark"] .admin-sidebar-link {
+    color: var(--text-muted) !important;
+}
+
+html[data-theme="dark"] .admin-sidebar-link:hover {
+    background: var(--mint-soft) !important;
+    color: var(--text-dark) !important;
+}
+
+html[data-theme="dark"] .admin-sidebar-link.active {
+    background: var(--mint) !important;
+    color: var(--green-dark) !important;
+    box-shadow: inset -3px 0 0 var(--green) !important;
+}
+
+html[data-theme="dark"] .admin-sidebar-collapse {
+    color: var(--text-muted) !important;
+}
+
+html[data-theme="dark"] .admin-sidebar-collapse:hover {
+    color: var(--green-dark) !important;
+}
+
+/* Admin Tabs */
+html[data-theme="dark"] .admin-tab-btn {
+    background: var(--surface) !important;
+    border-color: var(--border) !important;
+    color: var(--text-dark) !important;
+}
+
+html[data-theme="dark"] .admin-tab-btn:hover {
+    background: var(--mint) !important;
+    border-color: var(--green) !important;
+    color: var(--green-dark) !important;
+}
+
+html[data-theme="dark"] .admin-tab-btn.active {
+    background: var(--green) !important;
+    color: #0C1412 !important;
+    font-weight: 800 !important;
+    border-color: var(--green) !important;
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3) !important;
+}
+
+/* Admin Cards & Tables */
+html[data-theme="dark"] .admin-card {
+    background: var(--surface) !important;
+    border-color: var(--border) !important;
+}
+
+html[data-theme="dark"] .admin-table th {
+    background: var(--mint-soft) !important;
+    color: var(--text-muted) !important;
+    border-color: var(--border-soft) !important;
+}
+
+html[data-theme="dark"] .admin-table td {
+    color: var(--text-dark) !important;
+    border-color: var(--border-soft) !important;
+}
+
+html[data-theme="dark"] .admin-table tbody tr:hover td {
+    background: var(--mint-soft) !important;
+}
+
+html[data-theme="dark"] .selective-item {
+    background: var(--surface) !important;
+    border-color: var(--border) !important;
+    color: var(--text-dark) !important;
+}
+
+html[data-theme="dark"] .selective-item:hover {
+    background: var(--mint) !important;
+    border-color: var(--green) !important;
+}
+
+html[data-theme="dark"] #purgeConfirmModal .modal-card {
+    background: var(--surface) !important;
+    border-color: var(--border) !important;
+    color: var(--text-dark) !important;
+}
+
+html[data-theme="dark"] #modalPurgeSummary {
+    background: var(--mint-soft) !important;
+    border-color: var(--border) !important;
+    color: var(--text-dark) !important;
+}
+
+/* Full purge card in dark mode */
+html[data-theme="dark"] .full-wipe-card {
+    background: #241414 !important;
+    border-color: #5C2626 !important;
+}
+
+html[data-theme="dark"] .full-wipe-alert {
+    background: rgba(239, 68, 68, 0.12) !important;
+    border-color: rgba(239, 68, 68, 0.28) !important;
+    color: #FCA5A5 !important;
+}
+
+/* ---------- Navbar & Dropdowns ---------- */
+html[data-theme="dark"] .navbar {
+    background: rgba(24, 35, 33, 0.94) !important;
+    border-color: var(--border) !important;
+    color: var(--text-dark) !important;
+}
+
+html[data-theme="dark"] .nav-link {
+    color: var(--text-muted) !important;
+}
+
+html[data-theme="dark"] .nav-link:hover,
+html[data-theme="dark"] .nav-link.active {
+    color: var(--green-dark) !important;
+}
+
+html[data-theme="dark"] .brand-text {
+    color: var(--text-dark) !important;
+}
+
+html[data-theme="dark"] .notification-dropdown {
+    background: var(--surface) !important;
+    border-color: var(--border) !important;
+    color: var(--text-dark) !important;
+}
+
+html[data-theme="dark"] .notif-dropdown-header,
+html[data-theme="dark"] .notif-dropdown-footer {
+    background: var(--mint-soft) !important;
+    border-color: var(--border) !important;
+    color: var(--text-dark) !important;
+}
+
+html[data-theme="dark"] .notif-item {
+    border-color: var(--border-soft) !important;
+    color: var(--text-dark) !important;
+}
+
+html[data-theme="dark"] .notif-item:hover {
+    background: var(--mint-soft) !important;
+}
+
+/* ---------- Beneficiaries Module ---------- */
+html[data-theme="dark"] .beneficiaries-page {
+    background-color: var(--cream) !important;
+}
+
+html[data-theme="dark"] .beneficiaries-kpi-card,
+html[data-theme="dark"] .beneficiaries-controls,
+html[data-theme="dark"] .beneficiaries-table-card,
+html[data-theme="dark"] .beneficiary-profile-card,
+html[data-theme="dark"] .filter-drawer,
+html[data-theme="dark"] .verification-detail-card,
+html[data-theme="dark"] .ben-history-card,
+html[data-theme="dark"] .case-notes-card,
+html[data-theme="dark"] .rec-detail-card,
+html[data-theme="dark"] .rec-advisory-box,
+html[data-theme="dark"] .rec-action-panel,
+html[data-theme="dark"] .beneficiaries-filter-card {
+    background-color: var(--surface) !important;
+    border-color: var(--border) !important;
+    color: var(--text-dark) !important;
+}
+
+html[data-theme="dark"] .beneficiaries-table th {
+    background-color: var(--mint-soft) !important;
+    color: var(--text-muted) !important;
+    border-color: var(--border-soft) !important;
+}
+
+html[data-theme="dark"] .beneficiaries-table td {
+    color: var(--text-dark) !important;
+    border-color: var(--border-soft) !important;
+}
+
+html[data-theme="dark"] .beneficiaries-table tr:hover td {
+    background-color: var(--mint-soft) !important;
+}
+
+html[data-theme="dark"] .beneficiaries-modal-box,
+html[data-theme="dark"] .ben-modal-card {
+    background-color: var(--surface) !important;
+    border-color: var(--border) !important;
+    color: var(--text-dark) !important;
+}
+
+html[data-theme="dark"] .beneficiaries-kpi-content strong,
+html[data-theme="dark"] .inventory-kpi-content strong,
+html[data-theme="dark"] .dist-stat-info strong {
+    color: var(--text-dark) !important;
+}
+
+/* Verification Cases Sidebar */
+html[data-theme="dark"] .verification-cases-sidebar,
+html[data-theme="dark"] .verification-cases-header {
+    background-color: var(--surface) !important;
+    border-color: var(--border) !important;
+    color: var(--text-dark) !important;
+}
+
+html[data-theme="dark"] .verification-case-card {
+    background-color: var(--surface) !important;
+    border-color: var(--border) !important;
+    color: var(--text-dark) !important;
+}
+
+html[data-theme="dark"] .verification-case-card:hover:not(.active) {
+    background-color: var(--mint-soft) !important;
+}
+
+html[data-theme="dark"] .verification-case-card.active {
+    background-color: var(--mint) !important;
+    border-color: var(--green) !important;
+}
+
+html[data-theme="dark"] .beneficiaries-card,
+html[data-theme="dark"] .ben-drawer-panel,
+html[data-theme="dark"] .ben-drawer-header,
+html[data-theme="dark"] .ben-drawer-tabs,
+html[data-theme="dark"] .ben-info-item,
+html[data-theme="dark"] .ben-drawer-close,
+html[data-theme="dark"] .rec-card,
+html[data-theme="dark"] .verification-placeholder,
+html[data-theme="dark"] .ben-verify-bar,
+html[data-theme="dark"] .ai-assistant-panel {
+    background-color: var(--surface) !important;
+    border-color: var(--border) !important;
+    color: var(--text-dark) !important;
+}
+
+html[data-theme="dark"] .rec-advisory-banner {
+    background: rgba(59, 130, 246, 0.12) !important;
+    border-color: rgba(59, 130, 246, 0.28) !important;
+    color: #93C5FD !important;
+}
+
+html[data-theme="dark"] .rec-warning-banner {
+    background: rgba(245, 158, 11, 0.12) !important;
+    border-color: rgba(245, 158, 11, 0.28) !important;
+    color: #FCD34D !important;
+}
+
+html[data-theme="dark"] .dos-tag {
+    background: var(--mint-soft) !important;
+    color: var(--text-dark) !important;
+    border: 1px solid var(--border) !important;
+}
+
+html[data-theme="dark"] .ai-disclaimer-banner {
+    background: rgba(245, 158, 11, 0.12) !important;
+    border-color: rgba(245, 158, 11, 0.28) !important;
+    color: #FCD34D !important;
+}
+
+html[data-theme="dark"] .ai-preview-summary {
+    background: var(--mint-soft) !important;
+    border-color: var(--border) !important;
+    color: var(--text-dark) !important;
+}
+
+html[data-theme="dark"] .ben-modal-footer,
+html[data-theme="dark"] .ben-modal-header {
+    background: var(--mint-soft) !important;
+    border-color: var(--border) !important;
+    color: var(--text-dark) !important;
+}
+
+html[data-theme="dark"] .voucher-ref-code,
+html[data-theme="dark"] .voucher-info-grid,
+html[data-theme="dark"] .voucher-notes-box {
+    background: var(--mint-soft) !important;
+    color: var(--text-dark) !important;
+    border-color: var(--border) !important;
+}
+
+html[data-theme="dark"] input[type="checkbox"],
+html[data-theme="dark"] input[type="radio"] {
+    accent-color: var(--green);
+}
+
+html[data-theme="dark"] .ben-open-need-req {
+    background: var(--mint) !important;
+    color: var(--green-dark) !important;
+    border: 1px solid var(--border) !important;
+}
+
+/* ---------- Inventory Module ---------- */
+html[data-theme="dark"] .inventory-page {
+    background-color: var(--cream) !important;
+}
+
+html[data-theme="dark"] .inventory-kpi-card,
+html[data-theme="dark"] .inventory-controls,
+html[data-theme="dark"] .inventory-card,
+html[data-theme="dark"] .inventory-table-container {
+    background-color: var(--surface) !important;
+    border-color: var(--border) !important;
+    color: var(--text-dark) !important;
+}
+
+html[data-theme="dark"] .inventory-table th {
+    background-color: var(--mint-soft) !important;
+    color: var(--text-muted) !important;
+    border-color: var(--border-soft) !important;
+}
+
+html[data-theme="dark"] .inventory-table td {
+    color: var(--text-dark) !important;
+    border-color: var(--border-soft) !important;
+}
+
+html[data-theme="dark"] .inventory-table tr:hover td {
+    background-color: var(--mint-soft) !important;
+}
+
+html[data-theme="dark"] .inventory-modal,
+html[data-theme="dark"] .inv-modal-card {
+    background-color: var(--surface) !important;
+    border-color: var(--border) !important;
+    color: var(--text-dark) !important;
+}
+
+html[data-theme="dark"] .inv-modal-footer,
+html[data-theme="dark"] .inv-modal-header {
+    background-color: var(--mint-soft) !important;
+    border-color: var(--border) !important;
+    color: var(--text-dark) !important;
+}
+
+/* ---------- Distributions Module ---------- */
+html[data-theme="dark"] .dist-page {
+    background: var(--cream) !important;
+}
+
+html[data-theme="dark"] .dist-stat-card,
+html[data-theme="dark"] .dist-toolbar,
+html[data-theme="dark"] .dist-table-card,
+html[data-theme="dark"] .dist-summary-card,
+html[data-theme="dark"] .dist-modal-content,
+html[data-theme="dark"] .dist-modal-card {
+    background: var(--surface) !important;
+    border-color: var(--border) !important;
+    color: var(--text-dark) !important;
+}
+
+html[data-theme="dark"] .dist-modal-header,
+html[data-theme="dark"] .dist-modal-footer,
+html[data-theme="dark"] .dist-beneficiary-preview-box {
+    background: var(--mint-soft) !important;
+    border-color: var(--border) !important;
+    color: var(--text-dark) !important;
+}
+
+html[data-theme="dark"] .dist-rec-chips-wrapper {
+    background: var(--surface) !important;
+    border-color: var(--border) !important;
+    color: var(--text-dark) !important;
+}
+
+html[data-theme="dark"] .dist-code-badge,
+html[data-theme="dark"] .dist-item-tag {
+    background: var(--mint-soft) !important;
+    color: var(--green-dark) !important;
+    border: 1px solid var(--border) !important;
+}
+
+html[data-theme="dark"] .btn-add-item-row {
+    background: var(--mint) !important;
+    color: var(--green-dark) !important;
+    border: 1px solid var(--border) !important;
+}
+
+html[data-theme="dark"] .btn-add-item-row:hover {
+    background: var(--green) !important;
+    color: #0C1412 !important;
+}
+
+html[data-theme="dark"] .dist-table th {
+    background: var(--mint-soft) !important;
+    color: var(--text-muted) !important;
+    border-color: var(--border-soft) !important;
+}
+
+html[data-theme="dark"] .dist-table td {
+    background: var(--surface) !important;
+    color: var(--text-dark) !important;
+    border-color: var(--border-soft) !important;
+}
+
+html[data-theme="dark"] .dist-table tr:hover td {
+    background: var(--mint-soft) !important;
+}
+
+html[data-theme="dark"] .dist-item-row {
+    background: var(--mint-soft) !important;
+    border-color: var(--border) !important;
+    color: var(--text-dark) !important;
+}
+
+html[data-theme="dark"] .btn-icon-dist {
+    background: var(--surface) !important;
+    border: 1px solid var(--border) !important;
+    color: var(--text-dark) !important;
+}
+
+html[data-theme="dark"] .btn-icon-dist:hover {
+    background: var(--mint) !important;
+    border-color: var(--green) !important;
+    color: var(--green-dark) !important;
+}
+
+/* ---------- Dashboard & Common Cards ---------- */
+html[data-theme="dark"] .dash-card,
+html[data-theme="dark"] .search-card,
+html[data-theme="dark"] .don-card,
+html[data-theme="dark"] .profile-card,
+html[data-theme="dark"] .account-card,
+html[data-theme="dark"] .password-box,
+html[data-theme="dark"] .feature-card,
+html[data-theme="dark"] .benefits-card {
+    background-color: var(--surface) !important;
+    border-color: var(--border) !important;
+    color: var(--text-dark) !important;
+}
+
+html[data-theme="dark"] .dash-modal {
+    background-color: var(--surface) !important;
+    border-color: var(--border) !important;
+    color: var(--text-dark) !important;
+}
+
+/* ---------- Badges & Status Indicators in Dark Mode ---------- */
+html[data-theme="dark"] .role-badge.role-admin,
+html[data-theme="dark"] .ben-badge-verified,
+html[data-theme="dark"] .dist-badge.completed,
+html[data-theme="dark"] .inv-badge-available {
+    background: rgba(16, 185, 129, 0.16) !important;
+    color: #6EE7B7 !important;
+    border-color: rgba(16, 185, 129, 0.3) !important;
+}
+
+html[data-theme="dark"] .role-badge.role-donor,
+html[data-theme="dark"] .ben-badge-review,
+html[data-theme="dark"] .dist-badge.in_progress,
+html[data-theme="dark"] .inv-badge-surplus {
+    background: rgba(59, 130, 246, 0.16) !important;
+    color: #93C5FD !important;
+    border-color: rgba(59, 130, 246, 0.3) !important;
+}
+
+html[data-theme="dark"] .role-badge.role-beneficiary,
+html[data-theme="dark"] .ben-badge-pending,
+html[data-theme="dark"] .dist-badge.planned,
+html[data-theme="dark"] .inv-badge-low {
+    background: rgba(245, 158, 11, 0.16) !important;
+    color: #FCD34D !important;
+    border-color: rgba(245, 158, 11, 0.3) !important;
+}
+
+html[data-theme="dark"] .ben-badge-rejected,
+html[data-theme="dark"] .dist-badge.cancelled,
+html[data-theme="dark"] .inv-badge-out {
+    background: rgba(239, 68, 68, 0.16) !important;
+    color: #FCA5A5 !important;
+    border-color: rgba(239, 68, 68, 0.3) !important;
+}
+
+html[data-theme="dark"] .admin-pending-badge,
+html[data-theme="dark"] .session-badge,
+html[data-theme="dark"] .don-badge,
+html[data-theme="dark"] .dashboard-badge {
+    background: var(--mint) !important;
+    color: var(--green-dark) !important;
+    border: 1px solid var(--border) !important;
+}
+
+/* Priority Badges in Dark Mode */
+html[data-theme="dark"] .rec-priority-badge.rec-pri-urgent,
+html[data-theme="dark"] .dashboard-badge.priority-urgent {
+    background: rgba(239, 68, 68, 0.18) !important;
+    color: #FCA5A5 !important;
+    border: 1px solid rgba(239, 68, 68, 0.3) !important;
+}
+
+html[data-theme="dark"] .rec-priority-badge.rec-pri-high,
+html[data-theme="dark"] .dashboard-badge.priority-high {
+    background: rgba(245, 158, 11, 0.18) !important;
+    color: #FCD34D !important;
+    border: 1px solid rgba(245, 158, 11, 0.3) !important;
+}
+
+html[data-theme="dark"] .rec-priority-badge.rec-pri-medium {
+    background: rgba(59, 130, 246, 0.18) !important;
+    color: #93C5FD !important;
+    border: 1px solid rgba(59, 130, 246, 0.3) !important;
+}
+
+html[data-theme="dark"] .rec-priority-badge.rec-pri-low {
+    background: rgba(16, 185, 129, 0.18) !important;
+    color: #6EE7B7 !important;
+    border: 1px solid rgba(16, 185, 129, 0.3) !important;
+}
+
+/* Toast in Dark Mode */
+html[data-theme="dark"] .toast {
+    background: #1E2D29 !important;
+    color: #F1F7F4 !important;
+    border: 1px solid var(--border) !important;
+    box-shadow: var(--shadow-lg) !important;
+}
+
+/* Dashboard Error State in Dark Mode */
+html[data-theme="dark"] .dashboard-state.error-state {
+    background: rgba(239, 68, 68, 0.14) !important;
+    border-color: rgba(239, 68, 68, 0.3) !important;
+    color: #FCA5A5 !important;
+}
+
+/* KPI soft icons in dark mode */
+html[data-theme="dark"] .kpi-icon-teal,
+html[data-theme="dark"] .dist-stat-icon.teal,
+html[data-theme="dark"] .kpi-mint {
+    background-color: rgba(16, 185, 129, 0.18) !important;
+    color: #6EE7B7 !important;
+}
+
+html[data-theme="dark"] .kpi-icon-emerald,
+html[data-theme="dark"] .dist-stat-icon.green,
+html[data-theme="dark"] .kpi-green {
+    background-color: rgba(16, 185, 129, 0.18) !important;
+    color: #34D399 !important;
+}
+
+html[data-theme="dark"] .kpi-icon-amber,
+html[data-theme="dark"] .dist-stat-icon.amber,
+html[data-theme="dark"] .kpi-orange {
+    background-color: rgba(245, 158, 11, 0.18) !important;
+    color: #FBBF24 !important;
+}
+
+html[data-theme="dark"] .kpi-icon-rose,
+html[data-theme="dark"] .dist-stat-icon.blue,
+html[data-theme="dark"] .kpi-icon-blue,
+html[data-theme="dark"] .kpi-blue {
+    background-color: rgba(59, 130, 246, 0.18) !important;
+    color: #93C5FD !important;
+}
+
+html[data-theme="dark"] .kpi-coral,
+html[data-theme="dark"] .kpi-icon-red {
+    background-color: rgba(239, 68, 68, 0.18) !important;
+    color: #FCA5A5 !important;
+}
+
+/* Dashboard alerts and badges in dark mode */
+html[data-theme="dark"] .dashboard-alert.orange>span,
+html[data-theme="dark"] .dashboard-badge.priority-high {
+    background-color: rgba(245, 158, 11, 0.18) !important;
+    color: #FBBF24 !important;
+}
+
+html[data-theme="dark"] .dashboard-alert.red>span,
+html[data-theme="dark"] .dashboard-badge.cancelled,
+html[data-theme="dark"] .dashboard-badge.priority-urgent {
+    background-color: rgba(239, 68, 68, 0.18) !important;
+    color: #FCA5A5 !important;
+}
+
+html[data-theme="dark"] .dashboard-alert.purple>span {
+    background-color: rgba(139, 92, 246, 0.18) !important;
+    color: #C4B5FD !important;
+}
+
+html[data-theme="dark"] .dashboard-alert.blue>span,
+html[data-theme="dark"] .dashboard-badge.in_progress {
+    background-color: rgba(59, 130, 246, 0.18) !important;
+    color: #93C5FD !important;
+}
+
+html[data-theme="dark"] input[type="checkbox"],
+html[data-theme="dark"] input[type="radio"] {
+    accent-color: var(--green);
+}
+
+/* ---------- Login & Auth Pages in Dark Mode ---------- */
+html[data-theme="dark"] .page {
+    background: var(--cream) !important;
+}
+
+html[data-theme="dark"] .form-panel {
+    background: var(--surface) !important;
+    color: var(--text-dark) !important;
+}
+
+html[data-theme="dark"] .role-card,
+html[data-theme="dark"] .role-selector,
+html[data-theme="dark"] .verification-card,
+html[data-theme="dark"] .user-type-option {
+    background: var(--surface) !important;
+    border-color: var(--border) !important;
+    color: var(--text-dark) !important;
+}
+
+html[data-theme="dark"] .role-card:hover,
+html[data-theme="dark"] .role-card.selected {
+    background: var(--mint) !important;
+    border-color: var(--green) !important;
+}
+
+html[data-theme="dark"] .top-badge {
+    background: var(--mint) !important;
+    color: var(--green-dark) !important;
+    border: 1px solid var(--border) !important;
+}
+
+html[data-theme="dark"] .unverified-alert {
+    background: rgba(245, 158, 11, 0.15) !important;
+    border-color: rgba(245, 158, 11, 0.3) !important;
+    color: #FDE68A !important;
+}
+
+/* ---------- Preference Control Button Sizing & Positioning ---------- */
 .preference-controls {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 7px;
     margin-inline-start: 8px;
@@ -57,82 +880,41 @@ html[data-theme="dark"] .brand-text {
 .preference-btn {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    min-height: 36px;
-    padding: 7px 10px;
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    background: var(--surface);
-    color: var(--text-dark);
-    font: inherit;
-    font-size: 0.78rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: var(--transition);
-}
-
-.preference-btn:hover,
-.preference-btn:focus-visible {
-    color: var(--green);
-    border-color: var(--green);
-    transform: translateY(-1px);
-}
-
-.preference-btn:active {
-    transform: scale(0.97);
-}
-
-@media (max-width: 900px) {
-    .preference-controls {
-        width: 100%;
-        margin: 4px 0;
-        justify-content: center;
-    }
-
-    .preference-btn {
-        flex: 1;
-        justify-content: center;
-    }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .preference-btn {
-        transition: none;
-    }
-}
-
-/* ---------- icon-only theme control at navbar end ---------- */
-.preference-controls {
-    order: 99;
-    margin-inline-start: 4px;
-    margin-inline-end: 0;
-    display: inline-flex;
-    align-items: center;
-}
-
-.preference-btn {
+    justify-content: center;
     width: 38px;
     height: 38px;
     min-height: 38px;
     padding: 0;
-    justify-content: center;
+    border: 1px solid var(--border);
     border-radius: 50%;
+    background: var(--surface);
+    color: var(--text-dark);
+    font: inherit;
+    font-size: 1rem;
+    font-weight: 700;
     cursor: pointer;
+    transition: var(--transition);
 }
 
 .preference-btn .preference-label {
     display: none;
 }
 
-.preference-btn i {
-    font-size: 1rem;
+.preference-btn:hover,
+.preference-btn:focus-visible {
+    color: var(--green-dark);
+    border-color: var(--green);
+    transform: translateY(-1px);
+}
+
+.preference-btn:active {
+    transform: scale(0.96);
 }
 
 @media (max-width: 992px) {
     .preference-controls {
         width: auto;
         margin: 0;
-        order: 10;
         display: inline-flex;
         align-items: center;
     }
@@ -141,6 +923,11 @@ html[data-theme="dark"] .brand-text {
         width: 36px;
         height: 36px;
         min-height: 36px;
-        flex: 0 0 36px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .preference-btn {
+        transition: none;
     }
 }

@@ -6,7 +6,7 @@ import { once } from "node:events";
 import { Pool } from "pg";
 
 const root = process.cwd();
-const port = 3140;
+const port = Number(process.env.TEST_PORT || 3240);
 const baseUrl = `http://127.0.0.1:${port}`;
 const pageRoutes = [
     "/",

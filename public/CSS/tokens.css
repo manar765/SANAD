@@ -31,6 +31,15 @@
     --border: var(--color-neutral-200);
     --border-soft: var(--color-neutral-100);
 
+    /* semantic utility aliases used across modules */
+    --bg-surface: var(--surface);
+    --bg-surface-soft: var(--color-neutral-100);
+    --bg-soft: var(--cream);
+    --text-color: var(--text-dark);
+    --text-primary: var(--text-dark);
+    --border-color: var(--border);
+    --primary: var(--green);
+
     /* accent palette */
     --orange: #F5A623;
     --orange-tint: #FDF0DC;

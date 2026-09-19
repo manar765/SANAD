@@ -4,7 +4,7 @@ import { spawn } from "node:child_process";
 import { once } from "node:events";
 import { Pool } from "pg";
 
-const port = 3141;
+const port = Number(process.env.TEST_PORT || 3241);
 const baseUrl = `http://127.0.0.1:${port}`;
 const email = `production.audit.${Date.now()}@example.com`;
 const server = spawn(process.execPath, ["server/app.js"], {

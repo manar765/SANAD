@@ -6,7 +6,7 @@ import { once } from "node:events";
 import { Pool } from "pg";
 import { migrate } from "./database/schema.js";
 
-const port = 3137;
+const port = Number(process.env.TEST_PORT || 3289);
 const baseUrl = `http://127.0.0.1:${port}`;
 const testSuffix = `${Date.now()}-${process.pid}`;
 const users = {

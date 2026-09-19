@@ -229,3 +229,45 @@ body:has(.verify-page) {
   background: #E0F2FE;
   color: #0284C7;
 }
+
+/* Dark Mode Overrides for Email Verification */
+html[data-theme="dark"] body.verify-body,
+html[data-theme="dark"] body:has(.verify-page) {
+  background: var(--cream, #101817) !important;
+}
+
+html[data-theme="dark"] .verify-card {
+  background: var(--surface, #182321) !important;
+  border-color: var(--border, #2B4039) !important;
+  color: var(--text-dark, #F1F7F4) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45) !important;
+}
+
+html[data-theme="dark"] .verify-title {
+  color: var(--text-dark, #F1F7F4) !important;
+}
+
+html[data-theme="dark"] .verify-desc,
+html[data-theme="dark"] .resend-section {
+  color: var(--text-muted, #B5C7C0) !important;
+  border-color: var(--border, #2B4039) !important;
+}
+
+html[data-theme="dark"] .otp-box {
+  background: var(--surface, #182321) !important;
+  border-color: var(--border, #2B4039) !important;
+  color: var(--text-dark, #F1F7F4) !important;
+}
+
+html[data-theme="dark"] .otp-box:focus {
+  border-color: var(--green, #10B981) !important;
+  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.2) !important;
+}
+
+html[data-theme="dark"] .btn-resend {
+  color: var(--green-dark, #6EE7B7) !important;
+}
+
+html[data-theme="dark"] .btn-resend:hover:not(:disabled) {
+  background: var(--mint, #1E3730) !important;
+}

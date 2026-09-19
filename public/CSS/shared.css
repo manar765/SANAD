@@ -213,13 +213,20 @@ footer[id] {
     font-size: 1.05rem;
 }
 
+.btn-sm {
+    padding: 6px 14px;
+    font-size: 0.86rem;
+    border-radius: 8px;
+    gap: 6px;
+}
+
 .btn i {
     font-size: 0.85em;
 }
 
 .btn-primary {
     background: linear-gradient(135deg, var(--green), var(--green-dark));
-    color: #fff;
+    color: #fff !important;
     box-shadow: 0 8px 20px rgba(31, 122, 92, 0.26);
 }
 
@@ -227,30 +234,75 @@ footer[id] {
     background: linear-gradient(135deg, var(--green-dark), var(--green-dark));
     transform: translateY(-2px);
     box-shadow: 0 14px 28px rgba(15, 91, 70, 0.34);
+    color: #fff !important;
 }
 
 .btn-outline {
     background: transparent;
-    border-color: #CBD6D0;
+    border-color: var(--border);
     color: var(--text-dark);
 }
 
 .btn-outline:hover {
     border-color: var(--green);
-    color: var(--green);
+    color: var(--green-dark);
     background: var(--mint);
+    transform: translateY(-2px);
+}
+
+.btn-danger {
+    background: var(--red, #D92D20);
+    border-color: var(--red, #D92D20);
+    color: #fff !important;
+    box-shadow: 0 4px 12px rgba(217, 45, 32, 0.2);
+}
+
+.btn-danger:hover {
+    background: #B91C1C;
+    border-color: #B91C1C;
+    color: #fff !important;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px rgba(185, 28, 28, 0.3);
+}
+
+.btn-warning {
+    background: #D97706;
+    border-color: #B45309;
+    color: #fff !important;
+    box-shadow: 0 4px 12px rgba(217, 119, 6, 0.22);
+}
+
+.btn-warning:hover {
+    background: #B45309;
+    border-color: #92400E;
+    color: #fff !important;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px rgba(180, 83, 9, 0.3);
+}
+
+.btn-light {
+    background: var(--surface);
+    border-color: var(--border);
+    color: var(--text-dark);
+}
+
+.btn-light:hover {
+    background: var(--mint);
+    border-color: var(--green);
+    color: var(--green-dark);
     transform: translateY(-2px);
 }
 
 .btn-logout {
     background: transparent;
-    border-color: #CBD6D0;
+    border-color: var(--border);
     color: var(--text-dark);
 }
 
 .btn-logout:hover {
     border-color: var(--red);
     color: var(--red);
+    background: var(--red-tint);
     transform: translateY(-2px);
 }
 
