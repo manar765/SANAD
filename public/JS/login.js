@@ -128,7 +128,7 @@ form.addEventListener('submit', async (e) => {
         }
 
         localStorage.setItem('sanadUser', JSON.stringify(payload.user || { role: payload.role, email: email.value.trim() }));
-        window.location.assign(payload.role === 'admin' ? '/admin-requests' : '/');
+        window.location.assign(payload.role === 'admin' ? '/dashboard' : '/');
     } catch {
         password.classList.add('error');
         passwordError.textContent = 'تعذر الاتصال بالخادم. حاول مرة أخرى.';
@@ -156,7 +156,7 @@ mfaForm?.addEventListener('submit', async (event) => {
             return;
         }
         localStorage.setItem('sanadUser', JSON.stringify(payload.user || { role: payload.role, email: email.value.trim() }));
-        window.location.assign(payload.role === 'admin' ? '/admin-requests' : '/');
+        window.location.assign(payload.role === 'admin' ? '/dashboard' : '/');
     } catch {
         mfaError.textContent = 'تعذر الاتصال بالخادم. حاول مرة أخرى.';
         mfaError.classList.add('show');

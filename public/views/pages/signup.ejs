@@ -109,6 +109,15 @@
                 <div class="error-msg" id="confirmPasswordError">كلمتا المرور غير متطابقتين.</div>
               </div>
 
+              <div id="beneficiaryFields" class="conditional-fields hidden">
+                <div class="field-group">
+                  <label class="field-label" for="nationalId">الرقم القومي</label>
+                  <input class="field" id="nationalId" name="nationalId" type="text" inputmode="numeric"
+                    placeholder="14 رقماً" maxlength="14" autocomplete="off" />
+                  <div class="error-msg" id="nationalIdError">الرقم القومي يجب أن يتكون من 14 رقماً.</div>
+                </div>
+              </div>
+
               <div id="donorFields" class="conditional-fields hidden">
                 <div class="field-group">
                   <span class="field-label">نوع المتبرع</span>

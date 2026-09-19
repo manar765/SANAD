@@ -25,6 +25,7 @@ const users = {
         lastName: "مستفيد",
         email: `test.beneficiary.${testSuffix}@example.com`,
         phone: "01087654321",
+        nationalId: "29801011234567",
         password: "TestPass123",
     },
 };
@@ -484,6 +485,7 @@ test("stores donation requests securely and enforces donor/admin workflow", asyn
         lastName: "التجربة",
         email: `donation.beneficiary.${testSuffix}@example.com`,
         phone: "01033334444",
+        nationalId: "29801019876543",
         password: "DonationPass123",
     });
     const beneficiaryList = await request("/api/donations", { headers: { Cookie: beneficiary.cookie } });

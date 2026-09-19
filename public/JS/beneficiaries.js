@@ -37,6 +37,20 @@
     const drawerNeedsEmpty = $("#drawerNeedsEmpty");
     const drawerNeedsCount = $("#drawerNeedsCount");
 
+    // Add New Need Modal Elements
+    const addNeedBtn = $("#addNeedBtn");
+    const needModalOverlay = $("#needModalOverlay");
+    const needModalCloseBtn = $("#needModalCloseBtn");
+    const needModalCancelBtn = $("#needModalCancelBtn");
+    const needModalSaveBtn = $("#needModalSaveBtn");
+    const needForm = $("#needForm");
+    const needTitle = $("#needTitle");
+    const needCategory = $("#needCategory");
+    const needQuantity = $("#needQuantity");
+    const needUnit = $("#needUnit");
+    const needPriority = $("#needPriority");
+    const needDescription = $("#needDescription");
+
     const drawerHistoryTbody = $("#drawerHistoryTbody");
     const drawerHistoryEmpty = $("#drawerHistoryEmpty");
     const drawerHistoryCount = $("#drawerHistoryCount");
@@ -108,6 +122,13 @@
             .replace(/'/g, "&#39;");
     }
 
+    function maskDigits(value) {
+        const digits = String(value == null ? "" : value).replace(/\s+/g, "");
+        if (!digits) return "";
+        if (digits.length < 5) return "***";
+        return digits.slice(0, 2) + "***" + digits.slice(-2);
+    }
+
     const formatNumber = (value) => Number(value || 0).toLocaleString("ar-EG");
 
     function showToast(message) {
@@ -117,6 +138,26 @@
         if (span) span.textContent = message;
         toast.classList.add("show");
         setTimeout(function () { toast.classList.remove("show"); }, 3500);
+    }
+
+    function showNationalIdError() {
+        const errorBox = $("#benNationalIdError");
+        const field = $("#benNationalId");
+        if (errorBox) errorBox.hidden = false;
+        if (field) {
+            field.classList.add("ben-input-error");
+            field.focus();
+            if (field.scrollIntoView) {
+                field.scrollIntoView({ behavior: "smooth", block: "center" });
+            }
+        }
+    }
+
+    function hideNationalIdError() {
+        const errorBox = $("#benNationalIdError");
+        const field = $("#benNationalId");
+        if (errorBox) errorBox.hidden = true;
+        if (field) field.classList.remove("ben-input-error");
     }
 
     async function getCsrf() {
@@ -187,8 +228,8 @@
 
         tr.innerHTML =
             `<td><span class="ben-code-badge">${escapeHtml(item.referenceCode || `BEN-${String(item.id).padStart(4, "0")}`)}</span></td>` +
-            `<td><div class="ben-name-cell"><span class="ben-name-primary">${escapeHtml(item.name || "مستفيد")}</span>${item.nationalId ? `<span class="ben-name-meta"><i class="fa-solid fa-id-card"></i> ${escapeHtml(item.nationalId)}</span>` : ""}</div></td>` +
-            `<td>${escapeHtml(item.phone || "—")}</td>` +
+            `<td><div class="ben-name-cell"><span class="ben-name-primary">${escapeHtml(item.name || "مستفيد")}</span>${item.nationalId ? `<span class="ben-name-meta"><i class="fa-solid fa-id-card"></i> ${escapeHtml(maskDigits(item.nationalId))}</span>` : ""}</div></td>` +
+            `<td>${escapeHtml(item.phone ? maskDigits(item.phone) : "—")}</td>` +
             `<td>${escapeHtml(govDistrict)}</td>` +
             `<td>${escapeHtml(familyInfo)}</td>` +
             `<td><span class="ben-badge ${meta.badge}"><i class="${meta.icon}" aria-hidden="true"></i> ${meta.label}</span></td>` +
@@ -544,6 +585,7 @@
         $("#benFamilySize").value = "1";
         $("#benChildrenCount").value = "0";
         $("#benVerificationStatus").value = "pending";
+        hideNationalIdError();
         resetAiAssistant();
     }
 
@@ -683,7 +725,12 @@
         });
 
         showToast("تم تطبيق البيانات بنجاح على النموذج! يرجى المراجعة والضغط على حفظ.");
-        if (form) form.scrollIntoView({ behavior: "smooth", block: "start" });
+        if (aiAssistantPanel) aiAssistantPanel.setAttribute("hidden", "");
+        if (aiToggleBtn) aiToggleBtn.classList.remove("active");
+        if (form) {
+            form.scrollTop = 0;
+            form.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
     }
 
     function openModal(item) {
@@ -719,15 +766,96 @@
         modalOverlay.setAttribute("aria-hidden", "true");
     }
 
+    function openNeedModal() {
+        if (!isAdmin || !currentBeneficiary) return;
+        if (needForm) needForm.reset();
+        if (needPriority) needPriority.value = "medium";
+        if (needModalOverlay) {
+            needModalOverlay.classList.add("active");
+            needModalOverlay.setAttribute("aria-hidden", "false");
+        }
+        if (needTitle && needTitle.focus) needTitle.focus();
+    }
+
+    function closeNeedModal() {
+        if (!needModalOverlay) return;
+        needModalOverlay.classList.remove("active");
+        needModalOverlay.setAttribute("aria-hidden", "true");
+    }
+
+    async function handleNeedFormSubmit(event) {
+        event.preventDefault();
+        if (!isAdmin || !currentBeneficiary) return;
+
+        const title = (needTitle && needTitle.value.trim()) || "";
+        const category = (needCategory && needCategory.value.trim()) || "";
+        const rawQty = needQuantity ? needQuantity.value.trim() : "";
+        const unit = (needUnit && needUnit.value.trim()) || "";
+        const priority = (needPriority && needPriority.value) || "medium";
+        const description = (needDescription && needDescription.value.trim()) || "";
+
+        const quantityRequested = Number(rawQty);
+        if (title.length < 2) {
+            showToast("يرجى إدخال عنوان الاحتياج.");
+            return;
+        }
+        if (category.length < 2) {
+            showToast("يرجى إدخال فئة الاحتياج.");
+            return;
+        }
+        if (!Number.isInteger(quantityRequested) || quantityRequested <= 0) {
+            showToast("يرجى إدخال كمية صحيحة أكبر من صفر.");
+            return;
+        }
+        if (!unit) {
+            showToast("يرجى إدخال وحدة الكمية.");
+            return;
+        }
+        if (!["low", "medium", "high", "urgent"].includes(priority)) {
+            showToast("قيمة الأولوية غير صالحة.");
+            return;
+        }
+
+        if (needModalSaveBtn) needModalSaveBtn.disabled = true;
+        try {
+            const token = await getCsrf();
+            const res = await fetch("/api/beneficiary/needs", {
+                method: "POST",
+                credentials: "same-origin",
+                headers: { "Content-Type": "application/json", "X-CSRF-Token": token },
+                body: JSON.stringify({
+                    beneficiaryId: currentBeneficiary.id,
+                    title: title,
+                    category: category,
+                    quantityRequested: quantityRequested,
+                    unit: unit,
+                    priority: priority,
+                    description: description,
+                }),
+            });
+            const payload = await res.json();
+            if (!res.ok) throw new Error(payload.message || "تعذر حفظ الاحتياج.");
+            showToast("تم إضافة الاحتياج بنجاح.");
+            closeNeedModal();
+            await openDrawer(currentBeneficiary.id, "tab-needs");
+            await loadBeneficiaries();
+        } catch (error) {
+            showToast(error.message || "تعذر حفظ الاحتياج.");
+        } finally {
+            if (needModalSaveBtn) needModalSaveBtn.disabled = false;
+        }
+    }
+
     async function handleFormSubmit(event) {
         event.preventDefault();
         if (!isAdmin) return;
 
         const id = $("#benId").value;
+        const nationalIdValue = ($("#benNationalId").value.trim() || "").replace(/\D/g, "");
         const body = {
             name: $("#benName").value.trim(),
             phone: $("#benPhone").value.trim(),
-            nationalId: $("#benNationalId").value.trim() || null,
+            nationalId: nationalIdValue || null,
             governorate: $("#benGov").value,
             district: $("#benDistrict").value.trim() || null,
             address: $("#benAddress").value.trim() || null,
@@ -744,6 +872,11 @@
 
         if (!body.name || !body.phone || !body.governorate) {
             showToast("يرجى إدخال الاسم ورقم الهاتف والمحافظة.");
+            return;
+        }
+
+        if (body.nationalId && !/^\d{14}$/.test(body.nationalId)) {
+            showNationalIdError();
             return;
         }
 
@@ -784,6 +917,13 @@
     });
     if (refreshBtn) refreshBtn.addEventListener("click", loadBeneficiaries);
     if (addBtn) addBtn.addEventListener("click", () => openModal(null));
+    const nationalIdField = $("#benNationalId");
+    if (nationalIdField) {
+        nationalIdField.addEventListener("input", () => {
+            nationalIdField.value = nationalIdField.value.replace(/\D/g, "").slice(0, 14);
+            hideNationalIdError();
+        });
+    }
 
     // Drawer Tabs
     drawerTabs.forEach(btn => {
@@ -811,6 +951,15 @@
     });
     if (form) form.addEventListener("submit", handleFormSubmit);
 
+    // Add New Need Modal
+    if (addNeedBtn) addNeedBtn.addEventListener("click", openNeedModal);
+    if (needModalCloseBtn) needModalCloseBtn.addEventListener("click", closeNeedModal);
+    if (needModalCancelBtn) needModalCancelBtn.addEventListener("click", closeNeedModal);
+    if (needModalOverlay) needModalOverlay.addEventListener("click", (e) => {
+        if (e.target === needModalOverlay) closeNeedModal();
+    });
+    if (needForm) needForm.addEventListener("submit", handleNeedFormSubmit);
+
     // AI Assistant Listeners
     if (aiToggleBtn) aiToggleBtn.addEventListener("click", toggleAiAssistant);
     if (aiSampleBtn) aiSampleBtn.addEventListener("click", () => {
@@ -829,6 +978,7 @@
     // Escape Key Support
     window.addEventListener("keydown", (e) => {
         if (e.key === "Escape") {
+            if (needModalOverlay && needModalOverlay.classList.contains("active")) closeNeedModal();
             if (drawerOverlay && drawerOverlay.classList.contains("active")) closeDrawer();
             if (modalOverlay && modalOverlay.classList.contains("active")) closeModal();
         }

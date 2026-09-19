@@ -16,6 +16,7 @@ const beneficiary = {
     lastName: "المستفيد",
     email: `req.beneficiary.${suffix}@sanad.local`,
     phone: `010${suffix.padStart(7, "0")}`.slice(0, 11),
+    nationalId: "29801011234567",
     password: benPassword,
 };
 const donor = {

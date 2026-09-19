@@ -26,6 +26,9 @@ import {
   approveOrRejectDonation,
   changeDistributionStatus,
   createAssistanceRequestService,
+  deleteAllBeneficiaries,
+  deleteBeneficiariesByIds,
+  deleteSingleBeneficiary,
   editBeneficiary,
   editInventoryItem,
   editNeed,
@@ -474,6 +477,10 @@ function isValidPhone(value, { optional = false } = {}) {
   return /^[+\d][\d\s()\-]{7,19}$/.test(phone) && digits.length >= 8 && digits.length <= 15;
 }
 
+function isValidNationalId(value) {
+  return /^\d{14}$/.test(String(value || "").trim());
+}
+
 function isValidPassword(value) {
   const password = String(value || "");
   return password.length >= 8 && password.length <= 128 && !/[\u0000-\u001F\u007F]/.test(password);
@@ -587,6 +594,7 @@ const operationError = (error, res) => {
     CANNOT_REVERT_DISTRIBUTED_DONATION: "لا يمكن إلغاء أو تعديل تبرع تم توزيع أجزاء منه في المخزون بالفعل.",
     INVALID_BENEFICIARY_NAME: "يرجى تقديم اسم مستفيد صحيح.",
     INVALID_VERIFICATION_STATUS: "يرجى تقديم حالة تحقق صحيحة.",
+    INVALID_NATIONAL_ID: "الرقم القومي يجب أن يتكون من 14 رقماً ولا يقبل الحروف أو الرموز.",
     BENEFICIARY_NOT_FOUND: "لم يتم العثور على ملف المستفيد.",
   };
   if (error.code === "INSUFFICIENT_STOCK") {
@@ -695,6 +703,64 @@ app.patch("/api/beneficiaries/:id/verification", requireAdmin, requireCsrf, asyn
       metadata: { beneficiaryId: id, status },
     });
     return res.json({ beneficiary: updated });
+  } catch (error) {
+    return operationError(error, res);
+  }
+});
+
+app.delete("/api/beneficiaries/bulk", requireAdmin, requireCsrf, async (req, res) => {
+  try {
+    const ids = Array.isArray(req.body?.ids) ? req.body.ids : [];
+    if (ids.length === 0) return res.status(400).json({ message: "يرجى اختيار مستفيد واحد على الأقل." });
+    const result = await deleteBeneficiariesByIds(ids, req.user.id);
+    await recordAuditEvent(req, {
+      userId: req.user.id,
+      action: "beneficiaries_deleted",
+      metadata: {
+        count: result.deleted,
+        deletedIds: result.deletedIds,
+        blocked: result.blocked.map(({ id, distributionsCount, referenceCode }) => ({ id, distributionsCount, referenceCode })),
+      },
+    });
+    return res.json(result);
+  } catch (error) {
+    return operationError(error, res);
+  }
+});
+
+app.delete("/api/beneficiaries/all", requireAdmin, requireCsrf, async (req, res) => {
+  try {
+    const result = await deleteAllBeneficiaries(req.user.id);
+    await recordAuditEvent(req, {
+      userId: req.user.id,
+      action: "beneficiaries_all_deleted",
+      metadata: { count: result.deleted, deletedIds: result.deletedIds, blocked: result.blocked.length },
+    });
+    return res.json(result);
+  } catch (error) {
+    return operationError(error, res);
+  }
+});
+
+app.delete("/api/beneficiaries/:id", requireAdmin, requireCsrf, async (req, res) => {
+  const id = Number.parseInt(req.params.id, 10);
+  if (!Number.isInteger(id)) return res.status(400).json({ message: "يرجى تقديم رقم مستفيد صحيح." });
+  try {
+    const result = await deleteSingleBeneficiary(id, req.user.id);
+    if (!result.deleted && (result.blocked?.length || 0) > 0) {
+      const blocked = result.blocked[0];
+      return res.status(409).json({
+        message: `لا يمكن حذف المستفيد لأن لديه ${blocked.distributionsCount} سجل توزيع مرتبط.`,
+        ...result,
+      });
+    }
+    if (!result.deleted) return res.status(404).json({ message: "لم يتم العثور على ملف المستفيد.", ...result });
+    await recordAuditEvent(req, {
+      userId: req.user.id,
+      action: "beneficiary_deleted",
+      metadata: { count: result.deleted, deletedIds: result.deletedIds },
+    });
+    return res.json(result);
   } catch (error) {
     return operationError(error, res);
   }
@@ -1241,6 +1307,7 @@ app.post("/api/auth/signup", async (req, res) => {
     .toLowerCase();
   const phone = normalizePhone(req.body?.phone);
   const password = String(req.body?.password || "");
+  const nationalId = String(req.body?.nationalId || "").trim();
   const role = String(req.body?.role || "")
     .trim()
     .toLowerCase();
@@ -1274,6 +1341,14 @@ app.post("/api/auth/signup", async (req, res) => {
     });
   }
 
+  if (role === "beneficiary") {
+    if (!isValidNationalId(nationalId)) {
+      return res
+        .status(400)
+        .json({ message: "الرقم القومي يجب أن يتكون من 14 رقماً." });
+    }
+  }
+
   if (role === "donor" && !["individual", "organization"].includes(donorType)) {
     return res
       .status(400)
@@ -1298,6 +1373,7 @@ app.post("/api/auth/signup", async (req, res) => {
       passwordHash,
       phone,
       role,
+      nationalId,
       donorType,
       organizationName,
     });

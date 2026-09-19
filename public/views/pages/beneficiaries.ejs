@@ -320,6 +320,13 @@
 
                         <!-- Tab 2: Needs -->
                         <div class="ben-tab-pane" id="tab-needs" role="tabpanel">
+                            <div class="ben-needs-toolbar">
+                                <h3><i class="fa-solid fa-hand-holding-heart text-teal" aria-hidden="true"></i>
+                                    الاحتياجات المسجلة</h3>
+                                <button type="button" class="btn btn-sm btn-primary admin-only" id="addNeedBtn">
+                                    <i class="fa-solid fa-plus" aria-hidden="true"></i> إضافة احتياج جديد
+                                </button>
+                            </div>
                             <div class="beneficiaries-table-wrap">
                                 <table class="beneficiaries-table" id="drawerNeedsTable">
                                     <thead>
@@ -339,8 +346,8 @@
                             <div class="don-empty" id="drawerNeedsEmpty" hidden>
                                 <i class="fa-solid fa-circle-check text-teal"></i>
                                 <h4>لا توجد احتياجات مسجلة حالياً</h4>
-                                <p>لم يقم هذا المستفيد بإرسال أي طلب مساعدة بعد. عند إرسال طلب جديد، ستظهر الأصناف
-                                    المطلوبة هنا تلقائياً من سجلات الطلبات.</p>
+                                <p>يمكن إضافة احتياج جديد من الزر «إضافة احتياج جديد» أعلاه، أو يظهر تلقائياً عند إرسال
+                                    المستفيد طلباً من صفحة طلب المساعدة.</p>
                             </div>
                         </div>
 
@@ -468,67 +475,68 @@
                         </button>
                     </div>
 
-                    <!-- AI Assistant Section -->
-                    <div class="ai-assistant-wrapper">
-                        <button type="button" class="btn btn-outline ai-toggle-btn" id="aiToggleBtn"
-                            title="انقر لفتح المساعد الذكي لتفريغ الملاحظات">
-                            <i class="fa-solid fa-wand-magic-sparkles text-teal"></i>
-                            <span>استخراج ذكي من نص الملاحظات بالذكاء الاصطناعي (AI)</span>
-                            <i class="fa-solid fa-chevron-down ai-toggle-chevron"></i>
-                        </button>
+                    <form class="ben-modal-body" id="beneficiaryForm">
+                        <!-- AI Assistant Section -->
+                        <div class="ai-assistant-wrapper">
+                            <button type="button" class="btn btn-outline ai-toggle-btn" id="aiToggleBtn"
+                                title="انقر لفتح المساعد الذكي لتفريغ الملاحظات">
+                                <i class="fa-solid fa-wand-magic-sparkles text-teal"></i>
+                                <span>استخراج ذكي من نص الملاحظات بالذكاء الاصطناعي (AI)</span>
+                                <i class="fa-solid fa-chevron-down ai-toggle-chevron"></i>
+                            </button>
 
-                        <div class="ai-assistant-panel" id="aiAssistantPanel" hidden>
-                            <div class="ai-panel-header">
-                                <div class="ai-panel-title">
-                                    <i class="fa-solid fa-robot text-teal"></i>
-                                    <strong>مساعد تفريغ الملاحظات والتقارير الميدانية</strong>
+                            <div class="ai-assistant-panel" id="aiAssistantPanel" hidden>
+                                <div class="ai-panel-header">
+                                    <div class="ai-panel-title">
+                                        <i class="fa-solid fa-robot text-teal"></i>
+                                        <strong>مساعد تفريغ الملاحظات والتقارير الميدانية</strong>
+                                    </div>
+                                    <span class="ai-badge-pill">مراجعة بشرية إلزامية</span>
                                 </div>
-                                <span class="ai-badge-pill">مراجعة بشرية إلزامية</span>
-                            </div>
-                            <p class="ai-panel-desc">
-                                الصق تقرير الحالة غير المنظم الصادر عن الباحث الميداني، وسيقوم المساعد الذكي باستخراج
-                                بيانات الأسرة، الدخل، الأرقام القومية، والاحتياجات تلقائياً لتراجعها وتعتمدها قبل الحفظ.
-                            </p>
+                                <p class="ai-panel-desc">
+                                    الصق تقرير الحالة غير المنظم الصادر عن الباحث الميداني، وسيقوم المساعد الذكي
+                                    باستخراج بيانات الأسرة، الدخل، الأرقام القومية، والاحتياجات تلقائياً لتراجعها
+                                    وتعتمدها قبل الحفظ.
+                                </p>
 
-                            <div class="ai-input-wrap">
-                                <textarea id="aiRawNotes" class="ai-textarea" rows="4"
-                                    placeholder="اكتب أو الصق تقرير الحالة هنا... مثال: زار الباحث أسرة المواطن محمود أحمد الشريف (هاتف: 01012345678، رقم قومي: 28904011234567) بمركز أوسيم الجيزة، الأسرة 6 أفراد و 4 أطفال و 3 في سن المدرسة، يعمل باليومية ودخله 2500 جنيه، والزوجة مريضة سكر وتحتاج علاج شهري، والأسرة تطلب طرد غذائي وكسوة مدرسية للأطفال..."></textarea>
-                                <div class="ai-input-actions">
-                                    <button type="button" class="btn btn-sm btn-outline" id="aiSampleBtn">
-                                        <i class="fa-solid fa-file-lines"></i> تجربة تقرير ميداني نموذجي
-                                    </button>
-                                    <button type="button" class="btn btn-sm btn-primary" id="aiAnalyzeBtn">
-                                        <i class="fa-solid fa-wand-magic-sparkles"></i> تحليل واستخراج البيانات
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- Extracted Review Block -->
-                            <div class="ai-review-block" id="aiReviewBlock" hidden>
-                                <div class="ai-disclaimer-banner">
-                                    <i class="fa-solid fa-shield-halved"></i>
-                                    <span>تم استخراج هذه البيانات بواسطة الذكاء الاصطناعي — يرجى المراجعة والتدقيق
-                                        البشري قبل الحفظ</span>
+                                <div class="ai-input-wrap">
+                                    <textarea id="aiRawNotes" class="ai-textarea" rows="4"
+                                        placeholder="اكتب أو الصق تقرير الحالة هنا... مثال: زار الباحث أسرة المواطن محمود أحمد الشريف (هاتف: 01012345678، رقم قومي: 28904011234567) بمركز أوسيم الجيزة، الأسرة 6 أفراد و 4 أطفال و 3 في سن المدرسة، يعمل باليومية ودخله 2500 جنيه، والزوجة مريضة سكر وتحتاج علاج شهري، والأسرة تطلب طرد غذائي وكسوة مدرسية للأطفال..."></textarea>
+                                    <div class="ai-input-actions">
+                                        <button type="button" class="btn btn-sm btn-outline" id="aiSampleBtn">
+                                            <i class="fa-solid fa-file-lines"></i> تجربة تقرير ميداني نموذجي
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-primary" id="aiAnalyzeBtn">
+                                            <i class="fa-solid fa-wand-magic-sparkles"></i> تحليل واستخراج البيانات
+                                        </button>
+                                    </div>
                                 </div>
 
-                                <div class="ai-preview-summary" id="aiPreviewSummary"></div>
+                                <!-- Extracted Review Block -->
+                                <div class="ai-review-block" id="aiReviewBlock" hidden>
+                                    <div class="ai-disclaimer-banner">
+                                        <i class="fa-solid fa-shield-halved"></i>
+                                        <span>تم استخراج هذه البيانات بواسطة الذكاء الاصطناعي — يرجى المراجعة
+                                            والتدقيق البشري قبل الحفظ</span>
+                                    </div>
 
-                                <div class="ai-preview-grid" id="aiPreviewGrid">
-                                    <!-- Populated dynamically -->
-                                </div>
+                                    <div class="ai-preview-summary" id="aiPreviewSummary"></div>
 
-                                <div class="ai-review-actions">
-                                    <button type="button" class="btn btn-sm btn-outline" id="aiDiscardBtn">تجاهل
-                                        النتائج</button>
-                                    <button type="button" class="btn btn-sm btn-primary" id="aiApplyBtn">
-                                        <i class="fa-solid fa-check"></i> تطبيق البيانات على النموذج ومراجعتها
-                                    </button>
+                                    <div class="ai-preview-grid" id="aiPreviewGrid">
+                                        <!-- Populated dynamically -->
+                                    </div>
+
+                                    <div class="ai-review-actions">
+                                        <button type="button" class="btn btn-sm btn-outline" id="aiDiscardBtn">تجاهل
+                                            النتائج</button>
+                                        <button type="button" class="btn btn-sm btn-primary" id="aiApplyBtn">
+                                            <i class="fa-solid fa-check"></i> تطبيق ونقل البيانات للنموذج
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    <form class="ben-modal-body" id="beneficiaryForm">
                         <input type="hidden" id="benId" value="" />
                         <div class="ben-form-grid">
                             <div class="ben-form-group">
@@ -545,6 +553,10 @@
                             <div class="ben-form-group">
                                 <label for="benNationalId">الرقم القومي (14 رقماً)</label>
                                 <input id="benNationalId" maxlength="14" placeholder="2950101XXXXXXXX" />
+                                <div class="ben-field-error" id="benNationalIdError" role="alert" aria-live="assertive" hidden>
+                                    <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>
+                                    <span>يجب إدخال رقم قومي مصري صحيح مكوّن من 14 رقماً فقط.</span>
+                                </div>
                             </div>
 
                             <div class="ben-form-group">
@@ -643,13 +655,99 @@
                 </div>
             </div>
 
+            <!-- ============================================================
+         ADD NEW NEED MODAL (per drawer beneficiary)
+    ============================================================ -->
+            <div class="ben-modal-overlay ben-need-modal-overlay" id="needModalOverlay" aria-hidden="true">
+                <div class="ben-modal-card" role="dialog" aria-modal="true" aria-labelledby="needModalTitle">
+                    <div class="ben-modal-header">
+                        <h2 id="needModalTitle">
+                            <i class="fa-solid fa-hand-holding-heart text-teal" aria-hidden="true"></i>
+                            إضافة احتياج جديد
+                        </h2>
+                        <button type="button" class="ben-drawer-close" id="needModalCloseBtn" aria-label="إغلاق">
+                            <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                        </button>
+                    </div>
+
+                    <form class="ben-modal-body" id="needForm" novalidate>
+                        <div class="ben-form-grid">
+                            <div class="ben-form-group ben-form-col-2">
+                                <label for="needTitle">عنوان الاحتياج *</label>
+                                <input id="needTitle" type="text" maxlength="160" required
+                                    placeholder="مثال: شنط مدرسية للأبناء" />
+                            </div>
+
+                            <div class="ben-form-group ben-form-col-2">
+                                <label for="needCategory">الفئة *</label>
+                                <input id="needCategory" type="text" maxlength="80" required list="needCategoryList"
+                                    placeholder="اختر فئة أو اكتبها" />
+                                <datalist id="needCategoryList">
+                                    <option value="شنط مدرسية"></option>
+                                    <option value="مستلزمات مدرسية"></option>
+                                    <option value="ملابس"></option>
+                                    <option value="مواد غذائية"></option>
+                                    <option value="بطاطين"></option>
+                                    <option value="مستلزمات طبية"></option>
+                                    <option value="أخرى"></option>
+                                </datalist>
+                            </div>
+
+                            <div class="ben-form-group">
+                                <label for="needQuantity">الكمية المطلوبة *</label>
+                                <input id="needQuantity" type="number" min="1" step="1" required
+                                    placeholder="مثال: 2" />
+                            </div>
+
+                            <div class="ben-form-group">
+                                <label for="needUnit">الوحدة *</label>
+                                <input id="needUnit" type="text" maxlength="40" required list="needUnitList"
+                                    placeholder="مثال: قطعة" />
+                                <datalist id="needUnitList">
+                                    <option value="قطعة"></option>
+                                    <option value="سلة"></option>
+                                    <option value="كرتونة"></option>
+                                    <option value="زوج"></option>
+                                    <option value="كيلو"></option>
+                                    <option value="بطانية"></option>
+                                    <option value="سرير"></option>
+                                </datalist>
+                            </div>
+
+                            <div class="ben-form-group">
+                                <label for="needPriority">الأولوية *</label>
+                                <select id="needPriority" required>
+                                    <option value="low">منخفضة</option>
+                                    <option value="medium" selected>متوسطة</option>
+                                    <option value="high">عالية</option>
+                                    <option value="urgent">عاجلة</option>
+                                </select>
+                            </div>
+
+                            <div class="ben-form-group ben-form-col-2">
+                                <label for="needDescription">وصف إضافي (اختياري)</label>
+                                <textarea id="needDescription" rows="2" maxlength="2000"
+                                    placeholder="تفاصيل إضافية عن الاحتياج..."></textarea>
+                            </div>
+                        </div>
+                    </form>
+
+                    <div class="ben-modal-footer">
+                        <button type="button" class="btn btn-outline" id="needModalCancelBtn">إلغاء</button>
+                        <button type="submit" form="needForm" class="btn btn-primary" id="needModalSaveBtn">
+                            <i class="fa-solid fa-check" aria-hidden="true"></i> حفظ الاحتياج
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             </div>
             </div>
 
-            <!-- ============================================================
+                    <!-- ============================================================
          FOOTER
     ============================================================ -->
-            <%- include('../partials/footer') %>
+                    <%- include('../partials/footer') %>
 
                 <!-- toast notification -->
                 <div class="toast" id="toast" role="status" aria-live="polite">
