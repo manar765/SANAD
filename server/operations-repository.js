@@ -32,9 +32,9 @@ export async function listInventory({ status, category } = {}) {
 export async function createInventoryItem(input, userId) {
     const statusAtInsert = input.status === "archived" ? "archived"
         : input.quantityTotal <= 0 ? "out_of_stock"
-        : input.quantityTotal <= input.lowStockThreshold ? "low_stock"
-        : input.status === "surplus" || input.status === "in_distribution" ? input.status
-        : "available";
+            : input.quantityTotal <= input.lowStockThreshold ? "low_stock"
+                : input.status === "surplus" || input.status === "in_distribution" ? input.status
+                    : "available";
     const result = await pool.query(
         `INSERT INTO inventory_items
       (source_donation_id, name, category, description, unit, quantity_total, quantity_available,
@@ -1631,6 +1631,191 @@ export async function getOperationalNotifications() {
     };
 }
 
+export async function getDatabaseStatistics() {
+    const queries = {
+        donations: "SELECT COUNT(*)::int AS count FROM donation_requests",
+        inventory: "SELECT COUNT(*)::int AS count FROM inventory_items",
+        beneficiaries: "SELECT COUNT(*)::int AS count FROM beneficiary_profiles",
+        needs: "SELECT COUNT(*)::int AS count FROM beneficiary_needs",
+        assistanceRequests: "SELECT COUNT(*)::int AS count FROM assistance_requests",
+        distributions: "SELECT COUNT(*)::int AS count FROM distributions",
+        distributionItems: "SELECT COUNT(*)::int AS count FROM distribution_items",
+        recommendations: "SELECT COUNT(*)::int AS count FROM beneficiary_recommendations",
+        donors: "SELECT COUNT(*)::int AS count FROM donor_profiles",
+        donorUsers: "SELECT COUNT(*)::int AS count FROM users WHERE role = 'donor'",
+        beneficiaryUsers: "SELECT COUNT(*)::int AS count FROM users WHERE role = 'beneficiary'",
+        adminUsers: "SELECT COUNT(*)::int AS count FROM users WHERE role = 'admin'",
+        auditLogs: "SELECT COUNT(*)::int AS count FROM audit_logs"
+    };
 
+    const stats = {};
+    for (const [key, sql] of Object.entries(queries)) {
+        const res = await pool.query(sql);
+        stats[key] = Number(res.rows[0]?.count || 0);
+    }
 
+    return stats;
+}
 
+export async function executeDatabasePurge({
+    mode = "selective",
+    targets = [],
+    preserveAuditLogs = false,
+    requesterId = null
+} = {}) {
+    const client = await pool.connect();
+    const deletedCounts = {};
+
+    try {
+        await client.query("BEGIN");
+
+        const isFull = mode === "full";
+        const targetSet = new Set(Array.isArray(targets) ? targets : []);
+
+        if (isFull) {
+            // Full wipe of all operational data & non-admin accounts
+            const dDistItems = await client.query("DELETE FROM distribution_items");
+            deletedCounts.distributionItems = dDistItems.rowCount;
+
+            const dDists = await client.query("DELETE FROM distributions");
+            deletedCounts.distributions = dDists.rowCount;
+
+            const dRecs = await client.query("DELETE FROM beneficiary_recommendations");
+            deletedCounts.recommendations = dRecs.rowCount;
+
+            const dNeeds = await client.query("DELETE FROM beneficiary_needs");
+            deletedCounts.needs = dNeeds.rowCount;
+
+            const dAssistance = await client.query("DELETE FROM assistance_requests");
+            deletedCounts.assistanceRequests = dAssistance.rowCount;
+
+            const dInventory = await client.query("DELETE FROM inventory_items");
+            deletedCounts.inventory = dInventory.rowCount;
+
+            const dDonations = await client.query("DELETE FROM donation_requests");
+            deletedCounts.donations = dDonations.rowCount;
+
+            const dBeneficiaries = await client.query("DELETE FROM beneficiary_profiles");
+            deletedCounts.beneficiaries = dBeneficiaries.rowCount;
+
+            const dDonors = await client.query("DELETE FROM donor_profiles");
+            deletedCounts.donors = dDonors.rowCount;
+
+            // Delete non-admin users (cascade cleans up tokens/mfa/challenges)
+            const dUsers = await client.query(
+                "DELETE FROM users WHERE role != 'admin' AND is_super_admin = FALSE"
+            );
+            deletedCounts.nonAdminUsers = dUsers.rowCount;
+
+            // Clean orphaned sessions
+            await client.query("DELETE FROM user_sessions WHERE user_id NOT IN (SELECT id FROM users)");
+
+            if (!preserveAuditLogs) {
+                const dAudit = await client.query("DELETE FROM audit_logs");
+                deletedCounts.auditLogs = dAudit.rowCount;
+            }
+        } else {
+            // Selective wipe based on targets
+            // 1. Distributions (must precede inventory or beneficiaries if deleting them)
+            if (targetSet.has("distributions") || targetSet.has("beneficiaries")) {
+                const dDistItems = await client.query("DELETE FROM distribution_items");
+                deletedCounts.distributionItems = dDistItems.rowCount;
+
+                const dDists = await client.query("DELETE FROM distributions");
+                deletedCounts.distributions = dDists.rowCount;
+            }
+
+            // 2. Inventory Items
+            if (targetSet.has("inventory")) {
+                // If distributions weren't wiped yet, remove dependent distribution_items to satisfy FK restrict
+                if (!targetSet.has("distributions") && !targetSet.has("beneficiaries")) {
+                    const dDistItems = await client.query("DELETE FROM distribution_items");
+                    deletedCounts.distributionItems = (deletedCounts.distributionItems || 0) + dDistItems.rowCount;
+                }
+                const dInventory = await client.query("DELETE FROM inventory_items");
+                deletedCounts.inventory = dInventory.rowCount;
+            }
+
+            // 3. Donations
+            if (targetSet.has("donations")) {
+                // inventory_items.source_donation_id is ON DELETE SET NULL
+                const dDonations = await client.query("DELETE FROM donation_requests");
+                deletedCounts.donations = dDonations.rowCount;
+            }
+
+            // 4. Assistance Requests
+            if (targetSet.has("assistance_requests")) {
+                await client.query("UPDATE beneficiary_needs SET assistance_request_id = NULL WHERE assistance_request_id IS NOT NULL");
+                const dAssistance = await client.query("DELETE FROM assistance_requests");
+                deletedCounts.assistanceRequests = dAssistance.rowCount;
+            }
+
+            // 5. Beneficiary Needs
+            if (targetSet.has("needs")) {
+                await client.query("UPDATE distribution_items SET need_id = NULL WHERE need_id IS NOT NULL");
+                const dNeeds = await client.query("DELETE FROM beneficiary_needs");
+                deletedCounts.needs = dNeeds.rowCount;
+            }
+
+            // 6. Beneficiary Recommendations
+            if (targetSet.has("recommendations")) {
+                const dRecs = await client.query("DELETE FROM beneficiary_recommendations");
+                deletedCounts.recommendations = dRecs.rowCount;
+            }
+
+            // 7. Beneficiaries (includes needs, recommendations, profiles, and beneficiary user accounts)
+            if (targetSet.has("beneficiaries")) {
+                if (!deletedCounts.needs) {
+                    const dNeeds = await client.query("DELETE FROM beneficiary_needs");
+                    deletedCounts.needs = dNeeds.rowCount;
+                }
+                if (!deletedCounts.recommendations) {
+                    const dRecs = await client.query("DELETE FROM beneficiary_recommendations");
+                    deletedCounts.recommendations = dRecs.rowCount;
+                }
+                if (!deletedCounts.assistanceRequests) {
+                    const dAssistance = await client.query("DELETE FROM assistance_requests");
+                    deletedCounts.assistanceRequests = dAssistance.rowCount;
+                }
+
+                const dBeneficiaries = await client.query("DELETE FROM beneficiary_profiles");
+                deletedCounts.beneficiaries = dBeneficiaries.rowCount;
+
+                const dBenUsers = await client.query("DELETE FROM users WHERE role = 'beneficiary'");
+                deletedCounts.beneficiaryUsers = dBenUsers.rowCount;
+            }
+
+            // 8. Donors
+            if (targetSet.has("donors")) {
+                if (!deletedCounts.donations) {
+                    const dDonations = await client.query("DELETE FROM donation_requests");
+                    deletedCounts.donations = dDonations.rowCount;
+                }
+                const dDonors = await client.query("DELETE FROM donor_profiles");
+                deletedCounts.donors = dDonors.rowCount;
+
+                const dDonorUsers = await client.query("DELETE FROM users WHERE role = 'donor'");
+                deletedCounts.donorUsers = dDonorUsers.rowCount;
+            }
+
+            // 9. Audit logs
+            if (targetSet.has("audit_logs")) {
+                const dAudit = await client.query("DELETE FROM audit_logs");
+                deletedCounts.auditLogs = dAudit.rowCount;
+            }
+        }
+
+        await client.query("COMMIT");
+        return {
+            success: true,
+            mode,
+            targets: isFull ? ["all"] : Array.from(targetSet),
+            deletedCounts
+        };
+    } catch (error) {
+        await client.query("ROLLBACK").catch(() => { });
+        throw error;
+    } finally {
+        client.release();
+    }
+}

@@ -53,7 +53,7 @@ export async function createUserWithProfile({
 export async function findUserByEmail(email) {
     const result = await pool.query(
         `SELECT id, name, first_name, last_name, full_name, email, password_hash, role,
-            email_verified_at
+            is_super_admin, can_clear_database, email_verified_at
      FROM users WHERE email = $1`,
         [email],
     );
@@ -62,7 +62,8 @@ export async function findUserByEmail(email) {
 
 export async function findUserById(userId) {
     const result = await pool.query(
-        `SELECT id, name, first_name, last_name, full_name, email, password_hash, role, email_verified_at
+        `SELECT id, name, first_name, last_name, full_name, email, password_hash, role,
+            is_super_admin, can_clear_database, email_verified_at
      FROM users WHERE id = $1`,
         [userId],
     );
@@ -76,7 +77,8 @@ export async function findUserIdByEmail(email) {
 
 export async function findUserProfileById(userId) {
     const result = await pool.query(
-        `SELECT id, first_name, last_name, full_name, email, phone, role, email_verified_at
+        `SELECT id, first_name, last_name, full_name, email, phone, role,
+            is_super_admin, can_clear_database, email_verified_at
      FROM users WHERE id = $1`,
         [userId],
     );
@@ -287,6 +289,8 @@ export async function listAllUsers({ search = "", role = "", limit = 50, offset 
                 u.email,
                 COALESCE(u.phone, '') AS phone,
                 u.role,
+                u.is_super_admin AS "isSuperAdmin",
+                u.can_clear_database AS "canClearDatabase",
                 u.created_at AS "createdAt"
          FROM users u
          ${whereClause}
@@ -333,6 +337,13 @@ export async function updateUserRole(userId, newRole) {
             );
         }
 
+        if (newRole !== "admin") {
+            await client.query(
+                `UPDATE users SET can_clear_database = FALSE WHERE id = $1 AND is_super_admin = FALSE`,
+                [userId],
+            );
+        }
+
         await client.query("COMMIT");
         return user;
     } catch (error) {
@@ -341,5 +352,17 @@ export async function updateUserRole(userId, newRole) {
     } finally {
         client.release();
     }
+}
+
+export async function updateAdminDatabasePermission(userId, canClearDatabase) {
+    const result = await pool.query(
+        `UPDATE users
+         SET can_clear_database = $1
+         WHERE id = $2 AND role = 'admin' AND is_super_admin = FALSE
+         RETURNING id, COALESCE(NULLIF(full_name, ''), NULLIF(name, ''), email) AS name, email, role,
+                   is_super_admin AS "isSuperAdmin", can_clear_database AS "canClearDatabase"`,
+        [Boolean(canClearDatabase), userId],
+    );
+    return result.rows[0] || null;
 }
 

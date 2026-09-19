@@ -23,6 +23,7 @@ import {
     updateUserProfile,
     listAllUsers,
     updateUserRole,
+    updateAdminDatabasePermission,
 } from "./user-repository.js";
 
 export async function registerUser(input) {
@@ -140,6 +141,38 @@ export async function changeUserRole(targetUserId, newRole, adminUserId, adminUs
         }
     }
     const updated = await updateUserRole(targetUserId, newRole);
+    return updated;
+}
+
+export async function changeAdminDatabasePermission(targetUserId, canClearDatabase, requesterUserId, requesterEmail = "", isRequesterSuperAdmin = false) {
+    const defaultAdminEmail = (process.env.ADMIN_EMAIL || "admin@sanad.com").trim().toLowerCase();
+    const isSuper = Boolean(isRequesterSuperAdmin || (requesterEmail && String(requesterEmail).trim().toLowerCase() === defaultAdminEmail));
+    if (!isSuper) {
+        const error = new Error("SUPER_ADMIN_REQUIRED");
+        error.code = "SUPER_ADMIN_REQUIRED";
+        throw error;
+    }
+
+    const targetUser = await findUserById(targetUserId);
+    if (!targetUser) {
+        const error = new Error("USER_NOT_FOUND");
+        error.code = "USER_NOT_FOUND";
+        throw error;
+    }
+
+    if (targetUser.role !== "admin") {
+        const error = new Error("USER_NOT_ADMIN");
+        error.code = "USER_NOT_ADMIN";
+        throw error;
+    }
+
+    if (targetUser.is_super_admin || String(targetUser.email).trim().toLowerCase() === defaultAdminEmail) {
+        const error = new Error("CANNOT_MODIFY_SUPER_ADMIN");
+        error.code = "CANNOT_MODIFY_SUPER_ADMIN";
+        throw error;
+    }
+
+    const updated = await updateAdminDatabasePermission(targetUserId, canClearDatabase);
     return updated;
 }
 

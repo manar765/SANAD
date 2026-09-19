@@ -147,19 +147,23 @@
     loadRequests();
 
     // ==========================================================================
-    // Admin Tabs Navigation (Donations <-> Users & Roles <-> Assistance)
+    // Admin Tabs Navigation (Donations <-> Users & Roles <-> Assistance <-> Database)
     // ==========================================================================
     const tabDonationsBtn = document.getElementById("tabDonationsBtn");
     const tabUsersBtn = document.getElementById("tabUsersBtn");
     const tabAssistanceBtn = document.getElementById("tabAssistanceBtn");
+    const tabDatabaseBtn = document.getElementById("tabDatabaseBtn");
     const donationsSection = document.getElementById("donationsSection");
     const usersSection = document.getElementById("usersSection");
     const assistanceSection = document.getElementById("assistanceSection");
+    const databaseSection = document.getElementById("databaseSection");
 
     function switchAdminTab(target) {
         const showDonations = target === "donations";
         const showUsers = target === "users";
         const showAssistance = target === "assistance";
+        const showDatabase = target === "database";
+
         if (tabDonationsBtn) {
             tabDonationsBtn.classList.toggle("active", showDonations);
             tabDonationsBtn.setAttribute("aria-selected", showDonations);
@@ -172,9 +176,15 @@
             tabAssistanceBtn.classList.toggle("active", showAssistance);
             tabAssistanceBtn.setAttribute("aria-selected", showAssistance);
         }
+        if (tabDatabaseBtn) {
+            tabDatabaseBtn.classList.toggle("active", showDatabase);
+            tabDatabaseBtn.setAttribute("aria-selected", showDatabase);
+        }
+
         if (donationsSection) donationsSection.hidden = !showDonations;
         if (usersSection) usersSection.hidden = !showUsers;
         if (assistanceSection) assistanceSection.hidden = !showAssistance;
+        if (databaseSection) databaseSection.hidden = !showDatabase;
 
         if (showUsers && users.length === 0) {
             loadUsers();
@@ -182,11 +192,15 @@
         if (showAssistance && assistanceLoaded === false) {
             loadAssistanceRequests();
         }
+        if (showDatabase) {
+            loadDatabaseStats();
+        }
     }
 
     if (tabDonationsBtn) tabDonationsBtn.addEventListener("click", () => switchAdminTab("donations"));
     if (tabUsersBtn) tabUsersBtn.addEventListener("click", () => switchAdminTab("users"));
     if (tabAssistanceBtn) tabAssistanceBtn.addEventListener("click", () => switchAdminTab("assistance"));
+    if (tabDatabaseBtn) tabDatabaseBtn.addEventListener("click", () => switchAdminTab("database"));
 
     // ==========================================================================
     // Assistance Requests (طلبات المساعدة)
@@ -347,27 +361,81 @@
         const roleMeta = ROLE_LABELS[user.role] || { label: user.role, className: "" };
         const phone = user.phone || "—";
 
+        let purgePermCell = '<span style="color:var(--text-muted); font-size:0.85rem;">—</span>';
+        if (user.isSuperAdmin) {
+            purgePermCell = '<span class="badge" style="background:#fee2e2; color:#dc2626; font-size:0.8rem; padding:4px 8px; border-radius:6px; font-weight:700;"><i class="fa-solid fa-shield-halved"></i> الأدمن الأعلى</span>';
+        } else if (user.role === "admin") {
+            const isChecked = user.canClearDatabase ? " checked" : "";
+            const isDisabled = currentUserIsSuperAdmin ? "" : " disabled";
+            const tooltip = currentUserIsSuperAdmin ? "تعديل صلاحية مسح البيانات" : "تعديل الصلاحية متاح للأدمن الأعلى فقط";
+            purgePermCell =
+                '<label style="display:inline-flex; align-items:center; gap:6px; cursor:' + (currentUserIsSuperAdmin ? 'pointer' : 'not-allowed') + ';" title="' + tooltip + '">' +
+                '<input type="checkbox" class="can-clear-db-toggle"' + isChecked + isDisabled + ' data-user-id="' + escapeHtml(user.id) + '">' +
+                '<small class="perm-status-text" style="font-weight:600; color:' + (user.canClearDatabase ? '#16a34a' : '#64748b') + ';">' + (user.canClearDatabase ? 'مفعلة' : 'معطلة') + '</small>' +
+                '</label>';
+        }
+
         tr.innerHTML =
             '<td class="admin-id">' + escapeHtml(user.id) + '</td>' +
             '<td><strong>' + escapeHtml(user.name) + '</strong></td>' +
             '<td>' + escapeHtml(user.email) + '</td>' +
             '<td>' + escapeHtml(phone) + '</td>' +
             '<td><span class="role-badge ' + roleMeta.className + '">' + escapeHtml(roleMeta.label) + '</span></td>' +
+            '<td>' + purgePermCell + '</td>' +
             '<td>' +
-                '<select class="role-select" aria-label="تغيير دور ' + escapeHtml(user.name) + '">' +
-                    '<option value="admin"' + (user.role === "admin" ? " selected" : "") + '>مدير (Admin)</option>' +
-                    '<option value="donor"' + (user.role === "donor" ? " selected" : "") + '>متبرع (Donor)</option>' +
-                    '<option value="beneficiary"' + (user.role === "beneficiary" ? " selected" : "") + '>مستفيد (Beneficiary)</option>' +
-                '</select>' +
+            '<select class="role-select" aria-label="تغيير دور ' + escapeHtml(user.name) + '">' +
+            '<option value="admin"' + (user.role === "admin" ? " selected" : "") + '>مدير (Admin)</option>' +
+            '<option value="donor"' + (user.role === "donor" ? " selected" : "") + '>متبرع (Donor)</option>' +
+            '<option value="beneficiary"' + (user.role === "beneficiary" ? " selected" : "") + '>مستفيد (Beneficiary)</option>' +
+            '</select>' +
             '</td>' +
             '<td>' +
-                '<button type="button" class="btn btn-sm btn-primary btn-save-role" disabled>' +
-                    '<i class="fa-solid fa-floppy-disk" aria-hidden="true"></i> حفظ' +
-                '</button>' +
+            '<button type="button" class="btn btn-sm btn-primary btn-save-role" disabled>' +
+            '<i class="fa-solid fa-floppy-disk" aria-hidden="true"></i> حفظ' +
+            '</button>' +
             '</td>';
 
         const roleSelect = tr.querySelector(".role-select");
         const saveBtn = tr.querySelector(".btn-save-role");
+        const permToggle = tr.querySelector(".can-clear-db-toggle");
+
+        if (permToggle && currentUserIsSuperAdmin) {
+            permToggle.addEventListener("change", async function () {
+                const newChecked = permToggle.checked;
+                permToggle.disabled = true;
+                const statusText = tr.querySelector(".perm-status-text");
+
+                try {
+                    const csrfRes = await fetch("/api/auth/csrf", { credentials: "same-origin" });
+                    if (!csrfRes.ok) throw new Error("تعذر جلب رمز الأمان.");
+                    const { csrfToken } = await csrfRes.json();
+
+                    const response = await fetch(`/api/admin/users/${encodeURIComponent(user.id)}/permissions`, {
+                        method: "PATCH",
+                        credentials: "same-origin",
+                        headers: { "Content-Type": "application/json", "X-CSRF-Token": csrfToken },
+                        body: JSON.stringify({ canClearDatabase: newChecked })
+                    });
+
+                    const payload = await response.json().catch(() => ({}));
+                    if (!response.ok) {
+                        throw new Error(payload.message || "تعذر تعديل الصلاحية.");
+                    }
+
+                    user.canClearDatabase = newChecked;
+                    if (statusText) {
+                        statusText.textContent = newChecked ? "مفعلة" : "معطلة";
+                        statusText.style.color = newChecked ? "#16a34a" : "#64748b";
+                    }
+                    showToast("تم تحديث صلاحية مسح البيانات للمشرف بنجاح.");
+                } catch (error) {
+                    permToggle.checked = !newChecked;
+                    showToast(error.message || "تعذر تحديث الصلاحية.");
+                } finally {
+                    permToggle.disabled = false;
+                }
+            });
+        }
 
         roleSelect.addEventListener("change", function () {
             saveBtn.disabled = roleSelect.value === user.role;
@@ -454,4 +522,291 @@
     if (userSearchInput) userSearchInput.addEventListener("input", renderUsers);
     if (userRoleFilter) userRoleFilter.addEventListener("change", renderUsers);
     if (usersRetryBtn) usersRetryBtn.addEventListener("click", loadUsers);
+
+    // ==========================================================================
+    // Database Management & Purge Module
+    // ==========================================================================
+    let currentUserIsSuperAdmin = false;
+    let currentUserCanClearDatabase = false;
+    let databaseStats = null;
+    let currentPurgeAction = null;
+
+    const dbPermissionBadge = document.getElementById("dbPermissionBadge");
+    const dbLoading = document.getElementById("dbLoading");
+    const dbError = document.getElementById("dbError");
+    const dbRetryBtn = document.getElementById("dbRetryBtn");
+    const dbAccessDenied = document.getElementById("dbAccessDenied");
+    const dbContentArea = document.getElementById("dbContentArea");
+    const dbStatsGrid = document.getElementById("dbStatsGrid");
+    const btnRefreshDbStats = document.getElementById("btnRefreshDbStats");
+
+    const btnSelectAllTargets = document.getElementById("btnSelectAllTargets");
+    const btnDeselectAllTargets = document.getElementById("btnDeselectAllTargets");
+    const btnInitiateSelectivePurge = document.getElementById("btnInitiateSelectivePurge");
+    const btnInitiateFullPurge = document.getElementById("btnInitiateFullPurge");
+    const fullPurgeKeepAudit = document.getElementById("fullPurgeKeepAudit");
+
+    // Modal elements
+    const purgeConfirmModal = document.getElementById("purgeConfirmModal");
+    const modalPurgeTitle = document.getElementById("modalPurgeTitle");
+    const modalPurgeSubtitle = document.getElementById("modalPurgeSubtitle");
+    const modalPurgeSummary = document.getElementById("modalPurgeSummary");
+    const purgeConfirmationInput = document.getElementById("purgeConfirmationInput");
+    const btnCancelPurgeModal = document.getElementById("btnCancelPurgeModal");
+    const btnExecutePurgeConfirmed = document.getElementById("btnExecutePurgeConfirmed");
+
+    const STAT_CARD_CONFIG = [
+        { key: "donations", label: "طلبات التبرعات", icon: "fa-inbox", color: "#3b82f6" },
+        { key: "inventory", label: "أصناف المخزون", icon: "fa-boxes-stacked", color: "#10b981" },
+        { key: "distributions", label: "عمليات التوزيع", icon: "fa-truck-fast", color: "#8b5cf6" },
+        { key: "assistanceRequests", label: "طلبات المساعدة", icon: "fa-hand-holding-heart", color: "#f59e0b" },
+        { key: "beneficiaries", label: "ملفات المستفيدين", icon: "fa-people-roof", color: "#ec4899" },
+        { key: "needs", label: "احتياجات المستفيدين", icon: "fa-clipboard-list", color: "#06b6d4" },
+        { key: "donors", label: "ملفات المتبرعين", icon: "fa-user-heart", color: "#6366f1" },
+        { key: "auditLogs", label: "سجلات التدقيق", icon: "fa-clock-rotate-left", color: "#64748b" }
+    ];
+
+    const TARGET_LABELS = {
+        donations: "طلبات التبرعات",
+        inventory: "أصناف المخزون",
+        distributions: "التوزيعات وعمليات الصرف",
+        assistance_requests: "طلبات المساعدة",
+        beneficiaries: "المستفيدون والاحتياجات والتوصيات",
+        donors: "ملفات وحسابات المتبرعين",
+        audit_logs: "سجلات التدقيق والرقابة"
+    };
+
+    function renderDatabaseStats(stats) {
+        if (!dbStatsGrid) return;
+        dbStatsGrid.innerHTML = "";
+
+        STAT_CARD_CONFIG.forEach(item => {
+            const count = stats[item.key] ?? 0;
+            const card = document.createElement("div");
+            card.className = "db-stat-card";
+            card.style.cssText = "background:var(--bg-surface,#fff); border:1px solid var(--border); border-radius:12px; padding:16px; display:flex; align-items:center; gap:14px; box-shadow:0 1px 3px rgba(0,0,0,0.04);";
+            card.innerHTML =
+                '<div style="width:42px; height:42px; border-radius:10px; background:' + item.color + '15; color:' + item.color + '; display:flex; align-items:center; justify-content:center; font-size:1.2rem; flex-shrink:0;">' +
+                '<i class="fa-solid ' + item.icon + '"></i>' +
+                '</div>' +
+                '<div>' +
+                '<div style="font-size:1.35rem; font-weight:700; color:var(--text-primary); line-height:1.2;">' + count.toLocaleString("ar-EG") + '</div>' +
+                '<div style="font-size:0.85rem; color:var(--text-muted);">' + item.label + '</div>' +
+                '</div>';
+            dbStatsGrid.appendChild(card);
+        });
+
+        // Update target badges
+        const setBadge = (id, count) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = (count || 0).toLocaleString("ar-EG");
+        };
+
+        setBadge("badgeCountDonations", stats.donations);
+        setBadge("badgeCountInventory", stats.inventory);
+        setBadge("badgeCountDistributions", stats.distributions);
+        setBadge("badgeCountAssistance", stats.assistanceRequests);
+        setBadge("badgeCountBeneficiaries", stats.beneficiaries);
+        setBadge("badgeCountDonors", stats.donors);
+        setBadge("badgeCountAudit", stats.auditLogs);
+    }
+
+    async function loadDatabaseStats() {
+        if (!dbLoading) return;
+        window.SANADUI?.setLoading(dbLoading, true, "جارٍ تحميل إحصائيات وصلاحيات قاعدة البيانات…");
+        if (dbError) dbError.hidden = true;
+
+        try {
+            const res = await fetch("/api/admin/database/stats", { credentials: "same-origin" });
+            if (!res.ok) throw new Error("تعذر جلب إحصائيات قاعدة البيانات.");
+            const payload = await res.json();
+
+            currentUserIsSuperAdmin = Boolean(payload.isSuperAdmin);
+            currentUserCanClearDatabase = Boolean(payload.canClearDatabase || payload.isSuperAdmin);
+            databaseStats = payload.stats || {};
+
+            if (dbPermissionBadge) {
+                if (currentUserIsSuperAdmin) {
+                    dbPermissionBadge.innerHTML = '<i class="fa-solid fa-shield-halved"></i> الأدمن الأعلى (صلاحية كاملة)';
+                    dbPermissionBadge.style.background = "rgba(220, 38, 38, 0.1)";
+                    dbPermissionBadge.style.color = "#dc2626";
+                    dbPermissionBadge.style.borderColor = "rgba(220, 38, 38, 0.25)";
+                } else if (currentUserCanClearDatabase) {
+                    dbPermissionBadge.innerHTML = '<i class="fa-solid fa-user-check"></i> مشرف مخوّل بمسح البيانات';
+                    dbPermissionBadge.style.background = "rgba(16, 185, 129, 0.1)";
+                    dbPermissionBadge.style.color = "#059669";
+                    dbPermissionBadge.style.borderColor = "rgba(16, 185, 129, 0.25)";
+                } else {
+                    dbPermissionBadge.innerHTML = '<i class="fa-solid fa-lock"></i> غير مصرح بالمسح';
+                    dbPermissionBadge.style.background = "rgba(100, 116, 139, 0.1)";
+                    dbPermissionBadge.style.color = "#64748b";
+                    dbPermissionBadge.style.borderColor = "rgba(100, 116, 139, 0.25)";
+                }
+            }
+
+            if (currentUserCanClearDatabase) {
+                if (dbAccessDenied) dbAccessDenied.style.display = "none";
+                if (dbContentArea) dbContentArea.style.display = "block";
+                renderDatabaseStats(databaseStats);
+            } else {
+                if (dbAccessDenied) dbAccessDenied.style.display = "block";
+                if (dbContentArea) dbContentArea.style.display = "none";
+            }
+        } catch (error) {
+            window.SANADUI?.setError(dbError, error.message || "تعذر تحميل إحصائيات قاعدة البيانات.", loadDatabaseStats);
+        } finally {
+            window.SANADUI?.setLoading(dbLoading, false);
+        }
+    }
+
+    if (btnRefreshDbStats) btnRefreshDbStats.addEventListener("click", loadDatabaseStats);
+    if (dbRetryBtn) dbRetryBtn.addEventListener("click", loadDatabaseStats);
+
+    if (btnSelectAllTargets) {
+        btnSelectAllTargets.addEventListener("click", () => {
+            document.querySelectorAll(".target-checkbox").forEach(cb => cb.checked = true);
+        });
+    }
+
+    if (btnDeselectAllTargets) {
+        btnDeselectAllTargets.addEventListener("click", () => {
+            document.querySelectorAll(".target-checkbox").forEach(cb => cb.checked = false);
+        });
+    }
+
+    function openPurgeModal({ title, subtitle, summaryHtml, action }) {
+        currentPurgeAction = action;
+        if (modalPurgeTitle) modalPurgeTitle.textContent = title;
+        if (modalPurgeSubtitle) modalPurgeSubtitle.textContent = subtitle;
+        if (modalPurgeSummary) modalPurgeSummary.innerHTML = summaryHtml;
+        if (purgeConfirmationInput) purgeConfirmationInput.value = "";
+        if (btnExecutePurgeConfirmed) btnExecutePurgeConfirmed.disabled = true;
+        if (purgeConfirmModal) purgeConfirmModal.style.display = "flex";
+        if (purgeConfirmationInput) setTimeout(() => purgeConfirmationInput.focus(), 100);
+    }
+
+    function closePurgeModal() {
+        if (purgeConfirmModal) purgeConfirmModal.style.display = "none";
+        currentPurgeAction = null;
+        if (purgeConfirmationInput) purgeConfirmationInput.value = "";
+    }
+
+    if (btnCancelPurgeModal) btnCancelPurgeModal.addEventListener("click", closePurgeModal);
+
+    if (purgeConfirmationInput) {
+        purgeConfirmationInput.addEventListener("input", () => {
+            const val = purgeConfirmationInput.value.trim();
+            const isValid = val === "مسح البيانات" || val === "CLEAR_DATA" || val === "تأكيد المسح";
+            if (btnExecutePurgeConfirmed) {
+                btnExecutePurgeConfirmed.disabled = !isValid;
+            }
+        });
+    }
+
+    // Selective purge click
+    if (btnInitiateSelectivePurge) {
+        btnInitiateSelectivePurge.addEventListener("click", () => {
+            const selected = Array.from(document.querySelectorAll(".target-checkbox:checked")).map(cb => cb.value);
+            if (selected.length === 0) {
+                showToast("يرجى تحديد قسم واحد على الأقل للمسح الانتقائي.");
+                return;
+            }
+
+            const itemsList = selected.map(s => '<li><strong>' + (TARGET_LABELS[s] || s) + '</strong></li>').join("");
+            const summaryHtml =
+                '<div style="color:#92400e; font-weight:700; margin-bottom:8px;"><i class="fa-solid fa-triangle-exclamation"></i> سيتم مسح الأقسام التالية نهائياً:</div>' +
+                '<ul style="margin:0; padding-inline-start:20px; color:var(--text-primary);">' + itemsList + '</ul>' +
+                '<div style="margin-top:10px; font-size:0.85rem; color:var(--text-muted);">باقي بيانات المنظومة وحسابات المشرفين ستبقى دون أي تعديل.</div>';
+
+            openPurgeModal({
+                title: "تأكيد المسح المخصص",
+                subtitle: "سيتم مسح الأقسام المحددة فقط",
+                summaryHtml,
+                action: { mode: "selective", targets: selected }
+            });
+        });
+    }
+
+    // Full purge click
+    if (btnInitiateFullPurge) {
+        btnInitiateFullPurge.addEventListener("click", () => {
+            const keepAudit = Boolean(fullPurgeKeepAudit && fullPurgeKeepAudit.checked);
+            const summaryHtml =
+                '<div style="color:#991b1b; font-weight:700; margin-bottom:8px;"><i class="fa-solid fa-radiation"></i> تحذير عالي الخطورة — مسح شامل:</div>' +
+                '<div style="color:#7f1d1d; font-size:0.9rem; line-height:1.6;">' +
+                'سيتم مسح كافة التبرعات، أصناف المخزون، المستفيدين، التوزيعات، طلبات المساعدة، وحسابات المتبرعين/المستفيدين.' +
+                (keepAudit ? '<br>• <strong>سيتم الاحتفاظ بسجلات التدقيق والرقابة.</strong>' : '<br>• <strong>سيتم تفريغ كافة سجلات التدقيق.</strong>') +
+                '<br>• <strong>حسابات المشرفين (Admins) وحساب الأدمن الأعلى لن تُمس نهائياً.</strong>' +
+                '</div>';
+
+            openPurgeModal({
+                title: "تأكيد المسح الشامل لقاعدة البيانات",
+                subtitle: "إعادة ضبط المنظومة مع الحفاظ على المشرفين",
+                summaryHtml,
+                action: { mode: "full", targets: ["all"], preserveAuditLogs: keepAudit }
+            });
+        });
+    }
+
+    // Execute purge confirmed
+    if (btnExecutePurgeConfirmed) {
+        btnExecutePurgeConfirmed.addEventListener("click", async () => {
+            if (!currentPurgeAction) return;
+            const confirmationText = (purgeConfirmationInput ? purgeConfirmationInput.value : "").trim();
+
+            btnExecutePurgeConfirmed.disabled = true;
+            btnExecutePurgeConfirmed.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جارٍ تنفيذ المسح…';
+            if (btnCancelPurgeModal) btnCancelPurgeModal.disabled = true;
+
+            try {
+                const csrfRes = await fetch("/api/auth/csrf", { credentials: "same-origin" });
+                if (!csrfRes.ok) throw new Error("تعذر جلب رمز الأمان.");
+                const { csrfToken } = await csrfRes.json();
+
+                const response = await fetch("/api/admin/database/purge", {
+                    method: "POST",
+                    credentials: "same-origin",
+                    headers: { "Content-Type": "application/json", "X-CSRF-Token": csrfToken },
+                    body: JSON.stringify({
+                        mode: currentPurgeAction.mode,
+                        targets: currentPurgeAction.targets,
+                        preserveAuditLogs: currentPurgeAction.preserveAuditLogs,
+                        confirmationText
+                    })
+                });
+
+                const payload = await response.json().catch(() => ({}));
+                if (!response.ok) {
+                    throw new Error(payload.message || "حدث خطأ أثناء تنفيذ عملية المسح.");
+                }
+
+                closePurgeModal();
+                showToast(payload.message || "تمت عملية مسح البيانات بنجاح.");
+
+                // Refresh all relevant views
+                await loadDatabaseStats();
+                await loadRequests();
+                if (typeof loadAssistanceRequests === "function") await loadAssistanceRequests();
+                if (typeof loadUsers === "function") await loadUsers();
+            } catch (error) {
+                showToast(error.message || "تعذر تنفيذ عملية المسح.");
+                btnExecutePurgeConfirmed.disabled = false;
+                btnExecutePurgeConfirmed.innerHTML = '<i class="fa-solid fa-check"></i> تأكيد وحذف الآن';
+                if (btnCancelPurgeModal) btnCancelPurgeModal.disabled = false;
+            }
+        });
+    }
+
+    // Hash check on load
+    if (window.location.hash === "#database") {
+        switchAdminTab("database");
+    } else if (window.location.hash === "#users") {
+        switchAdminTab("users");
+    } else if (window.location.hash === "#assistance") {
+        switchAdminTab("assistance");
+    }
+
+    // Initial pre-load of database permissions/stats in background
+    loadDatabaseStats();
 })();
+

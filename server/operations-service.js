@@ -31,6 +31,8 @@ import {
     getDashboardSummary,
     getOperationalReports,
     getOperationalNotifications,
+    getDatabaseStatistics,
+    executeDatabasePurge,
 } from "./operations-repository.js";
 import {
     evaluateBeneficiaryRules,
@@ -219,7 +221,7 @@ export async function reviewAssistanceRequestService(requestId, status, reviewer
         await client.query("COMMIT");
         return getAssistanceRequest(requestId);
     } catch (error) {
-        await client.query("ROLLBACK").catch(() => {});
+        await client.query("ROLLBACK").catch(() => { });
         throw error;
     } finally {
         client.release();
@@ -507,6 +509,44 @@ export async function cancelDistributionService(id, actorId, reason) {
         throw err;
     }
     return cancelDistribution(numericId, actorId, reason);
+}
+
+export async function getDatabaseStatsService() {
+    return getDatabaseStatistics();
+}
+
+export async function purgeDatabaseService({
+    mode = "selective",
+    targets = [],
+    preserveAuditLogs = false,
+    requesterId = null,
+    confirmationText = ""
+} = {}) {
+    if (mode !== "full" && mode !== "selective") {
+        const err = new Error("نمط مسح البيانات غير صحيح.");
+        err.statusCode = 400;
+        throw err;
+    }
+
+    if (mode === "selective" && (!Array.isArray(targets) || targets.length === 0)) {
+        const err = new Error("يرجى تحديد عنصر واحد على الأقل للمسح الانتقائي.");
+        err.statusCode = 400;
+        throw err;
+    }
+
+    const normalizedConfirmation = String(confirmationText || "").trim();
+    if (normalizedConfirmation !== "مسح البيانات" && normalizedConfirmation !== "CLEAR_DATA" && normalizedConfirmation !== "تأكيد المسح") {
+        const err = new Error("يرجى كتابة عبارة التأكيد المطلوبة (مسح البيانات) بشكل صحيح لإتمام العملية.");
+        err.statusCode = 400;
+        throw err;
+    }
+
+    return executeDatabasePurge({
+        mode,
+        targets,
+        preserveAuditLogs,
+        requesterId
+    });
 }
 
 export {

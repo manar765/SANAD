@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <% /* EJS page template */ %>
-<html lang="ar" dir="rtl">
+    <html lang="ar" dir="rtl">
 
     <head>
         <meta charset="UTF-8" />
@@ -35,274 +35,574 @@
          ADMIN SIDEBAR
     ============================================================ -->
         <%- include('../partials/admin-sidebar') %>
-                <main id="main-content">
+            <main id="main-content">
 
-                    <!-- ============================================================
+                <!-- ============================================================
              PAGE HEADER
         ============================================================ -->
-                    <section class="page-hero" id="admin-requests">
-                        <div class="hero-blob hero-blob-1" aria-hidden="true"></div>
-                        <div class="hero-blob hero-blob-2" aria-hidden="true"></div>
+                <section class="page-hero" id="admin-requests">
+                    <div class="hero-blob hero-blob-1" aria-hidden="true"></div>
+                    <div class="hero-blob hero-blob-2" aria-hidden="true"></div>
 
-                        <div class="container page-hero-grid">
+                    <div class="container page-hero-grid">
 
-                            <div class="page-hero-content">
-                                <span class="eyebrow reveal"><img src="/assets/images/LogoSANAD.png" alt="logo"
-                                        style="width: 50px;">إدارة المنصة</span>
-                                <h1 class="page-hero-title reveal">طلبات الموافقة على التبرعات</h1>
-                                <p class="page-hero-sub reveal">راجع طلبات إضافة التبرعات المقدمة من المستخدمين ووافق
-                                    عليها أو
-                                    ارفضها.</p>
-                            </div>
-
-                            <div aria-hidden="true">
-                                <img src="/assets/images/Donations.png" alt="التبرعات">
-                            </div>
-
+                        <div class="page-hero-content">
+                            <span class="eyebrow reveal"><img src="/assets/images/LogoSANAD.png" alt="logo"
+                                    style="width: 50px;">إدارة المنصة</span>
+                            <h1 class="page-hero-title reveal">طلبات الموافقة على التبرعات</h1>
+                            <p class="page-hero-sub reveal">راجع طلبات إضافة التبرعات المقدمة من المستخدمين ووافق
+                                عليها أو
+                                ارفضها.</p>
                         </div>
-                    </section>
 
-                    <!-- ============================================================
+                        <div aria-hidden="true">
+                            <img src="/assets/images/Donations.png" alt="التبرعات">
+                        </div>
+
+                    </div>
+                </section>
+
+                <!-- ============================================================
              REQUESTS & USERS SECTION
         ============================================================ -->
-                    <section class="don-section" aria-label="أقسام الإدارة">
-                        <div class="container">
+                <section class="don-section" aria-label="أقسام الإدارة">
+                    <div class="container">
 
-                            <div class="admin-tabs-nav reveal" role="tablist" aria-label="أقسام لوحة الإدارة">
-                                <button type="button" class="admin-tab-btn active" id="tabDonationsBtn" role="tab" aria-selected="true" aria-controls="donationsSection">
-                                    <i class="fa-solid fa-inbox" aria-hidden="true"></i> طلبات التبرعات
-                                </button>
-                                <button type="button" class="admin-tab-btn" id="tabUsersBtn" role="tab" aria-selected="false" aria-controls="usersSection">
-                                    <i class="fa-solid fa-users-gear" aria-hidden="true"></i> إدارة المستخدمين والأدوار
-                                </button>
-                                <button type="button" class="admin-tab-btn" id="tabAssistanceBtn" role="tab" aria-selected="false" aria-controls="assistanceSection">
-                                    <i class="fa-solid fa-hand-holding-heart" aria-hidden="true"></i> طلبات المساعدة
-                                </button>
-                            </div>
-
-                            <div id="donationsSection" role="tabpanel">
-                                <div class="admin-toolbar reveal">
-                                    <div class="admin-toolbar-title">
-                                        <i class="fa-solid fa-inbox"></i>
-                                        <span>طلبات إضافة التبرعات</span>
-                                        <span class="admin-pending-badge" id="pendingCount">0</span>
-                                    </div>
-
-                                    <div class="admin-filter">
-                                        <i class="fa-solid fa-filter" aria-hidden="true"></i>
-                                        <select id="approvalFilter" aria-label="تصفية حالة الطلب">
-                                            <option value="all">كل الطلبات</option>
-                                            <option value="pending">بانتظار الموافقة</option>
-                                            <option value="approved">تمت الموافقة</option>
-                                            <option value="rejected">مرفوضة</option>
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div class="ui-state ui-loading" id="adminLoading" role="status" aria-live="polite"
-                                    aria-busy="true">
-                                    <i class="fa-solid fa-spinner" aria-hidden="true"></i>
-                                    <span data-state-message>جارٍ تحميل طلبات التبرعات…</span>
-                                </div>
-                                <div class="ui-state ui-error" id="adminError" role="alert" hidden>
-                                    <div class="ui-error-content">
-                                        <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>
-                                        <span data-state-message>تعذر تحميل طلبات التبرعات.</span>
-                                    </div>
-                                    <button type="button" class="btn btn-outline ui-error-retry" data-state-retry>إعادة
-                                        المحاولة</button>
-                                </div>
-                                <div class="admin-card reveal">
-                                    <div class="admin-table-wrap">
-                                        <table class="dash-table admin-table">
-                                            <thead>
-                                                <tr>
-                                                    <th>معرّف الطلب</th>
-                                                    <th>التبرع</th>
-                                                    <th>المتبرع</th>
-                                                    <th>الفئة</th>
-                                                    <th>الكمية</th>
-                                                    <th>الحالة</th>
-                                                    <th>المخزن / الموقع</th>
-                                                    <th>الوصف</th>
-                                                    <th>التاريخ</th>
-                                                    <th>حالة الطلب</th>
-                                                    <th>إجراءات</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="adminTableBody">
-                                                <!-- rows rendered by admin-requests.js -->
-                                            </tbody>
-                                        </table>
-                                    </div>
-
-                                    <div class="don-empty admin-empty" id="adminEmpty" hidden>
-                                        <i class="fa-solid fa-inbox"></i>
-                                        <h3>لا توجد طلبات مطابقة</h3>
-                                        <p>عندما يرسل المستخدمون طلبات إضافة تبرع ستظهر هنا.</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div id="usersSection" role="tabpanel" hidden>
-                                <div class="admin-toolbar">
-                                    <div class="admin-toolbar-title">
-                                        <i class="fa-solid fa-users"></i>
-                                        <span>إدارة المستخدمين والأدوار</span>
-                                        <span class="admin-pending-badge" id="usersTotalCount">0</span>
-                                    </div>
-
-                                    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-                                        <div style="position: relative;">
-                                            <input type="search" id="userSearchInput" placeholder="بحث بالاسم أو البريد…" class="form-control" style="padding-inline-start: 32px; height: 38px; border-radius: 8px; border: 1px solid var(--border); font-size: 0.9rem; min-width: 220px;" />
-                                            <i class="fa-solid fa-magnifying-glass" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none;"></i>
-                                        </div>
-                                        <div class="admin-filter">
-                                            <i class="fa-solid fa-filter" aria-hidden="true"></i>
-                                            <select id="userRoleFilter" aria-label="تصفية الدور">
-                                                <option value="">كل الأدوار</option>
-                                                <option value="admin">مدير (Admin)</option>
-                                                <option value="donor">متبرع (Donor)</option>
-                                                <option value="beneficiary">مستفيد (Beneficiary)</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="ui-state ui-loading" id="usersLoading" role="status" aria-live="polite" aria-busy="true">
-                                    <i class="fa-solid fa-spinner" aria-hidden="true"></i>
-                                    <span data-state-message>جارٍ تحميل بيانات المستخدمين…</span>
-                                </div>
-                                <div class="ui-state ui-error" id="usersError" role="alert" hidden>
-                                    <div class="ui-error-content">
-                                        <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>
-                                        <span data-state-message>تعذر تحميل بيانات المستخدمين.</span>
-                                    </div>
-                                    <button type="button" class="btn btn-outline ui-error-retry" id="usersRetryBtn">إعادة المحاولة</button>
-                                </div>
-
-                                <div class="admin-card">
-                                    <div class="admin-table-wrap">
-                                        <table class="dash-table admin-table">
-                                            <thead>
-                                                <tr>
-                                                    <th>المعرّف</th>
-                                                    <th>الاسم</th>
-                                                    <th>البريد الإلكتروني</th>
-                                                    <th>الهاتف</th>
-                                                    <th>الدور الحالي</th>
-                                                    <th>تغيير الدور</th>
-                                                    <th>إجراء</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="usersTableBody">
-                                                <!-- rows rendered by admin-requests.js -->
-                                            </tbody>
-                                        </table>
-                                    </div>
-
-                                    <div class="don-empty admin-empty" id="usersEmpty" hidden>
-                                        <i class="fa-solid fa-user-slash"></i>
-                                        <h3>لا يوجد مستخدمون مطابقون</h3>
-                                        <p>جرّب تعديل مصطلح البحث أو فلتر الدور.</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div id="assistanceSection" role="tabpanel" hidden>
-                                <div class="admin-toolbar">
-                                    <div class="admin-toolbar-title">
-                                        <i class="fa-solid fa-hand-holding-heart"></i>
-                                        <span>طلبات المساعدة</span>
-                                        <span class="admin-pending-badge" id="assistancePendingCount">0</span>
-                                    </div>
-
-                                    <div class="admin-filter">
-                                        <i class="fa-solid fa-filter" aria-hidden="true"></i>
-                                        <select id="assistanceFilter" aria-label="تصفية حالة طلب المساعدة">
-                                            <option value="all">كل الطلبات</option>
-                                            <option value="pending">قيد المراجعة</option>
-                                            <option value="approved">تمت الموافقة</option>
-                                            <option value="rejected">مرفوض</option>
-                                            <option value="fulfilled">تم التنفيذ</option>
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div class="ui-state ui-loading" id="assistanceLoading" role="status" aria-live="polite" aria-busy="true">
-                                    <i class="fa-solid fa-spinner" aria-hidden="true"></i>
-                                    <span data-state-message>جارٍ تحميل طلبات المساعدة…</span>
-                                </div>
-                                <div class="ui-state ui-error" id="assistanceError" role="alert" hidden>
-                                    <div class="ui-error-content">
-                                        <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>
-                                        <span data-state-message>تعذر تحميل طلبات المساعدة.</span>
-                                    </div>
-                                    <button type="button" class="btn btn-outline ui-error-retry" id="assistanceRetryBtn">إعادة المحاولة</button>
-                                </div>
-
-                                <div class="admin-card">
-                                    <div class="admin-table-wrap">
-                                        <table class="dash-table admin-table">
-                                            <thead>
-                                                <tr>
-                                                    <th>معرّف الطلب</th>
-                                                    <th>الاحتياج</th>
-                                                    <th>المستفيد</th>
-                                                    <th>الفئة</th>
-                                                    <th>الكمية</th>
-                                                    <th>الحالة</th>
-                                                    <th>الوصف</th>
-                                                    <th>التاريخ</th>
-                                                    <th>إجراءات</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="assistanceTableBody">
-                                                <!-- rows rendered by admin-requests.js -->
-                                            </tbody>
-                                        </table>
-                                    </div>
-
-                                    <div class="don-empty admin-empty" id="assistanceEmpty" hidden>
-                                        <i class="fa-solid fa-hand-holding-heart"></i>
-                                        <h3>لا توجد طلبات مساعدة</h3>
-                                        <p>عندما يرسل المستفيدون طلبات مساعدة ستظهر هنا.</p>
-                                    </div>
-                                </div>
-                            </div>
-
+                        <div class="admin-tabs-nav reveal" role="tablist" aria-label="أقسام لوحة الإدارة">
+                            <button type="button" class="admin-tab-btn active" id="tabDonationsBtn" role="tab"
+                                aria-selected="true" aria-controls="donationsSection">
+                                <i class="fa-solid fa-inbox" aria-hidden="true"></i> طلبات التبرعات
+                            </button>
+                            <button type="button" class="admin-tab-btn" id="tabUsersBtn" role="tab"
+                                aria-selected="false" aria-controls="usersSection">
+                                <i class="fa-solid fa-users-gear" aria-hidden="true"></i> إدارة المستخدمين والأدوار
+                            </button>
+                            <button type="button" class="admin-tab-btn" id="tabAssistanceBtn" role="tab"
+                                aria-selected="false" aria-controls="assistanceSection">
+                                <i class="fa-solid fa-hand-holding-heart" aria-hidden="true"></i> طلبات المساعدة
+                            </button>
+                            <button type="button" class="admin-tab-btn" id="tabDatabaseBtn" role="tab"
+                                aria-selected="false" aria-controls="databaseSection">
+                                <i class="fa-solid fa-database" aria-hidden="true"></i> إدارة وقاعدة البيانات
+                            </button>
                         </div>
-                    </section>
 
-                </main>
+                        <div id="donationsSection" role="tabpanel">
+                            <div class="admin-toolbar reveal">
+                                <div class="admin-toolbar-title">
+                                    <i class="fa-solid fa-inbox"></i>
+                                    <span>طلبات إضافة التبرعات</span>
+                                    <span class="admin-pending-badge" id="pendingCount">0</span>
+                                </div>
+
+                                <div class="admin-filter">
+                                    <i class="fa-solid fa-filter" aria-hidden="true"></i>
+                                    <select id="approvalFilter" aria-label="تصفية حالة الطلب">
+                                        <option value="all">كل الطلبات</option>
+                                        <option value="pending">بانتظار الموافقة</option>
+                                        <option value="approved">تمت الموافقة</option>
+                                        <option value="rejected">مرفوضة</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="ui-state ui-loading" id="adminLoading" role="status" aria-live="polite"
+                                aria-busy="true">
+                                <i class="fa-solid fa-spinner" aria-hidden="true"></i>
+                                <span data-state-message>جارٍ تحميل طلبات التبرعات…</span>
+                            </div>
+                            <div class="ui-state ui-error" id="adminError" role="alert" hidden>
+                                <div class="ui-error-content">
+                                    <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>
+                                    <span data-state-message>تعذر تحميل طلبات التبرعات.</span>
+                                </div>
+                                <button type="button" class="btn btn-outline ui-error-retry" data-state-retry>إعادة
+                                    المحاولة</button>
+                            </div>
+                            <div class="admin-card reveal">
+                                <div class="admin-table-wrap">
+                                    <table class="dash-table admin-table">
+                                        <thead>
+                                            <tr>
+                                                <th>معرّف الطلب</th>
+                                                <th>التبرع</th>
+                                                <th>المتبرع</th>
+                                                <th>الفئة</th>
+                                                <th>الكمية</th>
+                                                <th>الحالة</th>
+                                                <th>المخزن / الموقع</th>
+                                                <th>الوصف</th>
+                                                <th>التاريخ</th>
+                                                <th>حالة الطلب</th>
+                                                <th>إجراءات</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="adminTableBody">
+                                            <!-- rows rendered by admin-requests.js -->
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <div class="don-empty admin-empty" id="adminEmpty" hidden>
+                                    <i class="fa-solid fa-inbox"></i>
+                                    <h3>لا توجد طلبات مطابقة</h3>
+                                    <p>عندما يرسل المستخدمون طلبات إضافة تبرع ستظهر هنا.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="usersSection" role="tabpanel" hidden>
+                            <div class="admin-toolbar">
+                                <div class="admin-toolbar-title">
+                                    <i class="fa-solid fa-users"></i>
+                                    <span>إدارة المستخدمين والأدوار</span>
+                                    <span class="admin-pending-badge" id="usersTotalCount">0</span>
+                                </div>
+
+                                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                                    <div style="position: relative;">
+                                        <input type="search" id="userSearchInput" placeholder="بحث بالاسم أو البريد…"
+                                            class="form-control"
+                                            style="padding-inline-start: 32px; height: 38px; border-radius: 8px; border: 1px solid var(--border); font-size: 0.9rem; min-width: 220px;" />
+                                        <i class="fa-solid fa-magnifying-glass"
+                                            style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none;"></i>
+                                    </div>
+                                    <div class="admin-filter">
+                                        <i class="fa-solid fa-filter" aria-hidden="true"></i>
+                                        <select id="userRoleFilter" aria-label="تصفية الدور">
+                                            <option value="">كل الأدوار</option>
+                                            <option value="admin">مدير (Admin)</option>
+                                            <option value="donor">متبرع (Donor)</option>
+                                            <option value="beneficiary">مستفيد (Beneficiary)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="ui-state ui-loading" id="usersLoading" role="status" aria-live="polite"
+                                aria-busy="true">
+                                <i class="fa-solid fa-spinner" aria-hidden="true"></i>
+                                <span data-state-message>جارٍ تحميل بيانات المستخدمين…</span>
+                            </div>
+                            <div class="ui-state ui-error" id="usersError" role="alert" hidden>
+                                <div class="ui-error-content">
+                                    <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>
+                                    <span data-state-message>تعذر تحميل بيانات المستخدمين.</span>
+                                </div>
+                                <button type="button" class="btn btn-outline ui-error-retry" id="usersRetryBtn">إعادة
+                                    المحاولة</button>
+                            </div>
+
+                            <div class="admin-card">
+                                <div class="admin-table-wrap">
+                                    <table class="dash-table admin-table">
+                                        <thead>
+                                            <tr>
+                                                <th>المعرّف</th>
+                                                <th>الاسم</th>
+                                                <th>البريد الإلكتروني</th>
+                                                <th>الهاتف</th>
+                                                <th>الدور الحالي</th>
+                                                <th>صلاحية مسح البيانات</th>
+                                                <th>تغيير الدور</th>
+                                                <th>إجراء</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="usersTableBody">
+                                            <!-- rows rendered by admin-requests.js -->
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <div class="don-empty admin-empty" id="usersEmpty" hidden>
+                                    <i class="fa-solid fa-user-slash"></i>
+                                    <h3>لا يوجد مستخدمون مطابقون</h3>
+                                    <p>جرّب تعديل مصطلح البحث أو فلتر الدور.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="assistanceSection" role="tabpanel" hidden>
+                            <div class="admin-toolbar">
+                                <div class="admin-toolbar-title">
+                                    <i class="fa-solid fa-hand-holding-heart"></i>
+                                    <span>طلبات المساعدة</span>
+                                    <span class="admin-pending-badge" id="assistancePendingCount">0</span>
+                                </div>
+
+                                <div class="admin-filter">
+                                    <i class="fa-solid fa-filter" aria-hidden="true"></i>
+                                    <select id="assistanceFilter" aria-label="تصفية حالة طلب المساعدة">
+                                        <option value="all">كل الطلبات</option>
+                                        <option value="pending">قيد المراجعة</option>
+                                        <option value="approved">تمت الموافقة</option>
+                                        <option value="rejected">مرفوض</option>
+                                        <option value="fulfilled">تم التنفيذ</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="ui-state ui-loading" id="assistanceLoading" role="status" aria-live="polite"
+                                aria-busy="true">
+                                <i class="fa-solid fa-spinner" aria-hidden="true"></i>
+                                <span data-state-message>جارٍ تحميل طلبات المساعدة…</span>
+                            </div>
+                            <div class="ui-state ui-error" id="assistanceError" role="alert" hidden>
+                                <div class="ui-error-content">
+                                    <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>
+                                    <span data-state-message>تعذر تحميل طلبات المساعدة.</span>
+                                </div>
+                                <button type="button" class="btn btn-outline ui-error-retry"
+                                    id="assistanceRetryBtn">إعادة المحاولة</button>
+                            </div>
+
+                            <div class="admin-card">
+                                <div class="admin-table-wrap">
+                                    <table class="dash-table admin-table">
+                                        <thead>
+                                            <tr>
+                                                <th>معرّف الطلب</th>
+                                                <th>الاحتياج</th>
+                                                <th>المستفيد</th>
+                                                <th>الفئة</th>
+                                                <th>الكمية</th>
+                                                <th>الحالة</th>
+                                                <th>الوصف</th>
+                                                <th>التاريخ</th>
+                                                <th>إجراءات</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="assistanceTableBody">
+                                            <!-- rows rendered by admin-requests.js -->
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <div class="don-empty admin-empty" id="assistanceEmpty" hidden>
+                                    <i class="fa-solid fa-hand-holding-heart"></i>
+                                    <h3>لا توجد طلبات مساعدة</h3>
+                                    <p>عندما يرسل المستفيدون طلبات مساعدة ستظهر هنا.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ============================================================
+                                 DATABASE MANAGEMENT & PURGE SECTION
+                            ============================================================ -->
+                        <div id="databaseSection" role="tabpanel" hidden>
+                            <div class="admin-toolbar">
+                                <div class="admin-toolbar-title">
+                                    <i class="fa-solid fa-database"></i>
+                                    <span>إدارة ومسح بيانات المنظومة</span>
+                                    <span class="badge" id="dbPermissionBadge"
+                                        style="margin-inline-start: 10px; font-size: 0.8rem; padding: 4px 10px; border-radius: 20px; background: rgba(59, 130, 246, 0.1); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.2);">جارٍ
+                                        التحقق…</span>
+                                </div>
+
+                                <div>
+                                    <button type="button" class="btn btn-outline btn-sm" id="btnRefreshDbStats"
+                                        title="تحديث الإحصائيات">
+                                        <i class="fa-solid fa-rotate" aria-hidden="true"></i> تحديث الإحصائيات
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="ui-state ui-loading" id="dbLoading" role="status" aria-live="polite"
+                                aria-busy="true">
+                                <i class="fa-solid fa-spinner" aria-hidden="true"></i>
+                                <span data-state-message>جارٍ تحميل إحصائيات وصلاحيات قاعدة البيانات…</span>
+                            </div>
+
+                            <div class="ui-state ui-error" id="dbError" role="alert" hidden>
+                                <div class="ui-error-content">
+                                    <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>
+                                    <span data-state-message>تعذر تحميل بيانات قاعدة البيانات.</span>
+                                </div>
+                                <button type="button" class="btn btn-outline ui-error-retry" id="dbRetryBtn">إعادة
+                                    المحاولة</button>
+                            </div>
+
+                            <div id="dbAccessDenied" class="alert alert-warning"
+                                style="display: none; background: #fffbeb; border: 1px solid #fef3c7; color: #92400e; padding: 18px 22px; border-radius: 12px; margin-bottom: 24px;">
+                                <div style="display: flex; gap: 14px; align-items: flex-start;">
+                                    <i class="fa-solid fa-shield-halved"
+                                        style="font-size: 1.6rem; color: #d97706; margin-top: 2px;"></i>
+                                    <div>
+                                        <strong style="font-size: 1.05rem; display: block; margin-bottom: 6px;">صلاحية
+                                            مسح البيانات غير مفعلة لحسابك</strong>
+                                        <p style="margin: 0; font-size: 0.95rem; line-height: 1.6;">أنت مسجل كمشرف
+                                            (Admin)، ولكن لم يتم منحك صلاحية مسح قاعدة البيانات بعد. يمكن فقط
+                                            <strong>للأدمن الأعلى (Super Admin)</strong> تفعيل هذه الصلاحية لحسابك من
+                                            تبويب "إدارة المستخدمين والأدوار".</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="dbContentArea" style="display: none;">
+                                <!-- Live Statistics Grid -->
+                                <div class="db-stats-grid" id="dbStatsGrid"
+                                    style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 14px; margin-bottom: 26px;">
+                                    <!-- rendered dynamically -->
+                                </div>
+
+                                <div
+                                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 24px;">
+                                    <!-- Selective Purge Card -->
+                                    <div class="admin-card"
+                                        style="padding: 24px; border: 1px solid var(--border); border-radius: 14px; background: var(--bg-surface, #fff);">
+                                        <div
+                                            style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                                            <h3
+                                                style="margin: 0; font-size: 1.15rem; display: flex; align-items: center; gap: 10px; color: var(--text-primary);">
+                                                <i class="fa-solid fa-list-check" style="color: var(--primary);"></i>
+                                                مسح مخصص / انتقائي
+                                            </h3>
+                                            <div style="display: flex; gap: 8px;">
+                                                <button type="button" class="btn btn-sm btn-outline"
+                                                    id="btnSelectAllTargets"
+                                                    style="font-size: 0.8rem; padding: 3px 8px;">تحديد الكل</button>
+                                                <button type="button" class="btn btn-sm btn-outline"
+                                                    id="btnDeselectAllTargets"
+                                                    style="font-size: 0.8rem; padding: 3px 8px;">إلغاء</button>
+                                            </div>
+                                        </div>
+
+                                        <p
+                                            style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 18px; line-height: 1.5;">
+                                            حدد الأقسام التي ترغب في مسحها بدقة. سيتم الاحتفاظ بكافة الأقسام الأخرى التي
+                                            لم يتم تحديدها دون أي تغيير.
+                                        </p>
+
+                                        <div class="selective-targets-list"
+                                            style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 22px;">
+                                            <label class="selective-item"
+                                                style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--bg-surface-soft, #f8fafc); border: 1px solid var(--border); border-radius: 8px; cursor: pointer;">
+                                                <span
+                                                    style="display: flex; align-items: center; gap: 10px; font-size: 0.92rem;">
+                                                    <input type="checkbox" name="purgeTarget" value="donations"
+                                                        class="target-checkbox">
+                                                    <i class="fa-solid fa-inbox"
+                                                        style="color: #64748b; width: 16px;"></i> طلبات التبرعات
+                                                </span>
+                                                <span class="badge" id="badgeCountDonations"
+                                                    style="font-size: 0.8rem; background: rgba(0,0,0,0.05); padding: 2px 8px; border-radius: 12px;">0</span>
+                                            </label>
+
+                                            <label class="selective-item"
+                                                style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--bg-surface-soft, #f8fafc); border: 1px solid var(--border); border-radius: 8px; cursor: pointer;">
+                                                <span
+                                                    style="display: flex; align-items: center; gap: 10px; font-size: 0.92rem;">
+                                                    <input type="checkbox" name="purgeTarget" value="inventory"
+                                                        class="target-checkbox">
+                                                    <i class="fa-solid fa-boxes-stacked"
+                                                        style="color: #64748b; width: 16px;"></i> أصناف المخزون
+                                                </span>
+                                                <span class="badge" id="badgeCountInventory"
+                                                    style="font-size: 0.8rem; background: rgba(0,0,0,0.05); padding: 2px 8px; border-radius: 12px;">0</span>
+                                            </label>
+
+                                            <label class="selective-item"
+                                                style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--bg-surface-soft, #f8fafc); border: 1px solid var(--border); border-radius: 8px; cursor: pointer;">
+                                                <span
+                                                    style="display: flex; align-items: center; gap: 10px; font-size: 0.92rem;">
+                                                    <input type="checkbox" name="purgeTarget" value="distributions"
+                                                        class="target-checkbox">
+                                                    <i class="fa-solid fa-truck-fast"
+                                                        style="color: #64748b; width: 16px;"></i> التوزيعات وعمليات
+                                                    الصرف
+                                                </span>
+                                                <span class="badge" id="badgeCountDistributions"
+                                                    style="font-size: 0.8rem; background: rgba(0,0,0,0.05); padding: 2px 8px; border-radius: 12px;">0</span>
+                                            </label>
+
+                                            <label class="selective-item"
+                                                style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--bg-surface-soft, #f8fafc); border: 1px solid var(--border); border-radius: 8px; cursor: pointer;">
+                                                <span
+                                                    style="display: flex; align-items: center; gap: 10px; font-size: 0.92rem;">
+                                                    <input type="checkbox" name="purgeTarget"
+                                                        value="assistance_requests" class="target-checkbox">
+                                                    <i class="fa-solid fa-hand-holding-heart"
+                                                        style="color: #64748b; width: 16px;"></i> طلبات المساعدة
+                                                </span>
+                                                <span class="badge" id="badgeCountAssistance"
+                                                    style="font-size: 0.8rem; background: rgba(0,0,0,0.05); padding: 2px 8px; border-radius: 12px;">0</span>
+                                            </label>
+
+                                            <label class="selective-item"
+                                                style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--bg-surface-soft, #f8fafc); border: 1px solid var(--border); border-radius: 8px; cursor: pointer;">
+                                                <span
+                                                    style="display: flex; align-items: center; gap: 10px; font-size: 0.92rem;">
+                                                    <input type="checkbox" name="purgeTarget" value="beneficiaries"
+                                                        class="target-checkbox">
+                                                    <i class="fa-solid fa-people-roof"
+                                                        style="color: #64748b; width: 16px;"></i> المستفيدون والاحتياجات
+                                                    والتوصيات
+                                                </span>
+                                                <span class="badge" id="badgeCountBeneficiaries"
+                                                    style="font-size: 0.8rem; background: rgba(0,0,0,0.05); padding: 2px 8px; border-radius: 12px;">0</span>
+                                            </label>
+
+                                            <label class="selective-item"
+                                                style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--bg-surface-soft, #f8fafc); border: 1px solid var(--border); border-radius: 8px; cursor: pointer;">
+                                                <span
+                                                    style="display: flex; align-items: center; gap: 10px; font-size: 0.92rem;">
+                                                    <input type="checkbox" name="purgeTarget" value="donors"
+                                                        class="target-checkbox">
+                                                    <i class="fa-solid fa-user-heart"
+                                                        style="color: #64748b; width: 16px;"></i> ملفات وحسابات
+                                                    المتبرعين
+                                                </span>
+                                                <span class="badge" id="badgeCountDonors"
+                                                    style="font-size: 0.8rem; background: rgba(0,0,0,0.05); padding: 2px 8px; border-radius: 12px;">0</span>
+                                            </label>
+
+                                            <label class="selective-item"
+                                                style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--bg-surface-soft, #f8fafc); border: 1px solid var(--border); border-radius: 8px; cursor: pointer;">
+                                                <span
+                                                    style="display: flex; align-items: center; gap: 10px; font-size: 0.92rem;">
+                                                    <input type="checkbox" name="purgeTarget" value="audit_logs"
+                                                        class="target-checkbox">
+                                                    <i class="fa-solid fa-clock-rotate-left"
+                                                        style="color: #64748b; width: 16px;"></i> سجلات الرقابة والتدقيق
+                                                    (Audit Logs)
+                                                </span>
+                                                <span class="badge" id="badgeCountAudit"
+                                                    style="font-size: 0.8rem; background: rgba(0,0,0,0.05); padding: 2px 8px; border-radius: 12px;">0</span>
+                                            </label>
+                                        </div>
+
+                                        <button type="button" class="btn btn-warning" id="btnInitiateSelectivePurge"
+                                            style="width: 100%; justify-content: center; font-weight: 600;">
+                                            <i class="fa-solid fa-trash-arrow-up" aria-hidden="true"></i>
+                                            مسح الأقسام المحددة
+                                        </button>
+                                    </div>
+
+                                    <!-- Full Wipe Card -->
+                                    <div class="admin-card"
+                                        style="padding: 24px; border: 1px solid #fecaca; border-radius: 14px; background: #fffaf0;">
+                                        <div
+                                            style="display: flex; align-items: center; gap: 10px; margin-bottom: 14px;">
+                                            <div
+                                                style="width: 40px; height: 40px; border-radius: 10px; background: #fee2e2; display: flex; align-items: center; justify-content: center; color: #ef4444; font-size: 1.2rem;">
+                                                <i class="fa-solid fa-triangle-exclamation"></i>
+                                            </div>
+                                            <div>
+                                                <h3 style="margin: 0; font-size: 1.15rem; color: #991b1b;">مسح شامل
+                                                    لقاعدة البيانات</h3>
+                                                <small style="color: #b91c1c;">إعادة تعيين بيانات المنظومة
+                                                    بالكامل</small>
+                                            </div>
+                                        </div>
+
+                                        <div
+                                            style="background: rgba(254, 226, 226, 0.5); border: 1px solid #fca5a5; border-radius: 10px; padding: 14px; margin-bottom: 18px; font-size: 0.88rem; color: #7f1d1d; line-height: 1.6;">
+                                            <div style="font-weight: 700; margin-bottom: 6px;">ماذا سيحدث عند المسح
+                                                الشامل؟</div>
+                                            <ul style="margin: 0; padding-inline-start: 20px;">
+                                                <li>مسح كافة التبرعات، المخزون، والمستفيدين، والتوزيعات، وطلبات
+                                                    المساعدة.</li>
+                                                <li>مسح حسابات المتبرعين والمستفيدين غير الإداريين.</li>
+                                                <li><strong>المحافظة التامة:</strong> سيبقى حسابك وحسابات كافة المشرفين
+                                                    (Admins) وإعدادات النظام وهيكل الجداول سليمين تماماً.</li>
+                                            </ul>
+                                        </div>
+
+                                        <label
+                                            style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px; font-size: 0.9rem; cursor: pointer; color: #374151;">
+                                            <input type="checkbox" id="fullPurgeKeepAudit" checked>
+                                            <span>الاحتفاظ بسجلات التدقيق والرقابة (مستحسن للتوثيق الأمني)</span>
+                                        </label>
+
+                                        <button type="button" class="btn btn-danger" id="btnInitiateFullPurge"
+                                            style="width: 100%; justify-content: center; font-weight: 700; background: #dc2626; border-color: #dc2626; color: #fff;">
+                                            <i class="fa-solid fa-radiation" aria-hidden="true"></i>
+                                            بدء إجراء المسح الشامل
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </section>
+
+            </main>
             </div>
-        </div>
+            </div>
 
-        <!-- ============================================================
+            <!-- ============================================================
+             SAFETY CONFIRMATION MODAL
+        ============================================================ -->
+            <div class="modal-overlay" id="purgeConfirmModal"
+                style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.65); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center; padding: 20px;">
+                <div class="modal-card"
+                    style="background: var(--bg-surface, #fff); border-radius: 16px; max-width: 500px; width: 100%; padding: 28px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); border: 1px solid var(--border); direction: rtl;">
+                    <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 16px;">
+                        <div
+                            style="width: 48px; height: 48px; border-radius: 12px; background: #fee2e2; display: flex; align-items: center; justify-content: center; color: #dc2626; font-size: 1.4rem; flex-shrink: 0;">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                        </div>
+                        <div>
+                            <h3 id="modalPurgeTitle" style="margin: 0; font-size: 1.25rem; color: #991b1b;">تأكيد مسح
+                                البيانات</h3>
+                            <span id="modalPurgeSubtitle" style="font-size: 0.88rem; color: var(--text-muted);">إجراء
+                                حرج لا يمكن التراجع عنه</span>
+                        </div>
+                    </div>
+
+                    <div id="modalPurgeSummary"
+                        style="background: var(--bg-surface-soft, #f8fafc); border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin-bottom: 18px; font-size: 0.9rem; line-height: 1.6;">
+                        <!-- dynamic summary -->
+                    </div>
+
+                    <div style="margin-bottom: 22px;">
+                        <label for="purgeConfirmationInput"
+                            style="display: block; font-size: 0.92rem; font-weight: 600; margin-bottom: 8px; color: var(--text-primary);">
+                            لتأكيد العملية، يرجى كتابة <span
+                                style="color: #dc2626; font-weight: 700; user-select: all;">مسح البيانات</span> في الحقل
+                            أدناه:
+                        </label>
+                        <input type="text" id="purgeConfirmationInput" class="form-control" placeholder="مسح البيانات"
+                            style="width: 100%; height: 42px; border-radius: 8px; border: 2px solid var(--border); padding: 0 12px; font-size: 1rem; text-align: center;">
+                    </div>
+
+                    <div style="display: flex; gap: 12px; justify-content: flex-end;">
+                        <button type="button" class="btn btn-outline" id="btnCancelPurgeModal"
+                            style="flex: 1;">إلغاء</button>
+                        <button type="button" class="btn btn-danger" id="btnExecutePurgeConfirmed" disabled
+                            style="flex: 1; background: #dc2626; border-color: #dc2626; font-weight: 700;">
+                            <i class="fa-solid fa-check"></i> تأكيد وحذف الآن
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================================================
          FOOTER
     ============================================================ -->
-        <%- include('../partials/footer') %>
+            <%- include('../partials/footer') %>
 
-        <!-- toast notification -->
-        <div class="toast" id="toast" role="status" aria-live="polite">
-            <i class="fa-solid fa-circle-info"></i>
-            <span></span>
-        </div>
+                <!-- toast notification -->
+                <div class="toast" id="toast" role="status" aria-live="polite">
+                    <i class="fa-solid fa-circle-info"></i>
+                    <span></span>
+                </div>
 
-        <!-- back to top -->
-        <button class="back-to-top" id="backToTop" aria-label="العودة إلى الأعلى">
-            <i class="fa-solid fa-arrow-up"></i>
-        </button>
+                <!-- back to top -->
+                <button class="back-to-top" id="backToTop" aria-label="العودة إلى الأعلى">
+                    <i class="fa-solid fa-arrow-up"></i>
+                </button>
 
-        <!-- scripts -->
-        <script src="/JS/main.js"></script>
-        <script src="/JS/donations-store.js"></script>
-        <script src="/JS/ui-states.js"></script>
-        <script src="/JS/admin-requests.js"></script>
-        <script src="/JS/admin-sidebar.js"></script>
-        <script src="/JS/logout.js"></script>
+                <!-- scripts -->
+                <script src="/JS/main.js"></script>
+                <script src="/JS/donations-store.js"></script>
+                <script src="/JS/ui-states.js"></script>
+                <script src="/JS/admin-requests.js"></script>
+                <script src="/JS/admin-sidebar.js"></script>
+                <script src="/JS/logout.js"></script>
 
-        <script src="/JS/preferences.js"></script>
+                <script src="/JS/preferences.js"></script>
     </body>
 
-</html>
+    </html>

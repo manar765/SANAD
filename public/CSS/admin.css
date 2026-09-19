@@ -1027,3 +1027,45 @@ body.role-admin.admin-page .admin-layout>.admin-sidebar {
 .role-select {
     width: 100%;
 }
+
+/* ==========================================================================
+   Database Management & Purge UI
+   ========================================================================== */
+.db-stat-card {
+    transition: transform 0.2s var(--ease-out, ease-out), box-shadow 0.2s var(--ease-out, ease-out);
+}
+
+.db-stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+}
+
+.selective-item {
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.selective-item:hover {
+    background: var(--bg-surface, #fff) !important;
+    border-color: var(--primary, #059669) !important;
+}
+
+.can-clear-db-toggle {
+    accent-color: var(--primary, #059669);
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+#purgeConfirmModal.modal-overlay {
+    animation: fadeInModal 0.2s ease-out forwards;
+}
+
+@keyframes fadeInModal {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}

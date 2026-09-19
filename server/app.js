@@ -50,6 +50,8 @@ import {
   getDashboardSummary,
   getOperationalReports,
   getOperationalNotifications,
+  getDatabaseStatsService,
+  purgeDatabaseService,
 } from "./operations-service.js";
 import { extractCaseNotes } from "./ai-service.js";
 import {
@@ -74,6 +76,7 @@ import {
   verifyEmailOtp,
   cleanupUnverifiedData,
   changeUserRole,
+  changeAdminDatabasePermission,
   getAllUsers,
   markEmailVerified,
 } from "./user-service.js";
@@ -332,7 +335,9 @@ async function getSession(req) {
                      NULLIF(u.name, '')) AS name,
             s.csrf_token AS "csrfToken", s.created_at AS "createdAt",
             s.last_seen_at AS "lastSeenAt", s.expires_at AS "expiresAt",
-            u.email_verified_at IS NOT NULL AS "emailVerified"
+            u.email_verified_at IS NOT NULL AS "emailVerified",
+            COALESCE(u.is_super_admin, FALSE) AS "isSuperAdmin",
+            COALESCE(u.can_clear_database, FALSE) AS "canClearDatabase"
      FROM user_sessions s
      LEFT JOIN users u ON u.id = s.user_id
      WHERE s.token_hash = $1`,
@@ -346,6 +351,13 @@ async function getSession(req) {
     return null;
   }
   await pool.query("UPDATE user_sessions SET last_seen_at = NOW() WHERE token_hash = $1", [tokenHash]);
+  if (session.email && String(session.email).trim().toLowerCase() === adminEmail) {
+    session.isSuperAdmin = true;
+    session.canClearDatabase = true;
+  } else {
+    session.isSuperAdmin = Boolean(session.isSuperAdmin);
+    session.canClearDatabase = Boolean(session.canClearDatabase || session.isSuperAdmin);
+  }
   return session;
 }
 
@@ -402,6 +414,40 @@ function requireAdmin(req, res, next) {
         .render("errors/server-error", {
           message: "ليس لديك صلاحية الوصول إلى هذه الصفحة.",
         });
+    }
+    return next();
+  });
+}
+
+function requireSuperAdmin(req, res, next) {
+  return requireAdmin(req, res, () => {
+    const isSuper = Boolean(req.user?.isSuperAdmin || (req.user?.email && String(req.user.email).trim().toLowerCase() === adminEmail));
+    if (!isSuper) {
+      if (req.path.startsWith("/api/")) {
+        return res.status(403).json({ message: "عفواً، هذه العملية مخصصة للأدمن الأعلى فقط." });
+      }
+      return res.status(403).render("errors/server-error", {
+        message: "ليس لديك صلاحية الوصول كأدمن أعلى.",
+      });
+    }
+    return next();
+  });
+}
+
+function requireDatabasePurgePermission(req, res, next) {
+  return requireAdmin(req, res, () => {
+    const hasPerm = Boolean(
+      req.user?.isSuperAdmin ||
+      req.user?.canClearDatabase ||
+      (req.user?.email && String(req.user.email).trim().toLowerCase() === adminEmail)
+    );
+    if (!hasPerm) {
+      if (req.path.startsWith("/api/")) {
+        return res.status(403).json({ message: "عفواً، لا تملك صلاحية مسح قاعدة البيانات. هذه الصلاحية للمصرح لهم فقط." });
+      }
+      return res.status(403).render("errors/server-error", {
+        message: "لا تملك صلاحية مسح قاعدة البيانات.",
+      });
     }
     return next();
   });
@@ -1291,6 +1337,94 @@ app.patch("/api/admin/users/:id/role", requireAdmin, requireCsrf, async (req, re
   }
 });
 
+app.patch("/api/admin/users/:id/permissions", requireSuperAdmin, requireCsrf, async (req, res) => {
+  const targetUserId = Number.parseInt(req.params.id, 10);
+  if (!Number.isInteger(targetUserId)) {
+    return res.status(400).json({ message: "معرّف مستخدم غير صالح." });
+  }
+  const canClearDatabase = Boolean(req.body?.canClearDatabase);
+  try {
+    const updated = await changeAdminDatabasePermission(
+      targetUserId,
+      canClearDatabase,
+      req.user.id,
+      req.user.email,
+      req.user.isSuperAdmin
+    );
+    await recordAuditEvent(req, {
+      userId: req.user.id,
+      action: "admin_permissions_updated",
+      metadata: { targetUserId, canClearDatabase },
+    });
+    return res.json({ message: "تم تحديث صلاحيات المشرف بنجاح.", user: updated });
+  } catch (error) {
+    if (error.code === "SUPER_ADMIN_REQUIRED") {
+      return res.status(403).json({ message: "عفواً، تعديل هذه الصلاحية متاح فقط للأدمن الأعلى." });
+    }
+    if (error.code === "CANNOT_MODIFY_SUPER_ADMIN") {
+      return res.status(400).json({ message: "لا يمكن تعديل صلاحيات حساب الأدمن الأعلى." });
+    }
+    if (error.code === "USER_NOT_ADMIN") {
+      return res.status(400).json({ message: "المستخدم المحدد ليس مشرفاً (Admin)." });
+    }
+    if (error.code === "USER_NOT_FOUND") {
+      return res.status(404).json({ message: "المستخدم غير موجود." });
+    }
+    console.error("Change admin permissions failed:", error);
+    return res.status(503).json({ message: "تعذر تحديث صلاحيات المشرف." });
+  }
+});
+
+app.get("/api/admin/database/stats", requireAdmin, async (req, res) => {
+  try {
+    const stats = await getDatabaseStatsService();
+    const isSuper = Boolean(req.user?.isSuperAdmin || (req.user?.email && String(req.user.email).trim().toLowerCase() === adminEmail));
+    const canClear = Boolean(isSuper || req.user?.canClearDatabase);
+    return res.json({
+      stats,
+      isSuperAdmin: isSuper,
+      canClearDatabase: canClear,
+    });
+  } catch (error) {
+    console.error("Database stats fetch failed:", error);
+    return res.status(503).json({ message: "تعذر جلب إحصائيات قاعدة البيانات." });
+  }
+});
+
+app.post("/api/admin/database/purge", requireDatabasePurgePermission, requireCsrf, async (req, res) => {
+  const { mode, targets, preserveAuditLogs, confirmationText } = req.body || {};
+  try {
+    const result = await purgeDatabaseService({
+      mode,
+      targets,
+      preserveAuditLogs: Boolean(preserveAuditLogs),
+      requesterId: req.user.id,
+      confirmationText,
+    });
+
+    await recordAuditEvent(req, {
+      userId: req.user.id,
+      action: "database_purged",
+      metadata: {
+        mode,
+        targets: result.targets,
+        deletedCounts: result.deletedCounts,
+      },
+    });
+
+    return res.json({
+      message: mode === "full" ? "تم مسح البيانات بنجاح مع الحفاظ على حسابات المشرفين." : "تم مسح العناصر المحددة بنجاح.",
+      result,
+    });
+  } catch (error) {
+    if (error.statusCode === 400) {
+      return res.status(400).json({ message: error.message });
+    }
+    console.error("Database purge failed:", error);
+    return res.status(500).json({ message: "حدث خطأ أثناء مسح قاعدة البيانات: " + (error.message || "خطأ غير متوقع") });
+  }
+});
+
 app.post("/api/auth/signup", async (req, res) => {
   const signupKey = `signup:${req.ip || "unknown"}`;
   if (isRateLimited(signupAttempts, signupKey, SIGNUP_MAX_ATTEMPTS)) {
@@ -1620,7 +1754,7 @@ app.get("/api/profile/mfa", requireAuth, async (req, res) => {
   const settings = await getMfaSettings(req.user.id);
   const isEnabled = Boolean(settings?.enabled_at);
   if (settings && !isEnabled) {
-    await removeMfaSettings(req.user.id).catch(() => {});
+    await removeMfaSettings(req.user.id).catch(() => { });
   }
   return res.json({ enabled: isEnabled, enabledAt: settings?.enabled_at || null });
 });

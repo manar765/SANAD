@@ -49,6 +49,13 @@ export async function migrate() {
       await client.query(`UPDATE users SET role = 'donor' WHERE role = 'user'`);
       await client.query(`ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check`);
       await client.query(`ALTER TABLE users ADD CONSTRAINT users_role_check CHECK (role IN ('donor', 'beneficiary', 'admin'))`);
+      await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_super_admin BOOLEAN NOT NULL DEFAULT FALSE`);
+      await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS can_clear_database BOOLEAN NOT NULL DEFAULT FALSE`);
+      const defaultAdminEmail = (process.env.ADMIN_EMAIL || "admin@sanad.com").trim().toLowerCase();
+      await client.query(
+        `UPDATE users SET is_super_admin = TRUE, can_clear_database = TRUE WHERE LOWER(email) = $1`,
+        [defaultAdminEmail]
+      );
 
       await client.query(`
       CREATE TABLE IF NOT EXISTS donor_profiles (
@@ -494,6 +501,8 @@ export async function migrate() {
       await client.query(`CREATE INDEX IF NOT EXISTS audit_logs_created_at_idx ON audit_logs (created_at DESC)`);
       await client.query(`CREATE INDEX IF NOT EXISTS donation_requests_status_created_at_idx ON donation_requests (status, created_at DESC)`);
       await client.query(`CREATE INDEX IF NOT EXISTS donation_requests_donor_created_at_idx ON donation_requests (donor_id, created_at DESC)`);
+      await client.query(`CREATE INDEX IF NOT EXISTS users_is_super_admin_idx ON users (is_super_admin) WHERE is_super_admin = TRUE`);
+      await client.query(`CREATE INDEX IF NOT EXISTS users_can_clear_database_idx ON users (can_clear_database) WHERE can_clear_database = TRUE`);
 
       await client.query("COMMIT");
       return;
