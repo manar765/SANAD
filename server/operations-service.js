@@ -5,8 +5,10 @@ import {
     createBeneficiaryProfile,
     createDistribution,
     createInventoryItem,
+    deleteBeneficiaryRecords,
     getAssistanceRequest,
     getBeneficiaryDetail,
+    getBeneficiaryDistributionLink,
     getBeneficiaryProfileId,
     getBeneficiaryRecommendationHistory,
     getLatestBeneficiaryRecommendation,
@@ -46,6 +48,7 @@ const BENEFICIARY_VERIFICATION_STATUSES = new Set(["pending", "verified", "rejec
 const text = (value, max) => String(value ?? "").trim().replace(/\s+/g, " ").slice(0, max);
 const positiveInt = value => Number.isInteger(Number(value)) && Number(value) > 0 ? Number(value) : null;
 const nonNegativeInt = value => Number.isInteger(Number(value)) && Number(value) >= 0 ? Number(value) : null;
+const isValidEgyptianNationalId = (value) => /^\d{14}$/.test(String(value || "").trim());
 
 export async function getInventory(filters) { return listInventory({ status: text(filters?.status, 30) || null, category: text(filters?.category, 80) || null }); }
 
@@ -287,6 +290,7 @@ export async function addBeneficiary(body, createdBy) {
 
     if (!input.name || input.name.length < 2) throw new Error("INVALID_BENEFICIARY_NAME");
     if (input.verificationStatus && !BENEFICIARY_VERIFICATION_STATUSES.has(input.verificationStatus)) throw new Error("INVALID_VERIFICATION_STATUS");
+    if (input.nationalId && !isValidEgyptianNationalId(input.nationalId)) throw new Error("INVALID_NATIONAL_ID");
 
     return createBeneficiaryProfile(input, createdBy);
 }
@@ -313,8 +317,28 @@ export async function editBeneficiary(id, body, updatedBy) {
     if (input.verificationStatus && !BENEFICIARY_VERIFICATION_STATUSES.has(input.verificationStatus)) {
         throw new Error("INVALID_VERIFICATION_STATUS");
     }
+    if (input.nationalId !== undefined && input.nationalId && !isValidEgyptianNationalId(input.nationalId)) {
+        throw new Error("INVALID_NATIONAL_ID");
+    }
 
     return updateBeneficiaryProfile(id, input, updatedBy);
+}
+
+export async function deleteBeneficiariesByIds(ids, requesterId) {
+    const list = (Array.isArray(ids) ? ids : [])
+        .map(value => value)
+        .filter(value => Number.isInteger(Number(value)));
+    const numericIds = list.map(Number).filter(Number.isInteger);
+    if (numericIds.length === 0) throw new Error("INVALID_BENEFICIARY_SELECTION");
+    return deleteBeneficiaryRecords(numericIds, requesterId);
+}
+
+export async function deleteAllBeneficiaries(requesterId) {
+    return deleteBeneficiaryRecords(null, requesterId);
+}
+
+export async function deleteSingleBeneficiary(id, requesterId) {
+    return deleteBeneficiaryRecords([Number(id)], requesterId);
 }
 
 export async function evaluateAndSaveRecommendation(beneficiaryId, actorId) {

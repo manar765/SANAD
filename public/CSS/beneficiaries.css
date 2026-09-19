@@ -630,6 +630,67 @@
   opacity: 1;
 }
 
+/* Keep the Add New Need modal above the open detail drawer */
+.ben-need-modal-overlay {
+  z-index: 1020;
+}
+
+/* Needs tab toolbar (drawer) */
+.ben-needs-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.ben-needs-toolbar h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ben-field-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  margin-top: 0.25rem;
+  padding: 0.5rem 0.625rem;
+  width: 100%;
+  box-sizing: border-box;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.45;
+  text-align: right;
+  color: var(--danger, #dc2626);
+  background-color: rgba(220, 38, 38, 0.08);
+  border: 1px solid rgba(220, 38, 38, 0.35);
+  border-radius: 0.5rem;
+  overflow-wrap: anywhere;
+  position: static;
+  z-index: auto;
+}
+
+.ben-field-error[hidden] {
+  display: none;
+}
+
+.ben-input-error,
+.ben-form-group input.ben-input-error {
+  border-color: var(--danger, #dc2626) !important;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12) !important;
+}
+
+@media (max-width: 640px) {
+  .ben-field-error {
+    font-size: 0.75rem;
+  }
+}
+
 .ben-modal-card {
   width: 100%;
   max-width: 720px;
@@ -1270,7 +1331,7 @@
    PHASE 7: AI ASSISTANT NOTE EXTRACTION STYLES
 ============================================================ */
 .ai-assistant-wrapper {
-  margin: 0.25rem 1.5rem 1rem;
+  margin: 0.25rem 0 1rem;
 }
 
 .ai-toggle-btn {
@@ -1594,4 +1655,18 @@
     font-size: 0.78rem;
     padding: 0.2rem 0.5rem;
   }
+}
+/* ----------------------------
+   Danger button variant
+   ---------------------------- */
+.btn-danger {
+  background-color: var(--danger, #dc2626);
+  border-color: var(--danger, #dc2626);
+  color: #ffffff;
+}
+
+.btn-danger:hover {
+  background-color: #b91c1c;
+  border-color: #b91c1c;
+  color: #ffffff;
 }

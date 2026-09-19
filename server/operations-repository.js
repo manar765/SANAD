@@ -109,12 +109,72 @@ export async function getBeneficiaryProfileId(userId) {
 export async function createBeneficiaryNeed(input, beneficiaryId) {
     const result = await pool.query(
         `INSERT INTO beneficiary_needs
-      (beneficiary_id, title, description, category, quantity_requested, unit, priority, due_date)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
+      (beneficiary_id, title, description, category, quantity_requested, quantity_fulfilled, unit, priority, status, due_date)
+     VALUES ($1, $2, $3, $4, $5, 0, $6, $7, 'open', $8) RETURNING id`,
         [beneficiaryId, input.title, input.description, input.category, input.quantityRequested, input.unit, input.priority, input.dueDate || null],
     );
     const rows = await pool.query(`${needSelect} WHERE n.id = $1`, [result.rows[0].id]);
     return rows.rows[0];
+}
+
+export async function getBeneficiaryDistributionLink(ids) {
+    const list = (Array.isArray(ids) ? ids : [])
+        .map(value => Number(value))
+        .filter(Number.isInteger);
+    if (list.length === 0) return new Map();
+    const result = await pool.query(
+        `SELECT d.beneficiary_id, COUNT(*)::int AS count,
+                MIN(d.reference_code) AS referenceCode
+           FROM distributions d
+          WHERE d.beneficiary_id = ANY($1::int[])
+          GROUP BY d.beneficiary_id`,
+        [ids],
+    );
+    return new Map(result.rows.map(row => [row.beneficiary_id, { count: row.count, referenceCode: row.reference_code }]));
+}
+
+// Deleting a beneficiary record is a safe, auditable operation.
+//
+// Relationship handling follows the existing schema:
+//   * beneficiary_needs, beneficiary_needs.additional requests, beneficiary_profiles.recommendations and
+//     beneficiary_needs requests linked via assistance_requests cascade when their parent profile is removed
+//     (existing ON DELETE CASCADE, matching the system's documented behavior).
+//   * distributions reference beneficiary_profiles and are protected (ON DELETE RESTRICT); a beneficiary with
+//     an existing distribution cannot be removed, to preserve the integrity of distribution records.
+export async function deleteBeneficiaryRecords(ids, requesterId) {
+    const list = (Array.isArray(ids) ? ids : [])
+        .map(value => Number.parseInt(value, 10))
+        .filter(Number.isInteger);
+    if (list.length === 0) return { deleted: 0, deletedIds: [], blocked: [] };
+    const client = await pool.connect();
+    try {
+        await client.query("BEGIN");
+        const blocked = [];
+        const deletable = [];
+        const linked = await getBeneficiaryDistributionLink(list);
+        for (const id of list) {
+            if (linked.has(id)) {
+                blocked.push({ id, distributionsCount: linked.get(id).count, referenceCode: linked.get(id).referenceCode });
+            } else {
+                deletable.push(id);
+            }
+        }
+        let deletedIds = [];
+        if (deletable.length) {
+            const result = await client.query(
+                `DELETE FROM beneficiary_profiles WHERE id = ANY($1::int[]) RETURNING id`,
+                [deletable],
+            );
+            deletedIds = result.rows.map(row => row.id);
+        }
+        await client.query("COMMIT");
+        return { deleted: deletedIds.length, deletedIds, blocked };
+    } catch (error) {
+        await client.query("ROLLBACK").catch(() => { });
+        throw error;
+    } finally {
+        client.release();
+    }
 }
 
 export async function updateBeneficiaryNeed(id, input, beneficiaryId = null) {

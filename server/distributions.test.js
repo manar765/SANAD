@@ -85,7 +85,7 @@ test("Phase 6: Distributions Workflow — End-to-End Verification", async (t) =>
         body: JSON.stringify({
             name: `مستفيد التوزيع ${testId}`,
             phone: `010${testId}99`,
-            nationalId: `29${testId}1234567`,
+            nationalId: `29${testId}123456`,
             governorate: "القاهرة",
             district: "المعادي",
             address: "شارع التحرير",

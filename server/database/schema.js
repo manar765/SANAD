@@ -309,6 +309,27 @@ export async function migrate() {
       await client.query(`ALTER TABLE assistance_requests DROP CONSTRAINT IF EXISTS assistance_requests_beneficiary_id_fkey`);
       await client.query(`ALTER TABLE assistance_requests ADD CONSTRAINT assistance_requests_beneficiary_id_fkey FOREIGN KEY (beneficiary_id) REFERENCES beneficiary_profiles(id) ON DELETE CASCADE`);
 
+      // Migration for beneficiary_needs status workflow:
+      // Canonical statuses are 'open'/'partially_fulfilled'/'fulfilled'/'cancelled' with default 'open'.
+      // Older databases defaulted to 'pending' and used a legacy enum, which left staff-created
+      // needs invisible to active-need queries and the recommendation engine.
+      await client.query(`ALTER TABLE beneficiary_needs ALTER COLUMN status SET DEFAULT 'open'`);
+      await client.query(`UPDATE beneficiary_needs SET status = 'open' WHERE status IN ('pending', 'accepted', 'approved')`);
+      await client.query(`UPDATE beneficiary_needs SET status = 'cancelled' WHERE status = 'rejected'`);
+      await client.query(`ALTER TABLE beneficiary_needs DROP CONSTRAINT IF EXISTS beneficiary_needs_status_check`);
+      await client.query(`
+        DO $$
+        BEGIN
+          IF NOT EXISTS (
+            SELECT 1 FROM pg_constraint WHERE conname = 'beneficiary_needs_status_check'
+          ) THEN
+            ALTER TABLE beneficiary_needs ADD CONSTRAINT beneficiary_needs_status_check
+              CHECK (status IN ('open', 'partially_fulfilled', 'fulfilled', 'cancelled'));
+          END IF;
+        END;
+        $$;
+      `);
+
       await client.query(`
       CREATE OR REPLACE FUNCTION set_distribution_reference_code()
       RETURNS TRIGGER AS $$

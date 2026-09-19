@@ -155,6 +155,46 @@ test("beneficiary workflow — creation, listing, masking, search, and verificat
     assert.ok(pageHtml.includes("سجل المستفيدين"));
     assert.ok(pageHtml.includes("/JS/beneficiaries.js"));
     assert.ok(pageHtml.includes("/CSS/style.css"));
+
+    // 10. National ID validation — invalid values rejected on create
+    const invalidNationalIds = [
+        "2890401123",            // too short
+        "289040112345678",       // too long
+        "28a04011234567",        // contains letters
+        "28904011 234567",       // contains separators
+        "28904011234567a",       // trailing letter
+    ];
+    for (const bad of invalidNationalIds) {
+        const badRes = await fetch(`${baseUrl}/api/beneficiaries`, {
+            method: "POST",
+            headers: {
+                Cookie: adminCookie,
+                "X-CSRF-Token": adminCsrf,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                name: "حالة اختبار رقم قومي غير صالح",
+                phone: `011${Date.now().toString().slice(-8)}`,
+                nationalId: bad,
+                governorate: "الجيزة",
+            }),
+        });
+        assert.equal(badRes.status, 400, `nationalId '${bad}' must be rejected`);
+        const badData = await badRes.json();
+        assert.ok(String(badData.message).includes("14"), "rejection message must explain the 14-digit rule");
+    }
+
+    // 11. National ID validation — invalid value rejected on edit
+    const badEditRes = await fetch(`${baseUrl}/api/beneficiaries/${createdBeneficiaryId}`, {
+        method: "PATCH",
+        headers: {
+            Cookie: adminCookie,
+            "X-CSRF-Token": adminCsrf,
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ nationalId: "123" }),
+    });
+    assert.equal(badEditRes.status, 400, "invalid nationalId must be rejected on edit");
 });
 
 after(async () => {

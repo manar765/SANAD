@@ -12,6 +12,7 @@ export async function createUserWithProfile({
     passwordHash,
     phone,
     role,
+    nationalId = null,
     donorType = "individual",
     organizationName = "",
 }) {
@@ -33,7 +34,10 @@ export async function createUserWithProfile({
                 [user.id, donorType, donorType === "organization" ? organizationName : ""],
             );
         } else {
-            await client.query("INSERT INTO beneficiary_profiles (user_id) VALUES ($1)", [user.id]);
+            await client.query(
+                "INSERT INTO beneficiary_profiles (user_id, national_id) VALUES ($1, NULLIF($2, ''))",
+                [user.id, nationalId],
+            );
         }
 
         await client.query("COMMIT");

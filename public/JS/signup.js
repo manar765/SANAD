@@ -3,6 +3,8 @@ const roleStep = document.getElementById("roleStep");
 const formStep = document.getElementById("formStep");
 const roleInput = document.getElementById("role");
 const donorFields = document.getElementById("donorFields");
+const beneficiaryFields = document.getElementById("beneficiaryFields");
+const nationalId = document.getElementById("nationalId");
 const organizationField = document.getElementById("organizationField");
 const organizationName = document.getElementById("organizationName");
 const submitBtn = document.getElementById("submitBtn");
@@ -16,6 +18,7 @@ const fieldRules = [
   { input: document.getElementById("phone"), error: document.getElementById("phoneError"), valid: value => /^[+\d][\d\s()-]{7,19}$/.test(value.trim()) },
   { input: document.getElementById("password"), error: document.getElementById("passwordError"), valid: value => value.length >= 8 },
   { input: document.getElementById("confirmPassword"), error: document.getElementById("confirmPasswordError"), valid: value => value === document.getElementById("password").value && value.length > 0 },
+  { input: document.getElementById("nationalId"), error: document.getElementById("nationalIdError"), valid: value => /^\d{14}$/.test(value.trim()) },
 ];
 
 function setFieldState(rule) {
@@ -26,7 +29,10 @@ function setFieldState(rule) {
 }
 
 function validate() {
-  const valid = fieldRules.map(setFieldState).every(Boolean);
+  const rules = selectedRole === "beneficiary"
+    ? fieldRules
+    : fieldRules.filter(rule => rule.input.id !== "nationalId");
+  const valid = rules.map(setFieldState).every(Boolean);
   const isOrganization = selectedRole === "donor" && document.querySelector('input[name="donorType"]:checked')?.value === "organization";
   const organizationValid = !isOrganization || organizationName.value.trim().length >= 2;
   organizationName.classList.toggle("error", !organizationValid);
@@ -53,6 +59,13 @@ function chooseRole(role) {
   document.getElementById("formSubtitle").textContent = donor ? "أدخل بياناتك للبدء في تقديم الدعم." : "أدخل بياناتك للبدء في الاستفادة من الدعم.";
   document.querySelector(".btn-text").textContent = donor ? "إنشاء حساب متبرع" : "إنشاء حساب مستفيد";
   donorFields.classList.toggle("hidden", !donor);
+  beneficiaryFields.classList.toggle("hidden", donor);
+  nationalId.required = !donor;
+  if (donor) {
+    nationalId.value = "";
+    nationalId.classList.remove("error");
+    document.getElementById("nationalIdError").classList.remove("show");
+  }
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
@@ -106,6 +119,7 @@ form.addEventListener("submit", async event => {
         email: document.getElementById("email").value.trim(),
         phone: document.getElementById("phone").value.trim(),
         password: document.getElementById("password").value,
+        nationalId: selectedRole === "beneficiary" ? nationalId.value.trim() : undefined,
         donorType: selectedRole === "donor" ? donorType : undefined,
         organizationName: selectedRole === "donor" && donorType === "organization" ? organizationName.value.trim() : undefined,
       }),
